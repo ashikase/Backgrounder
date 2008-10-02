@@ -12,7 +12,7 @@ clean:
 strip:
 	$(target)strip $(name).dylib
 
-$(name).dylib: Tweak.mm
-	$(target)g++ -dynamiclib -ggdb -O2 -Wall -Werror -o $@ $(filter %.mm,$^) -init _TweakInitialize -lobjc -framework CoreFoundation -framework Foundation -framework UIKit -F${PKG_ROOT}/System/Library/PrivateFrameworks -I$(SUB_PATH) -L$(SUB_PATH) -lsubstrate
+$(name).dylib: Backgrounder.mm
+	$(target)g++ -dynamiclib -ggdb -O2 -Wall -Werror -o $@ $(filter %.mm,$^) -init _BackgrounderInitialize -lobjc -framework CoreFoundation -framework Foundation -framework UIKit -F${PKG_ROOT}/System/Library/PrivateFrameworks -I$(SUB_PATH) -L$(SUB_PATH) -lsubstrate
 
 .PHONY: all clean strip

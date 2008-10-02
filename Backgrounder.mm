@@ -2,7 +2,7 @@
  * Name: Backgrounder
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-09-25 10:08:16
+ * Last-modified: 2008-09-25 11:04:08
  *
  * Description:
  * ------------
@@ -113,7 +113,7 @@ static void $UIApplication$_setSuspended$(UIApplication<BackgrounderApp> *self, 
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-extern "C" void TweakInitialize()
+extern "C" void BackgrounderInitialize()
 {
     NSString *identifier = [[NSBundle mainBundle] bundleIdentifier];
     NSLog(@"Backgrounder: bundle is: %@", identifier);
