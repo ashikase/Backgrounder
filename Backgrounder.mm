@@ -2,7 +2,7 @@
  * Name: Backgrounder
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-09-25 12:48:50
+ * Last-modified: 2008-09-29 22:59:14
  *
  * Description:
  * ------------
@@ -70,27 +70,158 @@
  *   (and all things iPhone).
  */
 
+#include <signal.h>
 #include <substrate.h>
 
 #import <GraphicsServices/GraphicsServices.h>
 
 #import <Foundation/NSArray.h>
 #import <Foundation/NSBundle.h>
+#import <Foundation/NSDictionary.h>
 #import <Foundation/NSRunLoop.h>
 #import <Foundation/NSString.h>
+#import <Foundation/NSTimer.h>
+#import <Foundation/NSThread.h>
 
 #import <SpringBoard/SBApplication.h>
+#import <SpringBoard/SBAlert.h>
+#import <SpringBoard/SBAlertDisplay.h>
+#import <SpringBoard/SBSMSClass0Alert.h>
+#import <SpringBoard/SBDisplayStack.h>
+#import <SpringBoard/SpringBoard.h>
+
 #import <UIKit/UIApplication.h>
 
+extern "C" void msgSendLoggingSetEnabled(unsigned int enable);
 
-@protocol BackgrounderSB
-- (BOOL)bg_isSystemApplication;
+
+// -----------------------------------------------------------------------------
+// ------------------------------ SPRINGBOARD ----------------------------------
+// -----------------------------------------------------------------------------
+
+@protocol BackgrounderSBStack
+- (id)bg_init;
 @end
 
-static BOOL $SBApplication$isSystemApplication(UIApplication<BackgrounderSB> *self, SEL sel)
+static SBDisplayStack *displayStack = nil;
+
+static id $SBDisplayStack$init(SBDisplayStack<BackgrounderSBStack> *self, SEL sel)
 {
-    // Non-system applications get killed
-    return YES;
+    // NOTE: SpringBoard appears to create five stacks at startup;
+    //       the first stack is for applications (the others, unknown)
+    id ret = [self bg_init];
+    if (!displayStack)
+        displayStack = ret;
+    return ret;
+}
+
+//______________________________________________________________________________
+//______________________________________________________________________________
+
+static BOOL alertTimerDidFire = NO;
+
+// The alert window displays instructions when the home button is held down
+static NSTimer *alertTimer = nil;
+static id alert = nil;
+
+static void destroyAlertTimer()
+{
+    // Disable and release timer (may be nil)
+    [alertTimer invalidate];
+    [alertTimer release];
+    alertTimer = nil;
+}
+
+static void destroyAlert()
+{
+    // Hide and release alert window (may be nil)
+    [alert deactivate];
+    [alert release];
+    alert = nil;
+}
+
+@protocol BackgrounderSB
+- (void)bg_menuButtonDown:(GSEvent *)event;
+- (void)bg_menuButtonUp:(GSEvent *)event;
+@end
+
+static void $SpringBoard$showBackgrounderMessageBox(id self, SEL sel)
+{
+    alertTimerDidFire = YES;
+
+    // Notify the application that the menu button was pressed
+    id app = [displayStack topApplication];
+    if (app)
+        kill([app pid], SIGUSR1);
+
+    // Display information screen
+    Class $SBSMSClass0Alert(objc_getClass("SBSMSClass0Alert"));
+    alert = [[$SBSMSClass0Alert alloc] initWithString:@"Release: Toggle Backgrounding\n\nHold: Force Quit"];
+    [alert activate];
+}
+
+static void $SpringBoard$menuButtonDown$(SpringBoard<BackgrounderSB> *self, SEL sel, GSEvent *event)
+{
+    // Setup toggle-delay timer
+    id app = [displayStack topApplication];
+    if (app && app != self)
+        alertTimer = [[NSTimer scheduledTimerWithTimeInterval:0.8f
+            target:self selector:@selector(showBackgrounderMessageBox)
+            userInfo:nil repeats:NO] retain];
+
+    // Begin normal 'kill if held' sequence
+    [self bg_menuButtonDown:event];
+}
+
+static void $SpringBoard$menuButtonUp$(SpringBoard<BackgrounderSB> *self, SEL sel, GSEvent *event)
+{
+    // Stop information screen from showing (if button-up before timeout)
+    destroyAlertTimer();
+
+    // Hide and destroy the information screen
+    destroyAlert();
+
+    [self bg_menuButtonUp:event];
+}
+
+//______________________________________________________________________________
+//______________________________________________________________________________
+
+@protocol BackgrounderSBApp
+- (BOOL)bg_isSystemApplication;
+- (BOOL)bg_kill;
+@end
+
+static BOOL $SBApplication$isSystemApplication(SBApplication<BackgrounderSBApp> *self, SEL sel)
+{
+    // Non-system applications get killed; if app is running, report as system
+    // NOTE: Simply returning YES here can cause problems with SpringBoard,
+    //       such as the inability to uinstall an AppStore application
+    //return (self == [displayStack topApplication]) ? YES : [self bg_isSystemApplication];
+    return ([self pid] != -1) ? YES : [self bg_isSystemApplication];
+}
+
+static BOOL $SBApplication$kill(SBApplication<BackgrounderSBApp> *self, SEL sel)
+{
+    // Hide and destroy the information screen
+    destroyAlert();
+    return [self bg_kill];
+}
+
+// -----------------------------------------------------------------------------
+// ---------------------------- THE APPLICATION --------------------------------
+// -----------------------------------------------------------------------------
+
+static BOOL backgroundingEnabled = NO;
+
+static void toggleBackgrounding(int signal)
+{
+    backgroundingEnabled = !backgroundingEnabled;
+}
+
+static BOOL $UIApplication$isBackgroundable(id self, SEL sel)
+{
+    return backgroundingEnabled;
 }
 
 //______________________________________________________________________________
@@ -98,30 +229,49 @@ static BOOL $SBApplication$isSystemApplication(UIApplication<BackgrounderSB> *se
 
 @protocol BackgrounderApp
 - (void)bg_applicationWillSuspend;
-- (void)bg_applicationWillResume;
+- (void)bg_applicationDidResume;
 - (void)bg_applicationWillResignActive:(UIApplication *)application;
 - (void)bg_applicationDidBecomeActive:(UIApplication *)application;;
 - (void)bg_applicationSuspend:(GSEvent *)event;
 //- (void)bg__setSuspended:(BOOL)val;
+- (void)bg__loadMainNibFile;
 @end
 
 // Prevent execution of application's on-suspend/resume methods
-static void $UIApplication$applicationWillSuspend(id self, SEL sel) {}
-static void $UIApplication$applicationDidResume(id self, SEL sel) {}
-static void $UIApplication$applicationWillResignActive$(id self, SEL sel, id application) {}
-static void $UIApplication$applicationDidBecomeActive$(id self, SEL sel, id application) {}
+static void $UIApplication$applicationWillSuspend(UIApplication<BackgrounderApp> *self, SEL sel)
+{
+    NSLog(@"Backgrounder: %s", __FUNCTION__);
+    if (!backgroundingEnabled)
+        [self bg_applicationWillSuspend];
+}
+
+static void $UIApplication$applicationDidResume(UIApplication<BackgrounderApp> *self, SEL sel)
+{
+    NSLog(@"Backgrounder: %s", __FUNCTION__);
+    if (!backgroundingEnabled)
+        [self bg_applicationDidResume];
+}
+
+static void $UIApplication$applicationWillResignActive$(UIApplication<BackgrounderApp> *self, SEL sel, id application)
+{
+    NSLog(@"Backgrounder: %s", __FUNCTION__);
+    if (!backgroundingEnabled)
+        [self bg_applicationWillResignActive:application];
+}
+
+static void $UIApplication$applicationDidBecomeActive$(UIApplication<BackgrounderApp> *self, SEL sel, id application)
+{
+    NSLog(@"Backgrounder: %s", __FUNCTION__);
+    if (!backgroundingEnabled)
+        [self bg_applicationDidBecomeActive:application];
+}
 
 // Overriding this method prevents the application from quitting on suspend
 static void $UIApplication$applicationSuspend$(UIApplication<BackgrounderApp> *self, SEL sel, GSEvent *event)
 {
-    static BOOL isFirstCall = YES;
-
-    if (isFirstCall) {
-        Class $AppDelegate([[self delegate] class]);
-        MSHookMessage($AppDelegate, @selector(applicationWillResignActive:), (IMP)&$UIApplication$applicationWillResignActive$, "bg_");
-        MSHookMessage($AppDelegate, @selector(applicationDidBecomeActive:), (IMP)&$UIApplication$applicationDidBecomeActive$, "bg_");
-        isFirstCall = NO;
-    }
+    NSLog(@"Backgrounder: %s", __FUNCTION__);
+    if (!backgroundingEnabled)
+        [self bg_applicationSuspend:event];
 }
 
 // FIXME: Tests make this appear unneeded... confirm
@@ -132,26 +282,69 @@ static void $UIApplication$_setSuspended$(UIApplication<BackgrounderApp> *self, 
 }
 #endif
 
+static void $UIApplication$_loadMainNibFile(UIApplication<BackgrounderApp> *self, SEL sel)
+{
+    // NOTE: This method always gets called, even if no NIB files are used.
+    //       Also note that if an application overrides this method (unlikely,
+    //       but possible), this extension's hooks will not be installed.
+    [self bg__loadMainNibFile];
+
+    Class $UIApplication([self class]);
+    MSHookMessage($UIApplication, @selector(applicationSuspend:), (IMP)&$UIApplication$applicationSuspend$, "bg_");
+    MSHookMessage($UIApplication, @selector(applicationWillSuspend), (IMP)&$UIApplication$applicationWillSuspend, "bg_");
+    MSHookMessage($UIApplication, @selector(applicationDidResume), (IMP)&$UIApplication$applicationDidResume, "bg_");
+
+    id delegate = [self delegate];
+    Class $AppDelegate(delegate ? [delegate class] : [self class]);
+    MSHookMessage($AppDelegate, @selector(applicationWillResignActive:), (IMP)&$UIApplication$applicationWillResignActive$, "bg_");
+    MSHookMessage($AppDelegate, @selector(applicationDidBecomeActive:), (IMP)&$UIApplication$applicationDidBecomeActive$, "bg_");
+}
+
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-#define BUNDLE_ID "jp.ashikase.backgrounder"
+#define PREFS_FILE "/var/mobile/Library/Preferences/jp.ashikase.backgrounder.plist"
 
 extern "C" void BackgrounderInitialize()
 {
     NSString *identifier = [[NSBundle mainBundle] bundleIdentifier];
 
     if ([identifier isEqualToString:@"com.apple.springboard"]) {
+        // Is SpringBoard
+        Class $SBDisplayStack(objc_getClass("SBDisplayStack"));
+        MSHookMessage($SBDisplayStack, @selector(init), (IMP)&$SBDisplayStack$init, "bg_");
+
+        Class $SpringBoard(objc_getClass("SpringBoard"));
+        MSHookMessage($SpringBoard, @selector(menuButtonDown:), (IMP)&$SpringBoard$menuButtonDown$, "bg_");
+        MSHookMessage($SpringBoard, @selector(menuButtonUp:), (IMP)&$SpringBoard$menuButtonUp$, "bg_");
+        class_addMethod($SpringBoard, @selector(showBackgrounderMessageBox), (IMP)&$SpringBoard$showBackgrounderMessageBox, "v@:");
+
         Class $SBApplication(objc_getClass("SBApplication"));
         MSHookMessage($SBApplication, @selector(isSystemApplication), (IMP)&$SBApplication$isSystemApplication, "bg_");
+        MSHookMessage($SBApplication, @selector(kill), (IMP)&$SBApplication$kill, "bg_");
     } else {
-        CFPropertyListRef array = CFPreferencesCopyAppValue(CFSTR("enabled_apps"), CFSTR(BUNDLE_ID));
-        if ([(NSArray *)array containsObject:identifier]) {
-            Class $UIApplication(objc_getClass("UIApplication"));
-            MSHookMessage($UIApplication, @selector(applicationSuspend:), (IMP)&$UIApplication$applicationSuspend$, "bg_");
-            // MSHookMessage($UIApplication, @selector(_setSuspended:), (IMP)&$UIApplication$_setSuspended$, "bg_");
-            MSHookMessage($UIApplication, @selector(applicationWillSuspend), (IMP)&$UIApplication$applicationWillSuspend, "bg_");
-            MSHookMessage($UIApplication, @selector(applicationDidResume), (IMP)&$UIApplication$applicationDidResume, "bg_");
-        }
+        // Is an application
+        Class $UIApplication(objc_getClass("UIApplication"));
+        MSHookMessage($UIApplication, @selector(_loadMainNibFile), (IMP)&$UIApplication$_loadMainNibFile, "bg_");
+        class_addMethod($UIApplication, @selector(isBackgroundable), (IMP)&$UIApplication$isBackgroundable, "c@:");
+
+        // Setup action to take upon receiving toggle signal from SpringBoard
+        sigset_t block_mask;
+        sigfillset(&block_mask);
+        struct sigaction action;
+        action.sa_handler = toggleBackgrounding;
+        action.sa_mask = block_mask;
+        action.sa_flags = 0;
+        sigaction(SIGUSR1, &action, NULL);
+
+        // Check if this application defaults to backgrounding
+        // NOTE: Can't use CFPreferences* functions due to AppStore sandboxing
+        NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:@PREFS_FILE];
+        NSArray *array = [prefs objectForKey:@"enabled_apps"];
+        if ([array containsObject:identifier])
+            // NOTE: parameter is ignored (necessary for use as signal handler)
+            toggleBackgrounding(0);
     }
 }
+
+/* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
