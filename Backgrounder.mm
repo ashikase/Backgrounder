@@ -2,7 +2,7 @@
  * Name: Backgrounder
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-01 22:14:23
+ * Last-modified: 2008-10-02 21:01:54
  *
  * Description:
  * ------------
@@ -79,6 +79,7 @@
 #import <CoreFoundation/CFNotificationCenter.h>
 
 #import <Foundation/NSArray.h>
+#import <Foundation/NSAutoreleasePool.h>
 #import <Foundation/NSBundle.h>
 #import <Foundation/NSDictionary.h>
 #import <Foundation/NSRunLoop.h>
@@ -105,8 +106,6 @@
 
 #define NOTICE_ENABLED "jp.ashikase.backgrounder.enabled"
 #define NOTICE_DISABLED "jp.ashikase.backgrounder.disabled"
-
-extern "C" void msgSendLoggingSetEnabled(unsigned int enable);
 
 
 // -----------------------------------------------------------------------------
@@ -278,6 +277,7 @@ static void $SpringBoard$menuButtonUp$(SpringBoard<BackgrounderSB> *self, SEL se
 
 @protocol BackgrounderSBApp
 - (BOOL)bg_isSystemApplication;
+- (BOOL)bg_shouldLaunchPNGless;
 - (BOOL)bg_kill;
 @end
 
@@ -288,6 +288,12 @@ static BOOL $SBApplication$isSystemApplication(SBApplication<BackgrounderSBApp> 
     //       such as the inability to uinstall an AppStore application
     //return (self == [displayStack topApplication]) ? YES : [self bg_isSystemApplication];
     return ([self pid] != -1) ? YES : [self bg_isSystemApplication];
+}
+
+static BOOL $SBApplication$shouldLaunchPNGless(SBApplication<BackgrounderSBApp> *self, SEL sel)
+{
+    // Only show splash-screen on initial launch
+    return ([self pid] != -1) ? YES : [self bg_shouldLaunchPNGless];
 }
 
 static BOOL $SBApplication$kill(SBApplication<BackgrounderSBApp> *self, SEL sel)
@@ -392,6 +398,8 @@ static void $UIApplication$_loadMainNibFile(UIApplication<BackgrounderApp> *self
 
 extern "C" void BackgrounderInitialize()
 {
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
     NSString *identifier = [[NSBundle mainBundle] bundleIdentifier];
 
     if ([identifier isEqualToString:@"com.apple.springboard"]) {
@@ -407,6 +415,7 @@ extern "C" void BackgrounderInitialize()
 
         Class $SBApplication(objc_getClass("SBApplication"));
         MSHookMessage($SBApplication, @selector(isSystemApplication), (IMP)&$SBApplication$isSystemApplication, "bg_");
+        MSHookMessage($SBApplication, @selector(shouldLaunchPNGless), (IMP)&$SBApplication$shouldLaunchPNGless, "bg_");
         MSHookMessage($SBApplication, @selector(kill), (IMP)&$SBApplication$kill, "bg_");
 
         // Create custom alert-item class
@@ -444,6 +453,8 @@ extern "C" void BackgrounderInitialize()
         if ([array containsObject:identifier])
             backgroundingEnabled = YES;
     }
+
+    [pool release];
 }
 
 /* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
