@@ -2,26 +2,50 @@
  * Name: Backgrounder
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-09-25 11:04:08
+ * Last-modified: 2008-09-25 12:48:50
  *
  * Description:
  * ------------
- *   This is an extension to SpringBoard that allows for applications
+ *   This is an extension to SpringBoard that allows applications
  *   to run in the background (instead of terminating).
- *
- * Features:
- * ---------
- *   List of applicable apps.. plist..
- *
- * Limitations:
- * ------------
  *
  * Usage:
  * ------
+ *   The list of background-enabled applications is retrieved from the
+ *   following preferences file:
+ *
+ *   /var/mobile/Library/Preferences/jp.ashikase.backgrounder.plist
+ *
+ *   The file should be created with the following format, where the <string>
+ *   values represent the bundle identifiers of the applications that are to
+ *   be enabled:
+ *
+ *   <?xml version="1.0" encoding="UTF-8"?>
+ *   <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+ *   <plist version="1.0">
+ *   <dict>
+ *   	<key>enabled_apps</key>
+ *   	<array>
+ *   		<string>com.apple.weather</string>
+ *   		<string>com.apple.calculator</string>
+ *   	</array>
+ *   </dict>
+ *   </plist>
+ *
+ * Limitations:
+ * ------------
+ *   There is currently no way to terminate a background-enabled application,
+ *   other than killing it (by holding the Home button for 5-6 seconds or
+ *   using /bin/kill or /usr/bin/killall).
+ *
+ *   Some applications may use the suspend/resume methods to perform important
+ *   tasks, such as saving preferences. If the application is not properly
+ *   terminated, these tasks may never be run.
  *
  * Todo:
  * -----
  * - add a method for proper termination of a background-enabled app.
+ * - add a method to quickly enable/disable backgrounding of an app.
  *
  * Compilation:
  * ------------
@@ -50,6 +74,7 @@
 
 #import <GraphicsServices/GraphicsServices.h>
 
+#import <Foundation/NSArray.h>
 #import <Foundation/NSBundle.h>
 #import <Foundation/NSRunLoop.h>
 #import <Foundation/NSString.h>
@@ -92,18 +117,15 @@ static void $UIApplication$applicationSuspend$(UIApplication<BackgrounderApp> *s
     static BOOL isFirstCall = YES;
 
     if (isFirstCall) {
-        NSLog(@"Backgrounder: hooking susps");
         Class $AppDelegate([[self delegate] class]);
         MSHookMessage($AppDelegate, @selector(applicationWillResignActive:), (IMP)&$UIApplication$applicationWillResignActive$, "bg_");
         MSHookMessage($AppDelegate, @selector(applicationDidBecomeActive:), (IMP)&$UIApplication$applicationDidBecomeActive$, "bg_");
         isFirstCall = NO;
-    } else {
-        NSLog(@"Backgrounder: not first call");
     }
 }
 
-#if 0
 // FIXME: Tests make this appear unneeded... confirm
+#if 0
 static void $UIApplication$_setSuspended$(UIApplication<BackgrounderApp> *self, SEL sel, BOOL val)
 {
     //[self bg__setSuspended:val];
@@ -113,24 +135,21 @@ static void $UIApplication$_setSuspended$(UIApplication<BackgrounderApp> *self, 
 //______________________________________________________________________________
 //______________________________________________________________________________
 
+#define BUNDLE_ID "jp.ashikase.backgrounder"
+
 extern "C" void BackgrounderInitialize()
 {
     NSString *identifier = [[NSBundle mainBundle] bundleIdentifier];
-    NSLog(@"Backgrounder: bundle is: %@", identifier);
 
     if ([identifier isEqualToString:@"com.apple.springboard"]) {
         Class $SBApplication(objc_getClass("SBApplication"));
         MSHookMessage($SBApplication, @selector(isSystemApplication), (IMP)&$SBApplication$isSystemApplication, "bg_");
     } else {
-        // TODO: Read in plist with array containing names of apps to background
-        // if ([array contains:identifier]) {
-    
-        
-        if ([identifier isEqualToString:@"de.derflash.rooms"]) {
-            NSLog(@"Backgrounder: It's Rooms");
+        CFPropertyListRef array = CFPreferencesCopyAppValue(CFSTR("enabled_apps"), CFSTR(BUNDLE_ID));
+        if ([(NSArray *)array containsObject:identifier]) {
             Class $UIApplication(objc_getClass("UIApplication"));
             MSHookMessage($UIApplication, @selector(applicationSuspend:), (IMP)&$UIApplication$applicationSuspend$, "bg_");
-            //        MSHookMessage($UIApplication, @selector(_setSuspended:), (IMP)&$UIApplication$_setSuspended$, "bg_");
+            // MSHookMessage($UIApplication, @selector(_setSuspended:), (IMP)&$UIApplication$_setSuspended$, "bg_");
             MSHookMessage($UIApplication, @selector(applicationWillSuspend), (IMP)&$UIApplication$applicationWillSuspend, "bg_");
             MSHookMessage($UIApplication, @selector(applicationDidResume), (IMP)&$UIApplication$applicationDidResume, "bg_");
         }
