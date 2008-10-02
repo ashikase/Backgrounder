@@ -1,3 +1,51 @@
+/**
+ * Name: Backgrounder
+ * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
+ * Author: Lance Fetters (aka. ashikase)
+ * Last-modified: 2008-09-25 10:08:16
+ *
+ * Description:
+ * ------------
+ *   This is an extension to SpringBoard that allows for applications
+ *   to run in the background (instead of terminating).
+ *
+ * Features:
+ * ---------
+ *   List of applicable apps.. plist..
+ *
+ * Limitations:
+ * ------------
+ *
+ * Usage:
+ * ------
+ *
+ * Todo:
+ * -----
+ * - add a method for proper termination of a background-enabled app.
+ *
+ * Compilation:
+ * ------------
+ *   This code requires the MobileSubstrate library and headers;
+ *   the MobileSubstrate source can be obtained via Subversion at:
+ *   http://svn.saurik.com/repos/menes/trunk/mobilesubstrate
+ *
+ *   Compile with following command:
+ *
+ *   arm-apple-darwin-g++ -dynamiclib -O2 -Wall -Werror -o Backgrounder.dylib \
+ *   Backgrounder.mm -init _BackgrounderInitialize -lobjc -framework CoreFoundation \
+ *   -framework Foundation -framework UIKit \
+ *   -F${IPHONE_SYS_ROOT}/System/Library/PrivateFrameworks \
+ *   -I$(MOBILESUBTRATE_INCLUDE_PATH) -L$(MOBILESUBTRATE_LIB_PATH) -lsubstrate
+ *
+ *   The resulting Backgrounder.dylib should be placed on the iPhone/Pod
+ *   under /Library/MobileSubstrate/DynamicLibraries/
+ *
+ * Acknowledgements:
+ * -----------------
+ *   Thanks go out to Jay Freeman (saurik) for his work on MobileSubstrate
+ *   (and all things iPhone).
+ */
+
 #include <substrate.h>
 
 #import <GraphicsServices/GraphicsServices.h>
