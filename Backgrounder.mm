@@ -2,7 +2,7 @@
  * Name: Backgrounder
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-09-29 22:59:14
+ * Last-modified: 2008-10-01 22:14:23
  *
  * Description:
  * ------------
@@ -70,10 +70,13 @@
  *   (and all things iPhone).
  */
 
+#include <objc/message.h>
 #include <signal.h>
 #include <substrate.h>
 
 #import <GraphicsServices/GraphicsServices.h>
+
+#import <CoreFoundation/CFNotificationCenter.h>
 
 #import <Foundation/NSArray.h>
 #import <Foundation/NSBundle.h>
@@ -84,16 +87,77 @@
 #import <Foundation/NSThread.h>
 
 #import <SpringBoard/SBApplication.h>
-#import <SpringBoard/SBAlert.h>
-#import <SpringBoard/SBAlertDisplay.h>
-#import <SpringBoard/SBSMSClass0Alert.h>
+#import <SpringBoard/SBAlertItem.h>
+#import <SpringBoard/SBAlertItemsController.h>
 #import <SpringBoard/SBDisplayStack.h>
 #import <SpringBoard/SpringBoard.h>
 
 #import <UIKit/UIApplication.h>
+#import <UIKit/UIColor.h>
+#import <UIKit/UILabel.h>
+#import <UIKit/UIModalView.h>
+#import <UIKit/UIModalView-Private.h>
+#import <UIKit/UIScreen.h>
+#import <UIKit/UIView.h>
+#import <UIKit/UIView-Hierarchy.h>
+#import <UIKit/UIView-Rendering.h>
+#import <UIKit/UIWindow.h>
+
+#define NOTICE_ENABLED "jp.ashikase.backgrounder.enabled"
+#define NOTICE_DISABLED "jp.ashikase.backgrounder.disabled"
 
 extern "C" void msgSendLoggingSetEnabled(unsigned int enable);
 
+
+// -----------------------------------------------------------------------------
+// --------------------------- CUSTOM ALERT ITEM -------------------------------
+// -----------------------------------------------------------------------------
+
+@interface BackgrounderAlertItem : SBAlertItem
+{
+    NSString *title;
+    NSString *message;
+}
+
+- (id)initWithTitle:(NSString *)title message:(NSString *)message;
+- (void)configure:(BOOL)configure requirePasscodeForActions:(BOOL)passcode;
+
+@end
+
+static id $BackgrounderAlertItem$initWithTitle$message$(id self, SEL sel, NSString *title, NSString *message)
+{
+    Class $SBAlertItem = objc_getClass("SBAlertItem");
+    objc_super $super = {self, $SBAlertItem};
+    self = objc_msgSendSuper(&$super, @selector(init));
+    if (self) {
+        object_setInstanceVariable(self, "title", reinterpret_cast<void *>([title copy])); 
+        object_setInstanceVariable(self, "message", reinterpret_cast<void *>([message copy])); 
+    }
+    return self;
+}
+
+static void $BackgrounderAlertItem$dealloc(id self, SEL sel)
+{
+    NSString *title = nil, *message = nil;
+    object_getInstanceVariable(self, "title", reinterpret_cast<void **>(&title));
+    object_getInstanceVariable(self, "message", reinterpret_cast<void **>(&message));
+    [title release];
+    [message release];
+
+    Class $SBAlertItem = objc_getClass("SBAlertItem");
+    objc_super $super = {self, $SBAlertItem};
+    self = objc_msgSendSuper(&$super, @selector(dealloc));
+}
+
+static void $BackgrounderAlertItem$configure$requirePasscodeForActions$(id self, SEL sel, BOOL configure, BOOL passcode)
+{
+    NSString *title = nil, *message = nil;
+    object_getInstanceVariable(self, "title", reinterpret_cast<void **>(&title));
+    object_getInstanceVariable(self, "message", reinterpret_cast<void **>(&message));
+    UIModalView *view = [self alertSheet];
+    [view setTitle:title];
+    [view setMessage:message];
+}
 
 // -----------------------------------------------------------------------------
 // ------------------------------ SPRINGBOARD ----------------------------------
@@ -122,9 +186,9 @@ static BOOL alertTimerDidFire = NO;
 
 // The alert window displays instructions when the home button is held down
 static NSTimer *alertTimer = nil;
-static id alert = nil;
+static SBAlertItem *alert = nil;
 
-static void destroyAlertTimer()
+static void cancelAlertTimer()
 {
     // Disable and release timer (may be nil)
     [alertTimer invalidate];
@@ -132,20 +196,21 @@ static void destroyAlertTimer()
     alertTimer = nil;
 }
 
-static void destroyAlert()
+static void cancelAlert()
 {
     // Hide and release alert window (may be nil)
-    [alert deactivate];
+    [alert dismiss];
     [alert release];
     alert = nil;
 }
 
 @protocol BackgrounderSB
+- (void)bg_applicationDidFinishLaunching:(id)application;
 - (void)bg_menuButtonDown:(GSEvent *)event;
 - (void)bg_menuButtonUp:(GSEvent *)event;
 @end
 
-static void $SpringBoard$showBackgrounderMessageBox(id self, SEL sel)
+static void $SpringBoard$toggleBackgrounding(id self, SEL sel)
 {
     alertTimerDidFire = YES;
 
@@ -153,11 +218,35 @@ static void $SpringBoard$showBackgrounderMessageBox(id self, SEL sel)
     id app = [displayStack topApplication];
     if (app)
         kill([app pid], SIGUSR1);
+}
 
-    // Display information screen
-    Class $SBSMSClass0Alert(objc_getClass("SBSMSClass0Alert"));
-    alert = [[$SBSMSClass0Alert alloc] initWithString:@"Release: Toggle Backgrounding\n\nHold: Force Quit"];
-    [alert activate];
+static void backgroundingToggled(CFNotificationCenterRef center, void *observer,
+    CFStringRef name, const void *object, CFDictionaryRef userInfo)
+{
+    // Display popup alert
+    NSString *status = [NSString stringWithFormat:@"Backgrounding %s",
+        ([(NSString *)name isEqualToString:@NOTICE_ENABLED] ? "Enabled" : "Disabled")];
+        
+    Class $BackgrounderAlertItem = objc_getClass("BackgrounderAlertItem");
+    alert = [[$BackgrounderAlertItem alloc] initWithTitle:status
+        message:@"(Continue holding to force-quit)"];
+
+    Class $SBAlertItemsController(objc_getClass("SBAlertItemsController"));
+    SBAlertItemsController *controller = [$SBAlertItemsController sharedInstance];
+    [controller activateAlertItem:alert];
+}
+
+static void $SpringBoard$applicationDidFinishLaunching$(SpringBoard<BackgrounderSB> *self, SEL sel, id application)
+{
+    [self bg_applicationDidFinishLaunching:application];
+
+    // Setup handler for toggle notifications
+    CFNotificationCenterAddObserver(
+        CFNotificationCenterGetDarwinNotifyCenter(),
+        NULL, &backgroundingToggled, CFSTR(NOTICE_ENABLED), NULL, 0);
+    CFNotificationCenterAddObserver(
+        CFNotificationCenterGetDarwinNotifyCenter(),
+        NULL, &backgroundingToggled, CFSTR(NOTICE_DISABLED), NULL, 0);
 }
 
 static void $SpringBoard$menuButtonDown$(SpringBoard<BackgrounderSB> *self, SEL sel, GSEvent *event)
@@ -165,7 +254,7 @@ static void $SpringBoard$menuButtonDown$(SpringBoard<BackgrounderSB> *self, SEL 
     // Setup toggle-delay timer
     id app = [displayStack topApplication];
     if (app && app != self)
-        alertTimer = [[NSTimer scheduledTimerWithTimeInterval:0.8f
+        alertTimer = [[NSTimer scheduledTimerWithTimeInterval:0.7f
             target:self selector:@selector(showBackgrounderMessageBox)
             userInfo:nil repeats:NO] retain];
 
@@ -175,11 +264,11 @@ static void $SpringBoard$menuButtonDown$(SpringBoard<BackgrounderSB> *self, SEL 
 
 static void $SpringBoard$menuButtonUp$(SpringBoard<BackgrounderSB> *self, SEL sel, GSEvent *event)
 {
-    // Stop information screen from showing (if button-up before timeout)
-    destroyAlertTimer();
+    // Stop popup alert from showing (if button-up before timeout)
+    cancelAlertTimer();
 
-    // Hide and destroy the information screen
-    destroyAlert();
+    // Hide and destroy the popup alert
+    cancelAlert();
 
     [self bg_menuButtonUp:event];
 }
@@ -203,8 +292,8 @@ static BOOL $SBApplication$isSystemApplication(SBApplication<BackgrounderSBApp> 
 
 static BOOL $SBApplication$kill(SBApplication<BackgrounderSBApp> *self, SEL sel)
 {
-    // Hide and destroy the information screen
-    destroyAlert();
+    // Hide and destroy the popup alert
+    cancelAlert();
     return [self bg_kill];
 }
 
@@ -217,11 +306,12 @@ static BOOL backgroundingEnabled = NO;
 static void toggleBackgrounding(int signal)
 {
     backgroundingEnabled = !backgroundingEnabled;
-}
 
-static BOOL $UIApplication$isBackgroundable(id self, SEL sel)
-{
-    return backgroundingEnabled;
+    // Send notification of toggling
+    CFNotificationCenterPostNotification(
+        CFNotificationCenterGetDarwinNotifyCenter(),
+        (backgroundingEnabled ? CFSTR(NOTICE_ENABLED) : CFSTR(NOTICE_DISABLED)),
+        NULL, NULL, true);
 }
 
 //______________________________________________________________________________
@@ -240,28 +330,24 @@ static BOOL $UIApplication$isBackgroundable(id self, SEL sel)
 // Prevent execution of application's on-suspend/resume methods
 static void $UIApplication$applicationWillSuspend(UIApplication<BackgrounderApp> *self, SEL sel)
 {
-    NSLog(@"Backgrounder: %s", __FUNCTION__);
     if (!backgroundingEnabled)
         [self bg_applicationWillSuspend];
 }
 
 static void $UIApplication$applicationDidResume(UIApplication<BackgrounderApp> *self, SEL sel)
 {
-    NSLog(@"Backgrounder: %s", __FUNCTION__);
     if (!backgroundingEnabled)
         [self bg_applicationDidResume];
 }
 
 static void $UIApplication$applicationWillResignActive$(UIApplication<BackgrounderApp> *self, SEL sel, id application)
 {
-    NSLog(@"Backgrounder: %s", __FUNCTION__);
     if (!backgroundingEnabled)
         [self bg_applicationWillResignActive:application];
 }
 
 static void $UIApplication$applicationDidBecomeActive$(UIApplication<BackgrounderApp> *self, SEL sel, id application)
 {
-    NSLog(@"Backgrounder: %s", __FUNCTION__);
     if (!backgroundingEnabled)
         [self bg_applicationDidBecomeActive:application];
 }
@@ -269,7 +355,6 @@ static void $UIApplication$applicationDidBecomeActive$(UIApplication<Backgrounde
 // Overriding this method prevents the application from quitting on suspend
 static void $UIApplication$applicationSuspend$(UIApplication<BackgrounderApp> *self, SEL sel, GSEvent *event)
 {
-    NSLog(@"Backgrounder: %s", __FUNCTION__);
     if (!backgroundingEnabled)
         [self bg_applicationSuspend:event];
 }
@@ -315,20 +400,35 @@ extern "C" void BackgrounderInitialize()
         MSHookMessage($SBDisplayStack, @selector(init), (IMP)&$SBDisplayStack$init, "bg_");
 
         Class $SpringBoard(objc_getClass("SpringBoard"));
+        MSHookMessage($SpringBoard, @selector(applicationDidFinishLaunching:), (IMP)&$SpringBoard$applicationDidFinishLaunching$, "bg_");
         MSHookMessage($SpringBoard, @selector(menuButtonDown:), (IMP)&$SpringBoard$menuButtonDown$, "bg_");
         MSHookMessage($SpringBoard, @selector(menuButtonUp:), (IMP)&$SpringBoard$menuButtonUp$, "bg_");
-        class_addMethod($SpringBoard, @selector(showBackgrounderMessageBox), (IMP)&$SpringBoard$showBackgrounderMessageBox, "v@:");
+        class_addMethod($SpringBoard, @selector(showBackgrounderMessageBox), (IMP)&$SpringBoard$toggleBackgrounding, "v@:");
 
         Class $SBApplication(objc_getClass("SBApplication"));
         MSHookMessage($SBApplication, @selector(isSystemApplication), (IMP)&$SBApplication$isSystemApplication, "bg_");
         MSHookMessage($SBApplication, @selector(kill), (IMP)&$SBApplication$kill, "bg_");
+
+        // Create custom alert-item class
+        Class $SBAlertItem(objc_getClass("SBAlertItem"));
+        Class $BackgrounderAlertItem = objc_allocateClassPair($SBAlertItem, "BackgrounderAlertItem", 0);
+        class_addIvar($BackgrounderAlertItem, "title", sizeof(id), 0, "@");
+        class_addIvar($BackgrounderAlertItem, "message", sizeof(id), 0, "@");
+        class_addMethod($BackgrounderAlertItem, @selector(initWithTitle:message:),
+                (IMP)&$BackgrounderAlertItem$initWithTitle$message$, "@@:@@");
+        class_addMethod($BackgrounderAlertItem, @selector(dealloc),
+                (IMP)&$BackgrounderAlertItem$dealloc, "v@:");
+        class_addMethod($BackgrounderAlertItem, @selector(configure:requirePasscodeForActions:),
+                (IMP)&$BackgrounderAlertItem$configure$requirePasscodeForActions$, "v@:cc");
+        objc_registerClassPair($BackgrounderAlertItem);
     } else {
         // Is an application
         Class $UIApplication(objc_getClass("UIApplication"));
         MSHookMessage($UIApplication, @selector(_loadMainNibFile), (IMP)&$UIApplication$_loadMainNibFile, "bg_");
-        class_addMethod($UIApplication, @selector(isBackgroundable), (IMP)&$UIApplication$isBackgroundable, "c@:");
 
         // Setup action to take upon receiving toggle signal from SpringBoard
+        // NOTE: Done this way as the application hooks *must* be installed in
+        //       the UIApplication process, not the SpringBoard process
         sigset_t block_mask;
         sigfillset(&block_mask);
         struct sigaction action;
@@ -342,8 +442,7 @@ extern "C" void BackgrounderInitialize()
         NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:@PREFS_FILE];
         NSArray *array = [prefs objectForKey:@"enabled_apps"];
         if ([array containsObject:identifier])
-            // NOTE: parameter is ignored (necessary for use as signal handler)
-            toggleBackgrounding(0);
+            backgroundingEnabled = YES;
     }
 }
 
