@@ -1,73 +1,42 @@
 /**
  * Name: Backgrounder
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
+ * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-02 21:01:54
+ * Last-modified: 2008-10-02 21:18:44
+ */
+
+/**
+ * Copyright (C) 2008  Lance Fetters (aka. ashikase)
+ * All rights reserved.
  *
- * Description:
- * ------------
- *   This is an extension to SpringBoard that allows applications
- *   to run in the background (instead of terminating).
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- * Usage:
- * ------
- *   The list of background-enabled applications is retrieved from the
- *   following preferences file:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
  *
- *   /var/mobile/Library/Preferences/jp.ashikase.backgrounder.plist
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
  *
- *   The file should be created with the following format, where the <string>
- *   values represent the bundle identifiers of the applications that are to
- *   be enabled:
+ * 3. The name of the author may not be used to endorse or promote
+ *    products derived from this software without specific prior
+ *    written permission.
  *
- *   <?xml version="1.0" encoding="UTF-8"?>
- *   <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
- *   <plist version="1.0">
- *   <dict>
- *   	<key>enabled_apps</key>
- *   	<array>
- *   		<string>com.apple.weather</string>
- *   		<string>com.apple.calculator</string>
- *   	</array>
- *   </dict>
- *   </plist>
- *
- * Limitations:
- * ------------
- *   There is currently no way to terminate a background-enabled application,
- *   other than killing it (by holding the Home button for 5-6 seconds or
- *   using /bin/kill or /usr/bin/killall).
- *
- *   Some applications may use the suspend/resume methods to perform important
- *   tasks, such as saving preferences. If the application is not properly
- *   terminated, these tasks may never be run.
- *
- * Todo:
- * -----
- * - add a method for proper termination of a background-enabled app.
- * - add a method to quickly enable/disable backgrounding of an app.
- *
- * Compilation:
- * ------------
- *   This code requires the MobileSubstrate library and headers;
- *   the MobileSubstrate source can be obtained via Subversion at:
- *   http://svn.saurik.com/repos/menes/trunk/mobilesubstrate
- *
- *   Compile with following command:
- *
- *   arm-apple-darwin-g++ -dynamiclib -O2 -Wall -Werror -o Backgrounder.dylib \
- *   Backgrounder.mm -init _BackgrounderInitialize -lobjc -framework CoreFoundation \
- *   -framework Foundation -framework UIKit \
- *   -F${IPHONE_SYS_ROOT}/System/Library/PrivateFrameworks \
- *   -I$(MOBILESUBTRATE_INCLUDE_PATH) -L$(MOBILESUBTRATE_LIB_PATH) -lsubstrate
- *
- *   The resulting Backgrounder.dylib should be placed on the iPhone/Pod
- *   under /Library/MobileSubstrate/DynamicLibraries/
- *
- * Acknowledgements:
- * -----------------
- *   Thanks go out to Jay Freeman (saurik) for his work on MobileSubstrate
- *   (and all things iPhone).
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR "AS IS" AND ANY EXPRESS
+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <objc/message.h>
