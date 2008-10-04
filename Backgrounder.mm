@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-04 18:54:15
+ * Last-modified: 2008-10-04 19:49:05
  */
 
 /**
@@ -45,16 +45,12 @@
 
 #import <GraphicsServices/GraphicsServices.h>
 
-#import <CoreFoundation/CFNotificationCenter.h>
-
 #import <Foundation/NSArray.h>
 #import <Foundation/NSAutoreleasePool.h>
 #import <Foundation/NSBundle.h>
 #import <Foundation/NSDictionary.h>
-#import <Foundation/NSRunLoop.h>
 #import <Foundation/NSString.h>
 #import <Foundation/NSTimer.h>
-#import <Foundation/NSThread.h>
 
 #import <SpringBoard/SBApplication.h>
 #import <SpringBoard/SBAlertItem.h>
@@ -63,18 +59,7 @@
 #import <SpringBoard/SpringBoard.h>
 
 #import <UIKit/UIApplication.h>
-#import <UIKit/UIColor.h>
-#import <UIKit/UILabel.h>
 #import <UIKit/UIModalView.h>
-#import <UIKit/UIModalView-Private.h>
-#import <UIKit/UIScreen.h>
-#import <UIKit/UIView.h>
-#import <UIKit/UIView-Hierarchy.h>
-#import <UIKit/UIView-Rendering.h>
-#import <UIKit/UIWindow.h>
-
-#define NOTICE_ENABLED "jp.ashikase.backgrounder.enabled"
-#define NOTICE_DISABLED "jp.ashikase.backgrounder.disabled"
 
 
 // -----------------------------------------------------------------------------
@@ -202,39 +187,27 @@ static void $SpringBoard$toggleBackgrounding(id self, SEL sel)
         else
             // Backgrounding enabled
             [backgroundingEnabledApps addObject:identifier];
+
+        // Display popup alert
+        NSString *status = [NSString stringWithFormat:@"Backgrounding %s",
+                 ((index != NSNotFound) ? "Disabled" : "Enabled")];
+
+        Class $BackgrounderAlertItem = objc_getClass("BackgrounderAlertItem");
+        alert = [[$BackgrounderAlertItem alloc] initWithTitle:status
+            message:@"(Continue holding to force-quit)"];
+
+        Class $SBAlertItemsController(objc_getClass("SBAlertItemsController"));
+        SBAlertItemsController *controller = [$SBAlertItemsController sharedInstance];
+        [controller activateAlertItem:alert];
     }
-}
-
-static void backgroundingToggled(CFNotificationCenterRef center, void *observer,
-    CFStringRef name, const void *object, CFDictionaryRef userInfo)
-{
-    // Display popup alert
-    NSString *status = [NSString stringWithFormat:@"Backgrounding %s",
-        ([(NSString *)name isEqualToString:@NOTICE_ENABLED] ? "Enabled" : "Disabled")];
-        
-    Class $BackgrounderAlertItem = objc_getClass("BackgrounderAlertItem");
-    alert = [[$BackgrounderAlertItem alloc] initWithTitle:status
-        message:@"(Continue holding to force-quit)"];
-
-    Class $SBAlertItemsController(objc_getClass("SBAlertItemsController"));
-    SBAlertItemsController *controller = [$SBAlertItemsController sharedInstance];
-    [controller activateAlertItem:alert];
 }
 
 static void $SpringBoard$applicationDidFinishLaunching$(SpringBoard<BackgrounderSB> *self, SEL sel, id application)
 {
-    [self bg_applicationDidFinishLaunching:application];
-
     // NOTE: The initial capacity value was arbitrarily chosen
     backgroundingEnabledApps = [[NSMutableArray alloc] initWithCapacity:3];
 
-    // Setup handler for toggle notifications
-    CFNotificationCenterAddObserver(
-        CFNotificationCenterGetDarwinNotifyCenter(),
-        NULL, &backgroundingToggled, CFSTR(NOTICE_ENABLED), NULL, 0);
-    CFNotificationCenterAddObserver(
-        CFNotificationCenterGetDarwinNotifyCenter(),
-        NULL, &backgroundingToggled, CFSTR(NOTICE_DISABLED), NULL, 0);
+    [self bg_applicationDidFinishLaunching:application];
 }
 
 static void $SpringBoard$dealloc(SpringBoard<BackgrounderSB> *self, SEL sel)
@@ -289,15 +262,17 @@ static void $SBApplication$launchSucceeded(SBApplication<BackgrounderSBApp> *sel
 {
     NSString *identifier = [self bundleIdentifier];
 
-    // Check if this application defaults to backgrounding
-    // NOTE: Can't use CFPreferences* functions due to AppStore sandboxing
-    NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:@PREFS_FILE];
-    NSArray *array = [prefs objectForKey:@"enabled_apps"];
-    if ([array containsObject:identifier]) {
-        // Tell the application to enable backgrounding
-        kill([self pid], SIGUSR1);
-        // Store the backgrounding status of the application
-        [backgroundingEnabledApps addObject:identifier];
+    if (![backgroundingEnabledApps containsObject:identifier]) {
+        // Initial launch; check if this application defaults to backgrounding
+        // NOTE: Can't use CFPreferences* functions due to AppStore sandboxing
+        NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:@PREFS_FILE];
+        NSArray *array = [prefs objectForKey:@"enabled_apps"];
+        if ([array containsObject:identifier]) {
+            // Tell the application to enable backgrounding
+            kill([self pid], SIGUSR1);
+            // Store the backgrounding status of the application
+            [backgroundingEnabledApps addObject:identifier];
+        }
     }
 
     [self bg_launchSucceeded];
@@ -325,12 +300,6 @@ static BOOL backgroundingEnabled = NO;
 static void toggleBackgrounding(int signal)
 {
     backgroundingEnabled = !backgroundingEnabled;
-
-    // Send notification of toggling
-    CFNotificationCenterPostNotification(
-        CFNotificationCenterGetDarwinNotifyCenter(),
-        (backgroundingEnabled ? CFSTR(NOTICE_ENABLED) : CFSTR(NOTICE_DISABLED)),
-        NULL, NULL, true);
 }
 
 //______________________________________________________________________________
