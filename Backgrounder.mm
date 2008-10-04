@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-02 21:18:44
+ * Last-modified: 2008-10-04 18:54:15
  */
 
 /**
@@ -131,6 +131,11 @@ static void $BackgrounderAlertItem$configure$requirePasscodeForActions$(id self,
 // ------------------------------ SPRINGBOARD ----------------------------------
 // -----------------------------------------------------------------------------
 
+static NSMutableArray *backgroundingEnabledApps = nil;
+
+//______________________________________________________________________________
+//______________________________________________________________________________
+
 @protocol BackgrounderSBStack
 - (id)bg_init;
 @end
@@ -174,6 +179,7 @@ static void cancelAlert()
 
 @protocol BackgrounderSB
 - (void)bg_applicationDidFinishLaunching:(id)application;
+- (void)bg_dealloc;
 - (void)bg_menuButtonDown:(GSEvent *)event;
 - (void)bg_menuButtonUp:(GSEvent *)event;
 @end
@@ -182,10 +188,21 @@ static void $SpringBoard$toggleBackgrounding(id self, SEL sel)
 {
     alertTimerDidFire = YES;
 
-    // Notify the application that the menu button was pressed
     id app = [displayStack topApplication];
-    if (app)
+    if (app) {
+        // Notify the application that the menu button was pressed
         kill([app pid], SIGUSR1);
+
+        // Store the backgrounding status of the application
+        NSString *identifier = [app bundleIdentifier];
+        NSUInteger index = [backgroundingEnabledApps indexOfObject:identifier];
+        if (index != NSNotFound)
+            // Backgrounding disabled
+            [backgroundingEnabledApps removeObjectAtIndex:index];
+        else
+            // Backgrounding enabled
+            [backgroundingEnabledApps addObject:identifier];
+    }
 }
 
 static void backgroundingToggled(CFNotificationCenterRef center, void *observer,
@@ -208,6 +225,9 @@ static void $SpringBoard$applicationDidFinishLaunching$(SpringBoard<Backgrounder
 {
     [self bg_applicationDidFinishLaunching:application];
 
+    // NOTE: The initial capacity value was arbitrarily chosen
+    backgroundingEnabledApps = [[NSMutableArray alloc] initWithCapacity:3];
+
     // Setup handler for toggle notifications
     CFNotificationCenterAddObserver(
         CFNotificationCenterGetDarwinNotifyCenter(),
@@ -215,6 +235,12 @@ static void $SpringBoard$applicationDidFinishLaunching$(SpringBoard<Backgrounder
     CFNotificationCenterAddObserver(
         CFNotificationCenterGetDarwinNotifyCenter(),
         NULL, &backgroundingToggled, CFSTR(NOTICE_DISABLED), NULL, 0);
+}
+
+static void $SpringBoard$dealloc(SpringBoard<BackgrounderSB> *self, SEL sel)
+{
+    [backgroundingEnabledApps release];
+    [self bg_dealloc];
 }
 
 static void $SpringBoard$menuButtonDown$(SpringBoard<BackgrounderSB> *self, SEL sel, GSEvent *event)
@@ -245,19 +271,11 @@ static void $SpringBoard$menuButtonUp$(SpringBoard<BackgrounderSB> *self, SEL se
 //______________________________________________________________________________
 
 @protocol BackgrounderSBApp
-- (BOOL)bg_isSystemApplication;
 - (BOOL)bg_shouldLaunchPNGless;
+- (void)bg_launchSucceeded;
 - (BOOL)bg_kill;
+- (void)bg__startTerminationWatchdogTimer;
 @end
-
-static BOOL $SBApplication$isSystemApplication(SBApplication<BackgrounderSBApp> *self, SEL sel)
-{
-    // Non-system applications get killed; if app is running, report as system
-    // NOTE: Simply returning YES here can cause problems with SpringBoard,
-    //       such as the inability to uinstall an AppStore application
-    //return (self == [displayStack topApplication]) ? YES : [self bg_isSystemApplication];
-    return ([self pid] != -1) ? YES : [self bg_isSystemApplication];
-}
 
 static BOOL $SBApplication$shouldLaunchPNGless(SBApplication<BackgrounderSBApp> *self, SEL sel)
 {
@@ -265,11 +283,37 @@ static BOOL $SBApplication$shouldLaunchPNGless(SBApplication<BackgrounderSBApp> 
     return ([self pid] != -1) ? YES : [self bg_shouldLaunchPNGless];
 }
 
+#define PREFS_FILE "/var/mobile/Library/Preferences/jp.ashikase.backgrounder.plist"
+
+static void $SBApplication$launchSucceeded(SBApplication<BackgrounderSBApp> *self, SEL sel)
+{
+    NSString *identifier = [self bundleIdentifier];
+
+    // Check if this application defaults to backgrounding
+    // NOTE: Can't use CFPreferences* functions due to AppStore sandboxing
+    NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:@PREFS_FILE];
+    NSArray *array = [prefs objectForKey:@"enabled_apps"];
+    if ([array containsObject:identifier]) {
+        // Tell the application to enable backgrounding
+        kill([self pid], SIGUSR1);
+        // Store the backgrounding status of the application
+        [backgroundingEnabledApps addObject:identifier];
+    }
+
+    [self bg_launchSucceeded];
+}
+
 static BOOL $SBApplication$kill(SBApplication<BackgrounderSBApp> *self, SEL sel)
 {
     // Hide and destroy the popup alert
     cancelAlert();
     return [self bg_kill];
+}
+
+static void $SBApplication$_startTerminationWatchdogTimer(SBApplication<BackgrounderSBApp> *self, SEL sel)
+{
+    if (![backgroundingEnabledApps containsObject:[self bundleIdentifier]])
+        [self bg__startTerminationWatchdogTimer];
 }
 
 // -----------------------------------------------------------------------------
@@ -363,8 +407,6 @@ static void $UIApplication$_loadMainNibFile(UIApplication<BackgrounderApp> *self
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-#define PREFS_FILE "/var/mobile/Library/Preferences/jp.ashikase.backgrounder.plist"
-
 extern "C" void BackgrounderInitialize()
 {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -378,14 +420,16 @@ extern "C" void BackgrounderInitialize()
 
         Class $SpringBoard(objc_getClass("SpringBoard"));
         MSHookMessage($SpringBoard, @selector(applicationDidFinishLaunching:), (IMP)&$SpringBoard$applicationDidFinishLaunching$, "bg_");
+        MSHookMessage($SpringBoard, @selector(dealloc), (IMP)&$SpringBoard$dealloc, "bg_");
         MSHookMessage($SpringBoard, @selector(menuButtonDown:), (IMP)&$SpringBoard$menuButtonDown$, "bg_");
         MSHookMessage($SpringBoard, @selector(menuButtonUp:), (IMP)&$SpringBoard$menuButtonUp$, "bg_");
         class_addMethod($SpringBoard, @selector(showBackgrounderMessageBox), (IMP)&$SpringBoard$toggleBackgrounding, "v@:");
 
         Class $SBApplication(objc_getClass("SBApplication"));
-        MSHookMessage($SBApplication, @selector(isSystemApplication), (IMP)&$SBApplication$isSystemApplication, "bg_");
         MSHookMessage($SBApplication, @selector(shouldLaunchPNGless), (IMP)&$SBApplication$shouldLaunchPNGless, "bg_");
+        MSHookMessage($SBApplication, @selector(launchSucceeded), (IMP)&$SBApplication$launchSucceeded, "bg_");
         MSHookMessage($SBApplication, @selector(kill), (IMP)&$SBApplication$kill, "bg_");
+        MSHookMessage($SBApplication, @selector(_startTerminationWatchdogTimer), (IMP)&$SBApplication$_startTerminationWatchdogTimer, "bg_");
 
         // Create custom alert-item class
         Class $SBAlertItem(objc_getClass("SBAlertItem"));
@@ -414,13 +458,6 @@ extern "C" void BackgrounderInitialize()
         action.sa_mask = block_mask;
         action.sa_flags = 0;
         sigaction(SIGUSR1, &action, NULL);
-
-        // Check if this application defaults to backgrounding
-        // NOTE: Can't use CFPreferences* functions due to AppStore sandboxing
-        NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:@PREFS_FILE];
-        NSArray *array = [prefs objectForKey:@"enabled_apps"];
-        if ([array containsObject:identifier])
-            backgroundingEnabled = YES;
     }
 
     [pool release];
