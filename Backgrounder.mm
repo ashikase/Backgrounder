@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-04 19:49:05
+ * Last-modified: 2008-10-04 21:01:10
  */
 
 /**
@@ -297,9 +297,22 @@ static void $SBApplication$_startTerminationWatchdogTimer(SBApplication<Backgrou
 
 static BOOL backgroundingEnabled = NO;
 
+// Callback
 static void toggleBackgrounding(int signal)
 {
     backgroundingEnabled = !backgroundingEnabled;
+}
+
+// Class methods
+
+static BOOL $UIApplication$isBackgroundingEnabled(id self, SEL sel)
+{
+    return backgroundingEnabled;
+}
+
+static void $UIApplication$setBackgroundingEnabled$(id self, SEL sel, BOOL enable)
+{
+    backgroundingEnabled = enable;
 }
 
 //______________________________________________________________________________
@@ -416,6 +429,8 @@ extern "C" void BackgrounderInitialize()
         // Is an application
         Class $UIApplication(objc_getClass("UIApplication"));
         MSHookMessage($UIApplication, @selector(_loadMainNibFile), (IMP)&$UIApplication$_loadMainNibFile, "bg_");
+        class_addMethod($UIApplication, @selector(isBackgroundingEnabled), (IMP)&$UIApplication$isBackgroundingEnabled, "c@:");
+        class_addMethod($UIApplication, @selector(setBackgroundingEnabled:), (IMP)&$UIApplication$setBackgroundingEnabled$, "v@:c");
 
         // Setup action to take upon receiving toggle signal from SpringBoard
         // NOTE: Done this way as the application hooks *must* be installed in
