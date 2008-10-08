@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-04 21:01:10
+ * Last-modified: 2008-10-08 21:59:45
  */
 
 /**
@@ -39,7 +39,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <objc/message.h>
+#import <objc/message.h>
 #include <signal.h>
 #include <substrate.h>
 
@@ -53,64 +53,13 @@
 #import <Foundation/NSTimer.h>
 
 #import <SpringBoard/SBApplication.h>
-#import <SpringBoard/SBAlertItem.h>
 #import <SpringBoard/SBAlertItemsController.h>
 #import <SpringBoard/SBDisplayStack.h>
 #import <SpringBoard/SpringBoard.h>
 
 #import <UIKit/UIApplication.h>
-#import <UIKit/UIModalView.h>
 
-
-// -----------------------------------------------------------------------------
-// --------------------------- CUSTOM ALERT ITEM -------------------------------
-// -----------------------------------------------------------------------------
-
-@interface BackgrounderAlertItem : SBAlertItem
-{
-    NSString *title;
-    NSString *message;
-}
-
-- (id)initWithTitle:(NSString *)title message:(NSString *)message;
-- (void)configure:(BOOL)configure requirePasscodeForActions:(BOOL)passcode;
-
-@end
-
-static id $BackgrounderAlertItem$initWithTitle$message$(id self, SEL sel, NSString *title, NSString *message)
-{
-    Class $SBAlertItem = objc_getClass("SBAlertItem");
-    objc_super $super = {self, $SBAlertItem};
-    self = objc_msgSendSuper(&$super, @selector(init));
-    if (self) {
-        object_setInstanceVariable(self, "title", reinterpret_cast<void *>([title copy])); 
-        object_setInstanceVariable(self, "message", reinterpret_cast<void *>([message copy])); 
-    }
-    return self;
-}
-
-static void $BackgrounderAlertItem$dealloc(id self, SEL sel)
-{
-    NSString *title = nil, *message = nil;
-    object_getInstanceVariable(self, "title", reinterpret_cast<void **>(&title));
-    object_getInstanceVariable(self, "message", reinterpret_cast<void **>(&message));
-    [title release];
-    [message release];
-
-    Class $SBAlertItem = objc_getClass("SBAlertItem");
-    objc_super $super = {self, $SBAlertItem};
-    self = objc_msgSendSuper(&$super, @selector(dealloc));
-}
-
-static void $BackgrounderAlertItem$configure$requirePasscodeForActions$(id self, SEL sel, BOOL configure, BOOL passcode)
-{
-    NSString *title = nil, *message = nil;
-    object_getInstanceVariable(self, "title", reinterpret_cast<void **>(&title));
-    object_getInstanceVariable(self, "message", reinterpret_cast<void **>(&message));
-    UIModalView *view = [self alertSheet];
-    [view setTitle:title];
-    [view setMessage:message];
-}
+#import "SimplePopup.h"
 
 // -----------------------------------------------------------------------------
 // ------------------------------ SPRINGBOARD ----------------------------------
@@ -413,18 +362,8 @@ extern "C" void BackgrounderInitialize()
         MSHookMessage($SBApplication, @selector(kill), (IMP)&$SBApplication$kill, "bg_");
         MSHookMessage($SBApplication, @selector(_startTerminationWatchdogTimer), (IMP)&$SBApplication$_startTerminationWatchdogTimer, "bg_");
 
-        // Create custom alert-item class
-        Class $SBAlertItem(objc_getClass("SBAlertItem"));
-        Class $BackgrounderAlertItem = objc_allocateClassPair($SBAlertItem, "BackgrounderAlertItem", 0);
-        class_addIvar($BackgrounderAlertItem, "title", sizeof(id), 0, "@");
-        class_addIvar($BackgrounderAlertItem, "message", sizeof(id), 0, "@");
-        class_addMethod($BackgrounderAlertItem, @selector(initWithTitle:message:),
-                (IMP)&$BackgrounderAlertItem$initWithTitle$message$, "@@:@@");
-        class_addMethod($BackgrounderAlertItem, @selector(dealloc),
-                (IMP)&$BackgrounderAlertItem$dealloc, "v@:");
-        class_addMethod($BackgrounderAlertItem, @selector(configure:requirePasscodeForActions:),
-                (IMP)&$BackgrounderAlertItem$configure$requirePasscodeForActions$, "v@:cc");
-        objc_registerClassPair($BackgrounderAlertItem);
+        // Simple popup notification display
+        initSimplePopup();
     } else {
         // Is an application
         Class $UIApplication(objc_getClass("UIApplication"));

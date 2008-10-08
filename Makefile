@@ -9,7 +9,7 @@ all: $(name).dylib $(control)
 clean:
 	rm -f $(name).dylib
 
-$(name).dylib: Backgrounder.mm
+$(name).dylib: Backgrounder.mm SimplePopup.mm
 	$(target)g++ -dynamiclib -ggdb -O2 -Wall -Werror -o $@ $(filter %.mm,$^) -init _BackgrounderInitialize -lobjc -framework CoreFoundation -framework Foundation -framework UIKit -framework GraphicsServices -F${PKG_ROOT}/System/Library/PrivateFrameworks -I$(SUB_PATH) -L$(SUB_PATH) -lsubstrate
 
 .PHONY: all clean
