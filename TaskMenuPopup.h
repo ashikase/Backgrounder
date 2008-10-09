@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-09 17:05:03
+ * Last-modified: 2008-10-09 21:21:40
  */
 
 /**
@@ -39,23 +39,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import <SpringBoard/SBAlertItem.h>
-#import <UIKit/UIModalView.h>
+#import <SpringBoard/SBAlert.h>
+#import <SpringBoard/SBAlertDisplay.h>
 
 
-@interface BackgrounderAlertItem : SBAlertItem
+@class SBApplication;
+
+@interface BackgrounderAlertDisplay : SBAlertDisplay
 {
-    NSString *title;
-    NSString *message;
+    SBApplication *application;
 }
 
-- (id)initWithTitle:(NSString *)title message:(NSString *)message;
-- (void)configure:(BOOL)configure requirePasscodeForActions:(BOOL)passcode;
+- (id)initWithSize:(CGSize)size application:(SBApplication *)application;
 
 @end
 
 //______________________________________________________________________________
 
-void initSimplePopup();
+@interface BackgrounderAlert : SBAlert
+{
+    SBApplication *application;
+}
+
+- (id)initWithApplication:(SBApplication *)application;
+
+@end
+
+//______________________________________________________________________________
+
+void initTaskMenuPopup();
 
 /* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */

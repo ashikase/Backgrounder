@@ -19,7 +19,7 @@ all: $(NAME).dylib $(control)
 clean:
 	rm -f $(NAME).dylib
 
-$(NAME).dylib: Backgrounder.mm SimplePopup.mm
+$(NAME).dylib: Backgrounder.mm SimplePopup.mm TaskMenuPopup.mm
 	$(CXX) -dynamiclib ${CXXFLAGS} -o $@ $(filter %.mm,$^) -init _${NAME}Initialize ${LDFLAGS}
 
 .PHONY: all clean

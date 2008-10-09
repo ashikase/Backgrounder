@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+        Method used to (de)activate backgrounding
+        Allowed values:
+            homeShortPress: press-and-hold home button for a short amount of time (default)
+            homeSingleTap:  press-and-release home button one time
+            homeDoubleTap:  press-and-release home button two times
+    -->
+    <key>activationMethod</key>
+    <string>homeShortPress</string>
+
+    <!--
+        Feedback given when Backgrounder is (de)activated
+        Allowed values:
+            simplePopup:   a simple popup display showing backgrounder status (default)
+            taskMenuPopup: a popup task menu display allowing to switch to other applications
+            auralTone:     (not yet supported)
+    -->
+    <key>activationFeedback</key>
+    <string>taskMenuPopup</string>
+
+    <!--
+        This setting controls whether the application should suspend (quit/minimize) on backgrounding (de)activation
+        Allowed values:
+            true:  application will suspend upon backgrounding (de)activation (default)
+            false: application will not suspend
+    -->
+    <key>shouldSuspend</key>
+    <true/>
+
+    <!--
+        Applications listed here will have backgrounding enabled by default
+        Allowed values:
+            Any application's bundle identifier (found in the Info.plist file in the application's .app directory)
+    -->
+	<key>enabledApplications</key>
+	<array>
+        <!-- Sample:
+		<string>com.apple.weather</string>
+        -->
+		<string>com.apple.weather</string>
+	</array>
+</dict>
+</plist>

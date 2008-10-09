@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-08 21:59:45
+ * Last-modified: 2008-10-09 21:25:37
  */
 
 /**
@@ -60,10 +60,15 @@
 #import <UIKit/UIApplication.h>
 
 #import "SimplePopup.h"
+#import "TaskMenuPopup.h"
 
 // -----------------------------------------------------------------------------
 // ------------------------------ SPRINGBOARD ----------------------------------
 // -----------------------------------------------------------------------------
+
+#define SIMPLE_POPUP 0
+#define TASK_MENU_POPUP 1
+static int activationFeedback = 0;
 
 static NSMutableArray *backgroundingEnabledApps = nil;
 
@@ -93,7 +98,7 @@ static BOOL alertTimerDidFire = NO;
 
 // The alert window displays instructions when the home button is held down
 static NSTimer *alertTimer = nil;
-static SBAlertItem *alert = nil;
+static id alert = nil;
 
 static void cancelAlertTimer()
 {
@@ -106,7 +111,11 @@ static void cancelAlertTimer()
 static void cancelAlert()
 {
     // Hide and release alert window (may be nil)
-    [alert dismiss];
+    if (activationFeedback == TASK_MENU_POPUP) {
+        [alert deactivate];
+    } else {
+        [alert dismiss];
+    }
     [alert release];
     alert = nil;
 }
@@ -138,16 +147,22 @@ static void $SpringBoard$toggleBackgrounding(id self, SEL sel)
             [backgroundingEnabledApps addObject:identifier];
 
         // Display popup alert
-        NSString *status = [NSString stringWithFormat:@"Backgrounding %s",
-                 ((index != NSNotFound) ? "Disabled" : "Enabled")];
+        if (activationFeedback == TASK_MENU_POPUP) {
+            Class $SBAlert = objc_getClass("BackgrounderAlert");
+            alert = [[$SBAlert alloc] initWithApplication:app];
+            [alert activate];
+        } else {
+            NSString *status = [NSString stringWithFormat:@"Backgrounding %s",
+                     ((index != NSNotFound) ? "Disabled" : "Enabled")];
 
-        Class $BackgrounderAlertItem = objc_getClass("BackgrounderAlertItem");
-        alert = [[$BackgrounderAlertItem alloc] initWithTitle:status
-            message:@"(Continue holding to force-quit)"];
+            Class $BackgrounderAlertItem = objc_getClass("BackgrounderAlertItem");
+            alert = [[$BackgrounderAlertItem alloc] initWithTitle:status
+                message:@"(Continue holding to force-quit)"];
 
-        Class $SBAlertItemsController(objc_getClass("SBAlertItemsController"));
-        SBAlertItemsController *controller = [$SBAlertItemsController sharedInstance];
-        [controller activateAlertItem:alert];
+            Class $SBAlertItemsController(objc_getClass("SBAlertItemsController"));
+            SBAlertItemsController *controller = [$SBAlertItemsController sharedInstance];
+            [controller activateAlertItem:alert];
+        }
     }
 }
 
@@ -338,6 +353,8 @@ static void $UIApplication$_loadMainNibFile(UIApplication<BackgrounderApp> *self
 //______________________________________________________________________________
 //______________________________________________________________________________
 
+#define APP_ID "jp.ashikase.backgrounder"
+
 extern "C" void BackgrounderInitialize()
 {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -362,8 +379,16 @@ extern "C" void BackgrounderInitialize()
         MSHookMessage($SBApplication, @selector(kill), (IMP)&$SBApplication$kill, "bg_");
         MSHookMessage($SBApplication, @selector(_startTerminationWatchdogTimer), (IMP)&$SBApplication$_startTerminationWatchdogTimer, "bg_");
 
-        // Simple popup notification display
-        initSimplePopup();
+        CFPropertyListRef prefFeedback = CFPreferencesCopyAppValue(CFSTR("activationFeedback"), CFSTR(APP_ID));
+        if ([(NSString *)prefFeedback isEqualToString:@"taskMenuPopup"]) {
+            // Task menu popup
+            activationFeedback = TASK_MENU_POPUP;
+            initTaskMenuPopup();
+        } else {
+            // Simple notification popup
+            activationFeedback = SIMPLE_POPUP;
+            initSimplePopup();
+        }
     } else {
         // Is an application
         Class $UIApplication(objc_getClass("UIApplication"));

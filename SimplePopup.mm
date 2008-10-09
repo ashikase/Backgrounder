@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-08 22:00:27
+ * Last-modified: 2008-10-09 18:51:28
  */
 
 /**
@@ -79,6 +79,9 @@ static void $BackgrounderAlertItem$configure$requirePasscodeForActions$(id self,
     [view setTitle:title];
     [view setMessage:message];
 }
+
+//______________________________________________________________________________
+//______________________________________________________________________________
 
 void initSimplePopup()
 {
