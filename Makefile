@@ -1,15 +1,25 @@
-PKG_ROOT=/opt/iPhone/sys
-SUB_PATH=/files/Platforms/iPhone/build/Users/saurik/mobilesubstrate
+NAME = Backgrounder
 
-name = Backgrounder
-target = arm-apple-darwin9-
+# These paths must be changed to match the compilation environment
+SYS_PATH = /opt/iPhone/sys
+SUB_PATH = /files/Platforms/iPhone/build/Users/saurik/mobilesubstrate
 
-all: $(name).dylib $(control)
+CXX = arm-apple-darwin9-g++
+CXXFLAGS = -ggdb -O2 -Wall -Werror -I$(SUB_PATH) 
+LDFLAGS = -lobjc \
+		  -framework CoreFoundation \
+		  -framework Foundation \
+		  -framework UIKit \
+		  -framework GraphicsServices \
+		  -F${SYS_PATH}/System/Library/PrivateFrameworks \
+		  -L$(SUB_PATH) -lsubstrate
+
+all: $(NAME).dylib $(control)
 
 clean:
-	rm -f $(name).dylib
+	rm -f $(NAME).dylib
 
-$(name).dylib: Backgrounder.mm SimplePopup.mm
-	$(target)g++ -dynamiclib -ggdb -O2 -Wall -Werror -o $@ $(filter %.mm,$^) -init _BackgrounderInitialize -lobjc -framework CoreFoundation -framework Foundation -framework UIKit -framework GraphicsServices -F${PKG_ROOT}/System/Library/PrivateFrameworks -I$(SUB_PATH) -L$(SUB_PATH) -lsubstrate
+$(NAME).dylib: Backgrounder.mm SimplePopup.mm
+	$(CXX) -dynamiclib ${CXXFLAGS} -o $@ $(filter %.mm,$^) -init _${NAME}Initialize ${LDFLAGS}
 
 .PHONY: all clean
