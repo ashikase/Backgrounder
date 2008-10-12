@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-09 21:25:37
+ * Last-modified: 2008-10-12 10:08:06
  */
 
 /**
@@ -68,7 +68,14 @@
 
 #define SIMPLE_POPUP 0
 #define TASK_MENU_POPUP 1
-static int activationFeedback = 0;
+static int activationFeedback = SIMPLE_POPUP;
+
+#define HOME_SHORT_PRESS 0
+#define HOME_SINGLE_TAP 1
+#define HOME_DOUBLE_TAP 2
+static int activationMethod = HOME_SHORT_PRESS;
+
+static BOOL shouldSuspend = YES;
 
 static NSMutableArray *backgroundingEnabledApps = nil;
 
@@ -94,18 +101,16 @@ static id $SBDisplayStack$init(SBDisplayStack<BackgrounderSBStack> *self, SEL se
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-static BOOL alertTimerDidFire = NO;
-
 // The alert window displays instructions when the home button is held down
-static NSTimer *alertTimer = nil;
+static NSTimer *activationTimer = nil;
 static id alert = nil;
 
-static void cancelAlertTimer()
+static void cancelActivationTimer()
 {
     // Disable and release timer (may be nil)
-    [alertTimer invalidate];
-    [alertTimer release];
-    alertTimer = nil;
+    [activationTimer invalidate];
+    [activationTimer release];
+    activationTimer = nil;
 }
 
 static void cancelAlert()
@@ -125,33 +130,32 @@ static void cancelAlert()
 - (void)bg_dealloc;
 - (void)bg_menuButtonDown:(GSEvent *)event;
 - (void)bg_menuButtonUp:(GSEvent *)event;
+- (void)bg__handleMenuButtonEvent;
+- (void)bg_handleMenuDoubleTap;
+- (void)backgrounderActivate;
 @end
 
-static void $SpringBoard$toggleBackgrounding(id self, SEL sel)
+static void $SpringBoard$backgrounderActivate(id self, SEL sel)
 {
-    alertTimerDidFire = YES;
+    NSLog(@"Backgrounder: %s", __FUNCTION__);
 
     id app = [displayStack topApplication];
     if (app) {
-        // Notify the application that the menu button was pressed
-        kill([app pid], SIGUSR1);
+        if (activationFeedback == SIMPLE_POPUP) {
+            // Tell the application to toggle backgrounding
+            kill([app pid], SIGUSR1);
 
-        // Store the backgrounding status of the application
-        NSString *identifier = [app bundleIdentifier];
-        NSUInteger index = [backgroundingEnabledApps indexOfObject:identifier];
-        if (index != NSNotFound)
-            // Backgrounding disabled
-            [backgroundingEnabledApps removeObjectAtIndex:index];
-        else
-            // Backgrounding enabled
-            [backgroundingEnabledApps addObject:identifier];
+            // Store the backgrounding status of the application
+            NSString *identifier = [app bundleIdentifier];
+            NSUInteger index = [backgroundingEnabledApps indexOfObject:identifier];
+            if (index != NSNotFound)
+                // Backgrounding disabled
+                [backgroundingEnabledApps removeObjectAtIndex:index];
+            else
+                // Backgrounding enabled
+                [backgroundingEnabledApps addObject:identifier];
 
-        // Display popup alert
-        if (activationFeedback == TASK_MENU_POPUP) {
-            Class $SBAlert = objc_getClass("BackgrounderAlert");
-            alert = [[$SBAlert alloc] initWithApplication:app];
-            [alert activate];
-        } else {
+            // Display simple popup
             NSString *status = [NSString stringWithFormat:@"Backgrounding %s",
                      ((index != NSNotFound) ? "Disabled" : "Enabled")];
 
@@ -162,14 +166,109 @@ static void $SpringBoard$toggleBackgrounding(id self, SEL sel)
             Class $SBAlertItemsController(objc_getClass("SBAlertItemsController"));
             SBAlertItemsController *controller = [$SBAlertItemsController sharedInstance];
             [controller activateAlertItem:alert];
+        } else if (activationFeedback == TASK_MENU_POPUP) {
+            // Display task menu popup
+            Class $SBAlert = objc_getClass("BackgrounderAlert");
+            alert = [[$SBAlert alloc] initWithApplication:app];
+            [alert activate];
         }
     }
 }
+
+static void $SpringBoard$menuButtonDown$(SpringBoard<BackgrounderSB> *self, SEL sel, GSEvent *event)
+{
+    NSLog(@"Backgrounder: %s", __FUNCTION__);
+
+    if (activationMethod == HOME_SHORT_PRESS) {
+        if ([displayStack topApplication] != nil)
+            // Setup toggle-delay timer
+            activationTimer = [[NSTimer scheduledTimerWithTimeInterval:0.7f
+                target:self selector:@selector(backgrounderActivate)
+                userInfo:nil repeats:NO] retain];
+    }
+
+    [self bg_menuButtonDown:event];
+}
+
+static void $SpringBoard$menuButtonUp$(SpringBoard<BackgrounderSB> *self, SEL sel, GSEvent *event)
+{
+    NSLog(@"Backgrounder: %s", __FUNCTION__);
+
+    if (activationMethod == HOME_SHORT_PRESS)
+        // Stop activation timer (assuming that it has not already fired)
+        cancelActivationTimer();
+
+    [self bg_menuButtonUp:event];
+}
+
+static void $SpringBoard$_handleMenuButtonEvent(SpringBoard<BackgrounderSB> *self, SEL sel)
+{
+    NSLog(@"Backgrounder: %s", __FUNCTION__);
+
+    if ([displayStack topApplication] != nil) {
+        Ivar ivar = class_getInstanceVariable([self class], "_menuButtonClickCount");
+        unsigned int *_menuButtonClickCount = (unsigned int *)((char *)self + ivar_getOffset(ivar));
+
+        // FIXME: This should be rearranged/cleaned-up, if possible
+        if (activationFeedback == TASK_MENU_POPUP && alert != nil) {
+            // Hide and destroy the popup
+            cancelAlert();
+            *_menuButtonClickCount = 0x8000;
+            return;
+        } else if (activationMethod == HOME_SINGLE_TAP) {
+            [self  backgrounderActivate];
+        } else if (activationMethod == HOME_SHORT_PRESS && !shouldSuspend) {
+            *_menuButtonClickCount = 0x8000;
+            return;
+        }
+    }
+
+    [self bg__handleMenuButtonEvent];
+}
+
+static void $SpringBoard$handleMenuDoubleTap(SpringBoard<BackgrounderSB> *self, SEL sel)
+{
+    NSLog(@"Backgrounder: %s", __FUNCTION__);
+
+    if ([displayStack topApplication] != nil && alert == nil)
+        // Is an application and popup is not visible; toggle backgrounding
+        [self backgrounderActivate];
+    else {
+        // Is SpringBoard or alert is visible; perform normal behaviour
+        cancelAlert();
+        [self bg_handleMenuDoubleTap];
+    }
+}
+
+#define APP_ID "jp.ashikase.backgrounder"
 
 static void $SpringBoard$applicationDidFinishLaunching$(SpringBoard<BackgrounderSB> *self, SEL sel, id application)
 {
     // NOTE: The initial capacity value was arbitrarily chosen
     backgroundingEnabledApps = [[NSMutableArray alloc] initWithCapacity:3];
+
+    // Load preferences
+    Class $SpringBoard(objc_getClass("SpringBoard"));
+    CFPropertyListRef prefMethod = CFPreferencesCopyAppValue(CFSTR("activationMethod"), CFSTR(APP_ID));
+    if ([(NSString *)prefMethod isEqualToString:@"homeDoubleTap"]) {
+        activationMethod = HOME_DOUBLE_TAP;
+        MSHookMessage($SpringBoard, @selector(handleMenuDoubleTap), (IMP)&$SpringBoard$handleMenuDoubleTap, "bg_");
+    } else if ([(NSString *)prefMethod isEqualToString:@"homeSingleTap"]) {
+        activationMethod = HOME_SINGLE_TAP;
+    } else {
+        activationMethod = HOME_SHORT_PRESS;
+    }
+
+    CFPropertyListRef prefFeedback = CFPreferencesCopyAppValue(CFSTR("activationFeedback"), CFSTR(APP_ID));
+    if ([(NSString *)prefFeedback isEqualToString:@"taskMenuPopup"]) {
+        // Task menu popup
+        activationFeedback = TASK_MENU_POPUP;
+        initTaskMenuPopup();
+    } else {
+        // Simple notification popup
+        activationFeedback = SIMPLE_POPUP;
+        initSimplePopup();
+    }
 
     [self bg_applicationDidFinishLaunching:application];
 }
@@ -178,30 +277,6 @@ static void $SpringBoard$dealloc(SpringBoard<BackgrounderSB> *self, SEL sel)
 {
     [backgroundingEnabledApps release];
     [self bg_dealloc];
-}
-
-static void $SpringBoard$menuButtonDown$(SpringBoard<BackgrounderSB> *self, SEL sel, GSEvent *event)
-{
-    // Setup toggle-delay timer
-    id app = [displayStack topApplication];
-    if (app && app != self)
-        alertTimer = [[NSTimer scheduledTimerWithTimeInterval:0.7f
-            target:self selector:@selector(showBackgrounderMessageBox)
-            userInfo:nil repeats:NO] retain];
-
-    // Begin normal 'kill if held' sequence
-    [self bg_menuButtonDown:event];
-}
-
-static void $SpringBoard$menuButtonUp$(SpringBoard<BackgrounderSB> *self, SEL sel, GSEvent *event)
-{
-    // Stop popup alert from showing (if button-up before timeout)
-    cancelAlertTimer();
-
-    // Hide and destroy the popup alert
-    cancelAlert();
-
-    [self bg_menuButtonUp:event];
 }
 
 //______________________________________________________________________________
@@ -353,8 +428,6 @@ static void $UIApplication$_loadMainNibFile(UIApplication<BackgrounderApp> *self
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-#define APP_ID "jp.ashikase.backgrounder"
-
 extern "C" void BackgrounderInitialize()
 {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -371,24 +444,14 @@ extern "C" void BackgrounderInitialize()
         MSHookMessage($SpringBoard, @selector(dealloc), (IMP)&$SpringBoard$dealloc, "bg_");
         MSHookMessage($SpringBoard, @selector(menuButtonDown:), (IMP)&$SpringBoard$menuButtonDown$, "bg_");
         MSHookMessage($SpringBoard, @selector(menuButtonUp:), (IMP)&$SpringBoard$menuButtonUp$, "bg_");
-        class_addMethod($SpringBoard, @selector(showBackgrounderMessageBox), (IMP)&$SpringBoard$toggleBackgrounding, "v@:");
+        MSHookMessage($SpringBoard, @selector(_handleMenuButtonEvent), (IMP)&$SpringBoard$_handleMenuButtonEvent, "bg_");
+        class_addMethod($SpringBoard, @selector(backgrounderActivate), (IMP)&$SpringBoard$backgrounderActivate, "v@:");
 
         Class $SBApplication(objc_getClass("SBApplication"));
         MSHookMessage($SBApplication, @selector(shouldLaunchPNGless), (IMP)&$SBApplication$shouldLaunchPNGless, "bg_");
         MSHookMessage($SBApplication, @selector(launchSucceeded), (IMP)&$SBApplication$launchSucceeded, "bg_");
         MSHookMessage($SBApplication, @selector(kill), (IMP)&$SBApplication$kill, "bg_");
         MSHookMessage($SBApplication, @selector(_startTerminationWatchdogTimer), (IMP)&$SBApplication$_startTerminationWatchdogTimer, "bg_");
-
-        CFPropertyListRef prefFeedback = CFPreferencesCopyAppValue(CFSTR("activationFeedback"), CFSTR(APP_ID));
-        if ([(NSString *)prefFeedback isEqualToString:@"taskMenuPopup"]) {
-            // Task menu popup
-            activationFeedback = TASK_MENU_POPUP;
-            initTaskMenuPopup();
-        } else {
-            // Simple notification popup
-            activationFeedback = SIMPLE_POPUP;
-            initSimplePopup();
-        }
     } else {
         // Is an application
         Class $UIApplication(objc_getClass("UIApplication"));

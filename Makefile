@@ -11,6 +11,7 @@ LDFLAGS = -lobjc \
 		  -framework Foundation \
 		  -framework UIKit \
 		  -framework GraphicsServices \
+		  -framework CoreGraphics \
 		  -F${SYS_PATH}/System/Library/PrivateFrameworks \
 		  -L$(SUB_PATH) -lsubstrate
 
