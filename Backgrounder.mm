@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-12 10:31:15
+ * Last-modified: 2008-10-12 10:55:03
  */
 
 /**
@@ -43,7 +43,7 @@
 #include <signal.h>
 #include <substrate.h>
 
-#import <GraphicsServices/GraphicsServices.h>
+#import <CoreFoundation/CFPreferences.h>
 
 #import <Foundation/NSArray.h>
 #import <Foundation/NSAutoreleasePool.h>
@@ -57,10 +57,13 @@
 #import <SpringBoard/SBDisplayStack.h>
 #import <SpringBoard/SpringBoard.h>
 
-#import <UIKit/UIApplication.h>
-
 #import "SimplePopup.h"
 #import "TaskMenuPopup.h"
+
+struct GSEvent;
+
+extern void initApplicationHooks();
+
 
 // -----------------------------------------------------------------------------
 // ------------------------------ SPRINGBOARD ----------------------------------
@@ -330,101 +333,6 @@ static void $SBApplication$_startTerminationWatchdogTimer(SBApplication<Backgrou
         [self bg__startTerminationWatchdogTimer];
 }
 
-// -----------------------------------------------------------------------------
-// ---------------------------- THE APPLICATION --------------------------------
-// -----------------------------------------------------------------------------
-
-static BOOL backgroundingEnabled = NO;
-
-// Callback
-static void toggleBackgrounding(int signal)
-{
-    backgroundingEnabled = !backgroundingEnabled;
-}
-
-// Class methods
-
-static BOOL $UIApplication$isBackgroundingEnabled(id self, SEL sel)
-{
-    return backgroundingEnabled;
-}
-
-static void $UIApplication$setBackgroundingEnabled$(id self, SEL sel, BOOL enable)
-{
-    backgroundingEnabled = enable;
-}
-
-//______________________________________________________________________________
-//______________________________________________________________________________
-
-@protocol BackgrounderApp
-- (void)bg_applicationWillSuspend;
-- (void)bg_applicationDidResume;
-- (void)bg_applicationWillResignActive:(UIApplication *)application;
-- (void)bg_applicationDidBecomeActive:(UIApplication *)application;;
-- (void)bg_applicationSuspend:(GSEvent *)event;
-//- (void)bg__setSuspended:(BOOL)val;
-- (void)bg__loadMainNibFile;
-@end
-
-// Prevent execution of application's on-suspend/resume methods
-static void $UIApplication$applicationWillSuspend(UIApplication<BackgrounderApp> *self, SEL sel)
-{
-    if (!backgroundingEnabled)
-        [self bg_applicationWillSuspend];
-}
-
-static void $UIApplication$applicationDidResume(UIApplication<BackgrounderApp> *self, SEL sel)
-{
-    if (!backgroundingEnabled)
-        [self bg_applicationDidResume];
-}
-
-static void $UIApplication$applicationWillResignActive$(UIApplication<BackgrounderApp> *self, SEL sel, id application)
-{
-    if (!backgroundingEnabled)
-        [self bg_applicationWillResignActive:application];
-}
-
-static void $UIApplication$applicationDidBecomeActive$(UIApplication<BackgrounderApp> *self, SEL sel, id application)
-{
-    if (!backgroundingEnabled)
-        [self bg_applicationDidBecomeActive:application];
-}
-
-// Overriding this method prevents the application from quitting on suspend
-static void $UIApplication$applicationSuspend$(UIApplication<BackgrounderApp> *self, SEL sel, GSEvent *event)
-{
-    if (!backgroundingEnabled)
-        [self bg_applicationSuspend:event];
-}
-
-// FIXME: Tests make this appear unneeded... confirm
-#if 0
-static void $UIApplication$_setSuspended$(UIApplication<BackgrounderApp> *self, SEL sel, BOOL val)
-{
-    //[self bg__setSuspended:val];
-}
-#endif
-
-static void $UIApplication$_loadMainNibFile(UIApplication<BackgrounderApp> *self, SEL sel)
-{
-    // NOTE: This method always gets called, even if no NIB files are used.
-    //       Also note that if an application overrides this method (unlikely,
-    //       but possible), this extension's hooks will not be installed.
-    [self bg__loadMainNibFile];
-
-    Class $UIApplication([self class]);
-    MSHookMessage($UIApplication, @selector(applicationSuspend:), (IMP)&$UIApplication$applicationSuspend$, "bg_");
-    MSHookMessage($UIApplication, @selector(applicationWillSuspend), (IMP)&$UIApplication$applicationWillSuspend, "bg_");
-    MSHookMessage($UIApplication, @selector(applicationDidResume), (IMP)&$UIApplication$applicationDidResume, "bg_");
-
-    id delegate = [self delegate];
-    Class $AppDelegate(delegate ? [delegate class] : [self class]);
-    MSHookMessage($AppDelegate, @selector(applicationWillResignActive:), (IMP)&$UIApplication$applicationWillResignActive$, "bg_");
-    MSHookMessage($AppDelegate, @selector(applicationDidBecomeActive:), (IMP)&$UIApplication$applicationDidBecomeActive$, "bg_");
-}
-
 //______________________________________________________________________________
 //______________________________________________________________________________
 
@@ -454,21 +362,7 @@ extern "C" void BackgrounderInitialize()
         MSHookMessage($SBApplication, @selector(_startTerminationWatchdogTimer), (IMP)&$SBApplication$_startTerminationWatchdogTimer, "bg_");
     } else {
         // Is an application
-        Class $UIApplication(objc_getClass("UIApplication"));
-        MSHookMessage($UIApplication, @selector(_loadMainNibFile), (IMP)&$UIApplication$_loadMainNibFile, "bg_");
-        class_addMethod($UIApplication, @selector(isBackgroundingEnabled), (IMP)&$UIApplication$isBackgroundingEnabled, "c@:");
-        class_addMethod($UIApplication, @selector(setBackgroundingEnabled:), (IMP)&$UIApplication$setBackgroundingEnabled$, "v@:c");
-
-        // Setup action to take upon receiving toggle signal from SpringBoard
-        // NOTE: Done this way as the application hooks *must* be installed in
-        //       the UIApplication process, not the SpringBoard process
-        sigset_t block_mask;
-        sigfillset(&block_mask);
-        struct sigaction action;
-        action.sa_handler = toggleBackgrounding;
-        action.sa_mask = block_mask;
-        action.sa_flags = 0;
-        sigaction(SIGUSR1, &action, NULL);
+        initApplicationHooks();
     }
 
     [pool release];
