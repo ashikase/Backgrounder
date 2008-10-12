@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-12 14:42:51
+ * Last-modified: 2008-10-12 23:24:33
  */
 
 /**
@@ -144,7 +144,7 @@ static void $SpringBoard$backgrounderActivate(id self, SEL sel)
             kill([app pid], SIGUSR1);
 
             // Store the backgrounding status of the application
-            NSString *identifier = [app bundleIdentifier];
+            NSString *identifier = [app displayIdentifier];
             BOOL isEnabled = [[activeApplications objectForKey:identifier] boolValue];
             [activeApplications setObject:[NSNumber numberWithBool:(!isEnabled)]
                 forKey:identifier];
@@ -293,7 +293,7 @@ static BOOL $SBApplication$shouldLaunchPNGless(SBApplication<BackgrounderSBApp> 
 
 static void $SBApplication$launchSucceeded(SBApplication<BackgrounderSBApp> *self, SEL sel)
 {
-    NSString *identifier = [self bundleIdentifier];
+    NSString *identifier = [self displayIdentifier];
 
     if ([activeApplications objectForKey:identifier] == nil) {
         // Initial launch; check if this application defaults to backgrounding
@@ -316,7 +316,7 @@ static void $SBApplication$exitedCommon(SBApplication<BackgrounderSBApp> *self, 
 {
     // Application has exited (either normally or abnormally);
     // remove from active applications list
-    NSString *identifier = [self bundleIdentifier];
+    NSString *identifier = [self displayIdentifier];
     [activeApplications removeObjectForKey:identifier];
 
     [self bg_exitedCommon];
@@ -331,7 +331,7 @@ static BOOL $SBApplication$kill(SBApplication<BackgrounderSBApp> *self, SEL sel)
 
 static void $SBApplication$_startTerminationWatchdogTimer(SBApplication<BackgrounderSBApp> *self, SEL sel)
 {
-    BOOL isBackgroundingEnabled = [[activeApplications objectForKey:[self bundleIdentifier]] boolValue];
+    BOOL isBackgroundingEnabled = [[activeApplications objectForKey:[self displayIdentifier]] boolValue];
     if (!isBackgroundingEnabled)
         [self bg__startTerminationWatchdogTimer];
 }
