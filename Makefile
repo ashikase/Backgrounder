@@ -19,6 +19,7 @@ SRCS = \
 	ApplicationHooks.mm \
 	Backgrounder.mm \
 	SimplePopup.mm \
+	SpringBoardHooks.mm \
 	TaskMenuPopup.mm
 
 all: $(NAME).dylib $(control)
