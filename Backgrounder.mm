@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-12 10:08:06
+ * Last-modified: 2008-10-12 10:31:15
  */
 
 /**
@@ -68,12 +68,12 @@
 
 #define SIMPLE_POPUP 0
 #define TASK_MENU_POPUP 1
-static int activationFeedback = SIMPLE_POPUP;
+static int feedbackType = SIMPLE_POPUP;
 
 #define HOME_SHORT_PRESS 0
 #define HOME_SINGLE_TAP 1
 #define HOME_DOUBLE_TAP 2
-static int activationMethod = HOME_SHORT_PRESS;
+static int invocationMethod = HOME_SHORT_PRESS;
 
 static BOOL shouldSuspend = YES;
 
@@ -116,7 +116,7 @@ static void cancelActivationTimer()
 static void cancelAlert()
 {
     // Hide and release alert window (may be nil)
-    if (activationFeedback == TASK_MENU_POPUP) {
+    if (feedbackType == TASK_MENU_POPUP) {
         [alert deactivate];
     } else {
         [alert dismiss];
@@ -141,7 +141,7 @@ static void $SpringBoard$backgrounderActivate(id self, SEL sel)
 
     id app = [displayStack topApplication];
     if (app) {
-        if (activationFeedback == SIMPLE_POPUP) {
+        if (feedbackType == SIMPLE_POPUP) {
             // Tell the application to toggle backgrounding
             kill([app pid], SIGUSR1);
 
@@ -166,7 +166,7 @@ static void $SpringBoard$backgrounderActivate(id self, SEL sel)
             Class $SBAlertItemsController(objc_getClass("SBAlertItemsController"));
             SBAlertItemsController *controller = [$SBAlertItemsController sharedInstance];
             [controller activateAlertItem:alert];
-        } else if (activationFeedback == TASK_MENU_POPUP) {
+        } else if (feedbackType == TASK_MENU_POPUP) {
             // Display task menu popup
             Class $SBAlert = objc_getClass("BackgrounderAlert");
             alert = [[$SBAlert alloc] initWithApplication:app];
@@ -179,7 +179,7 @@ static void $SpringBoard$menuButtonDown$(SpringBoard<BackgrounderSB> *self, SEL 
 {
     NSLog(@"Backgrounder: %s", __FUNCTION__);
 
-    if (activationMethod == HOME_SHORT_PRESS) {
+    if (invocationMethod == HOME_SHORT_PRESS) {
         if ([displayStack topApplication] != nil)
             // Setup toggle-delay timer
             activationTimer = [[NSTimer scheduledTimerWithTimeInterval:0.7f
@@ -194,7 +194,7 @@ static void $SpringBoard$menuButtonUp$(SpringBoard<BackgrounderSB> *self, SEL se
 {
     NSLog(@"Backgrounder: %s", __FUNCTION__);
 
-    if (activationMethod == HOME_SHORT_PRESS)
+    if (invocationMethod == HOME_SHORT_PRESS)
         // Stop activation timer (assuming that it has not already fired)
         cancelActivationTimer();
 
@@ -210,14 +210,14 @@ static void $SpringBoard$_handleMenuButtonEvent(SpringBoard<BackgrounderSB> *sel
         unsigned int *_menuButtonClickCount = (unsigned int *)((char *)self + ivar_getOffset(ivar));
 
         // FIXME: This should be rearranged/cleaned-up, if possible
-        if (activationFeedback == TASK_MENU_POPUP && alert != nil) {
+        if (feedbackType == TASK_MENU_POPUP && alert != nil) {
             // Hide and destroy the popup
             cancelAlert();
             *_menuButtonClickCount = 0x8000;
             return;
-        } else if (activationMethod == HOME_SINGLE_TAP) {
+        } else if (invocationMethod == HOME_SINGLE_TAP) {
             [self  backgrounderActivate];
-        } else if (activationMethod == HOME_SHORT_PRESS && !shouldSuspend) {
+        } else if (invocationMethod == HOME_SHORT_PRESS && !shouldSuspend) {
             *_menuButtonClickCount = 0x8000;
             return;
         }
@@ -249,24 +249,24 @@ static void $SpringBoard$applicationDidFinishLaunching$(SpringBoard<Backgrounder
 
     // Load preferences
     Class $SpringBoard(objc_getClass("SpringBoard"));
-    CFPropertyListRef prefMethod = CFPreferencesCopyAppValue(CFSTR("activationMethod"), CFSTR(APP_ID));
+    CFPropertyListRef prefMethod = CFPreferencesCopyAppValue(CFSTR("invocationMethod"), CFSTR(APP_ID));
     if ([(NSString *)prefMethod isEqualToString:@"homeDoubleTap"]) {
-        activationMethod = HOME_DOUBLE_TAP;
+        invocationMethod = HOME_DOUBLE_TAP;
         MSHookMessage($SpringBoard, @selector(handleMenuDoubleTap), (IMP)&$SpringBoard$handleMenuDoubleTap, "bg_");
     } else if ([(NSString *)prefMethod isEqualToString:@"homeSingleTap"]) {
-        activationMethod = HOME_SINGLE_TAP;
+        invocationMethod = HOME_SINGLE_TAP;
     } else {
-        activationMethod = HOME_SHORT_PRESS;
+        invocationMethod = HOME_SHORT_PRESS;
     }
 
-    CFPropertyListRef prefFeedback = CFPreferencesCopyAppValue(CFSTR("activationFeedback"), CFSTR(APP_ID));
+    CFPropertyListRef prefFeedback = CFPreferencesCopyAppValue(CFSTR("feedbackType"), CFSTR(APP_ID));
     if ([(NSString *)prefFeedback isEqualToString:@"taskMenuPopup"]) {
         // Task menu popup
-        activationFeedback = TASK_MENU_POPUP;
+        feedbackType = TASK_MENU_POPUP;
         initTaskMenuPopup();
     } else {
         // Simple notification popup
-        activationFeedback = SIMPLE_POPUP;
+        feedbackType = SIMPLE_POPUP;
         initSimplePopup();
     }
 

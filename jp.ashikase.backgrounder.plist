@@ -3,27 +3,27 @@
 <plist version="1.0">
 <dict>
     <!--
-        Method used to (de)activate backgrounding
+        Method used to invoke Backgrounder
         Allowed values:
             homeShortPress: press-and-hold home button for a short amount of time (default)
-            homeSingleTap:  press-and-release home button one time
+            homeSingleTap:  press-and-release home button one time (cannot be used with simplePopup)
             homeDoubleTap:  press-and-release home button two times
     -->
-    <key>activationMethod</key>
+    <key>invocationMethod</key>
     <string>homeShortPress</string>
 
     <!--
-        Feedback given when Backgrounder is (de)activated
+        Type of feedback given when Backgrounder is invoked
         Allowed values:
-            simplePopup:   a simple popup display showing backgrounder status (default)
-            taskMenuPopup: a popup task menu display allowing to switch to other applications
+            simplePopup:   a simple popup showing Backgrounder status (default)
+            taskMenuPopup: a popup task menu allowing to switch to other applications
             auralTone:     (not yet supported)
     -->
-    <key>activationFeedback</key>
+    <key>feedbackType</key>
     <string>taskMenuPopup</string>
 
     <!--
-        This setting controls whether the application should suspend (quit/minimize) on backgrounding (de)activation
+        This setting controls whether the application should suspend (quit/minimize) upon backgrounding (de)activation
         Allowed values:
             true:  application will suspend upon backgrounding (de)activation (default)
             false: application will not suspend
@@ -38,8 +38,9 @@
     -->
 	<key>enabledApplications</key>
 	<array>
-        <!-- Sample:
-		<string>com.apple.weather</string>
+        <!--
+            Sample:
+		        <string>com.apple.weather</string>
         -->
 		<string>com.apple.weather</string>
 	</array>
