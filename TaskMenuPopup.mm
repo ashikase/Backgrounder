@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-11 17:48:10
+ * Last-modified: 2008-10-13 16:02:58
  */
 
 /**
@@ -42,16 +42,20 @@
 #import "TaskMenuPopup.h"
 
 #import <objc/message.h>
+#include <signal.h>
 #include <substrate.h>
 
-#import <CoreGraphics/CGGeometry.h>
 #import <CoreGraphics/CGAffineTransform.h>
 
-#import <Foundation/NSRange.h>
+#import <Foundation/NSArray.h>
 #import <Foundation/NSString.h>
 
 #import <SpringBoard/SBApplication.h>
+#import <SpringBoard/SBApplicationController.h>
+#import <SpringBoard/SBStatusBarController.h>
+#import <SpringBoard/SBUIController.h>
 
+#import <UIKit/NSIndexPath-UITableView.h>
 #import <UIKit/UIColor.h>
 #import <UIKit/UIFont.h>
 typedef struct {
@@ -60,19 +64,23 @@ typedef struct {
     float bottom;
     float right;
 } CDAnonymousStruct2;
-#import <UIKit/UIGlassButton.h>
+#import <UIKit/UIImage.h>
+#import <UIKit/UIImage-UIImageInternal.h>
 #import <UIKit/UILabel.h>
 #import <UIKit/UINavigationBar.h>
+#import <UIKit/UINavigationBarBackground.h>
 #import <UIKit/UINavigationItem.h>
+#import <UIKit/UIScreen.h>
 @protocol UITableViewDataSource;
 #import <UIKit/UITableView.h>
+#import <UIKit/UITableViewCell.h>
 #import <UIKit/UIView-Animation.h>
 #import <UIKit/UIView-Geometry.h>
 #import <UIKit/UIView-Hierarchy.h>
 #import <UIKit/UIView-Rendering.h>
 
 
-static id $BackgrounderAlertDisplay$initWithSize$application$(SBAlertDisplay *self, SEL sel, CGSize size, SBApplication *application)
+static id $BackgrounderAlertDisplay$initWithSize$currentApp$otherApps$(SBAlertDisplay *self, SEL sel, CGSize size, NSString *currentApp, NSArray *otherApps)
 {
     CGRect rect = CGRectMake(0, 0, size.width, size.height);
 
@@ -80,14 +88,19 @@ static id $BackgrounderAlertDisplay$initWithSize$application$(SBAlertDisplay *se
     objc_super $super = {self, $SBAlertDisplay};
     self = objc_msgSendSuper(&$super, @selector(initWithFrame:), rect);
     if (self) {
-        object_setInstanceVariable(self, "application", reinterpret_cast<void *>([application retain])); 
+        object_setInstanceVariable(self, "currentApp", reinterpret_cast<void *>([currentApp retain])); 
+        object_setInstanceVariable(self, "otherApps", reinterpret_cast<void *>([otherApps retain])); 
 
         [self setBackgroundColor:[UIColor colorWithWhite:0.30 alpha:1]];
 
-        UIFont *font = [UIFont boldSystemFontOfSize:20.0f];
+        // Get the status bar height (normally 0 (hidden) or 20 (shown))
+        Class $SBStatusBarController(objc_getClass("SBStatusBarController"));
+        UIWindow *statusBar = [[$SBStatusBarController sharedStatusBarController] statusBarWindow];
+        float statusBarHeight = [statusBar frame].size.height;
 
+        // Create a top navigation bar
         UINavigationItem *navItem = [[UINavigationItem alloc] initWithTitle:@"Active Applications"];
-        UINavigationBar *navBar = [[UINavigationBar alloc] initWithFrame:CGRectMake(0, 20, size.width, 44)];
+        UINavigationBar *navBar = [[UINavigationBar alloc] initWithFrame:CGRectMake(0, statusBarHeight, size.width, 44)];
         [navBar setTintColor:[UIColor colorWithWhite:0.23 alpha:1]];
         [navBar pushNavigationItem:navItem];
         [navBar showButtonsWithLeftTitle:nil rightTitle:@"Edit"];
@@ -95,41 +108,56 @@ static id $BackgrounderAlertDisplay$initWithSize$application$(SBAlertDisplay *se
         [self addSubview:navBar];
         [navBar release];
 
-        // FIXME: Should determine statusbar height programatically, as it may
-        //        be hidden
+        // Create a table, which acts as the main body of the popup
         UITableView *table = [[UITableView alloc] initWithFrame:
-            CGRectMake(0, 20 + 44, size.width, size.height - 20 - 44 - 50 - 10)
+            CGRectMake(0, statusBarHeight + 44, size.width, size.height - statusBarHeight - 44 - 44)
             style:0];
+        [table setDataSource:self];
+        [table setDelegate:self];
+        [table setRowHeight:68];
         [self addSubview:table];
         [table release];
 
-        SBApplication *application = nil;
-        object_getInstanceVariable(self, "application", reinterpret_cast<void **>(&application));
-        NSString *appName = [application displayName];
+        // Create a bottom bar which contains instructional information
+        Class $UINavigationBarBackground(objc_getClass("UINavigationBarBackground"));
+        UINavigationBarBackground *footer = [[$UINavigationBarBackground alloc]
+            initWithFrame:CGRectMake(0, size.height - 44, size.width, 44)
+            withBarStyle:0
+            withTintColor:[UIColor colorWithWhite:0.23 alpha:1]];
+        [self addSubview:footer];
+        [footer release];
 
-        CDAnonymousStruct2 insets;
-        insets.top = 0;
-        insets.bottom = 0;
-        insets.left = 14;
-        insets.right = 14;
+        // Instructional item one
+        UILabel *footerText = [[UILabel alloc] initWithFrame:CGRectMake(0, size.height - 44, size.width, 22)];
+        [footerText setText:@"Tap an application to switch"];
+        [footerText setTextAlignment:1];
+        [footerText setTextColor:[UIColor whiteColor]];
+        [footerText setBackgroundColor:[UIColor clearColor]];
+        [self addSubview:footerText];
+        [footerText release];
 
-        Class $UIGlassButton(objc_getClass("UIGlassButton"));
-        UIGlassButton *gButton = [[$UIGlassButton alloc] initWithFrame:CGRectMake(20, size.height - 50, size.width - 40, 47)];
-        [gButton setTitle:[NSString stringWithFormat:@"Quit %@", appName] forState:0];
-        [gButton setFont:font];
-        [gButton setTintColor:[UIColor colorWithRed:0.80 green:0.12 blue:0.09 alpha:1]];
-        [gButton setContentEdgeInsets:insets];
-        [self addSubview:gButton];
-        [gButton release];
+        // Instructional item two
+        footerText = [[UILabel alloc] initWithFrame:CGRectMake(0, size.height - 22, size.width, 22)];
+        [footerText setText:@"Tap the Home Button to cancel"];
+        [footerText setTextAlignment:1];
+        [footerText setTextColor:[UIColor whiteColor]];
+        [footerText setBackgroundColor:[UIColor clearColor]];
+        [self addSubview:footerText];
+        [footerText release];
+
+        // Set the initial position of the view as off-screen
+        [self setOrigin:CGPointMake(0, size.height)];
     }
     return self;
 }
 
 static void $BackgrounderAlertDisplay$dealloc(SBAlertDisplay *self, SEL sel)
 {
-    SBApplication *application = nil;
-    object_getInstanceVariable(self, "application", reinterpret_cast<void **>(&application));
-    [application release];
+    id currentApp = nil, otherApps = nil;
+    object_getInstanceVariable(self, "currentApp", reinterpret_cast<void **>(&currentApp));
+    object_getInstanceVariable(self, "otherApps", reinterpret_cast<void **>(&otherApps));
+    [currentApp release];
+    [otherApps release];
 
     Class $SBAlertDisplay = objc_getClass("SBAlertDisplay");
     objc_super $super = {self, $SBAlertDisplay};
@@ -140,39 +168,113 @@ static void $BackgrounderAlertDisplay$alertDisplayBecameVisible(SBAlertDisplay *
 {
     // FIXME: The proper method for animating an SBAlertDisplay is currently
     //        unknown; for now, the following method seems to work well enough
-    [self setAlpha:0];
-    [self setTransform:CGAffineTransformMakeScale(2.0, 2.0)];
 
-    [UIView beginAnimations:nil];
-    [UIView setAnimationCurve:2];
-    [UIView setAnimationDuration:0.5f];
-    [self setAlpha:1];
-    [self setTransform:CGAffineTransformIdentity];
+    [UIView beginAnimations:nil context:NULL];
+    [self setFrame:[[UIScreen mainScreen] bounds]];
     [UIView commitAnimations];
 
     // NOTE: There is no need to call the superclass's method, as its
     //       implementation does nothing
 }
 
+#pragma mark - UITableViewDataSource
+
+static int $BackgrounderAlertDisplay$numberOfSectionsInTableView$(id self, SEL sel, UITableView *tableView)
+{
+    // Two sections: "current" and "other" applications
+	return 2;
+}
+
+static NSString * $BackgrounderAlertDisplay$tableView$titleForHeaderInSection$(id self, SEL sel, UITableView *tableView, int section)
+{
+    if (section == 0)
+        return @"Current Application";
+    else
+        return @"Other Applications";
+}
+
+static int $BackgrounderAlertDisplay$tableView$numberOfRowsInSection$(id self, SEL sel, UITableView *tableView, int section)
+{
+    if (section == 0) {
+        return 1;
+    } else {
+        id otherApps = nil;
+        object_getInstanceVariable(self, "otherApps", reinterpret_cast<void **>(&otherApps));
+
+        return [otherApps count];
+    }
+}
+
+
+static UITableViewCell * $BackgrounderAlertDisplay$tableView$cellForRowAtIndexPath$(id self, SEL sel, UITableView *tableView, NSIndexPath *indexPath)
+{
+    static NSString *reuseIdentifier = @"TaskMenuCell";
+
+    // Try to retrieve from the table view a now-unused cell with the given identifier
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
+    if (cell == nil)
+        // Cell does not exist, create a new one
+        cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
+    [cell setSelectionStyle:2];
+
+    // Get the display identifier of the application for this cell
+    NSString *identifier = nil;
+    if (indexPath.section == 0) {
+        object_getInstanceVariable(self, "currentApp", reinterpret_cast<void **>(&identifier));
+    } else {
+        id otherApps = nil;
+        object_getInstanceVariable(self, "otherApps", reinterpret_cast<void **>(&otherApps));
+        identifier = [otherApps objectAtIndex:indexPath.row];
+    }
+
+    // Get the SBApplication object
+    Class $SBApplicationController(objc_getClass("SBApplicationController"));
+    SBApplication *app = [[$SBApplicationController sharedInstance] applicationWithDisplayIdentifier:identifier];
+
+    // Set the cell text and image
+    [cell setText:[app displayName]];
+    UIImage *icon = nil;
+    if ([identifier isEqualToString:@"com.apple.springboard"]) {
+        icon = [UIImage imageWithContentsOfFile:@"/System/Library/CoreServices/SpringBoard.app/applelogo.png"];
+        icon = [icon _imageScaledToSize:CGSizeMake(59, 62) interpolationQuality:0];
+    } else {
+        icon = [UIImage imageWithContentsOfFile:[app pathForIcon]];
+    }
+    [cell setImage:icon];
+
+    return cell;
+}
+
+#pragma mark - UITableViewCellDelegate
+
+static NSIndexPath * $BackgrounderAlertDisplay$tableView$didSelectRowAtIndexPath$(id self, SEL sel, UITableView *tableView, NSIndexPath *indexPath)
+{
+	return nil;
+}
+
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-static id $BackgrounderAlert$initWithApplication$(SBAlert *self, SEL sel, SBApplication *application)
+static id $BackgrounderAlert$initWithCurrentApp$otherApps$(SBAlert *self, SEL sel, SBApplication *currentApp, NSArray *otherApps)
 {
     Class $SBAlert = objc_getClass("SBAlert");
     objc_super $super = {self, $SBAlert};
     self = objc_msgSendSuper(&$super, @selector(init));
     if (self) {
-        object_setInstanceVariable(self, "application", reinterpret_cast<void *>([application retain])); 
+        object_setInstanceVariable(self, "currentApp", reinterpret_cast<void *>([currentApp retain])); 
+        object_setInstanceVariable(self, "otherApps", reinterpret_cast<void *>([otherApps retain])); 
     }
     return self;
 }
 
 static void $BackgrounderAlert$dealloc(SBAlert *self, SEL sel)
 {
-    SBApplication *application = nil;
-    object_getInstanceVariable(self, "application", reinterpret_cast<void **>(&application));
-    [application release];
+    NSLog(@"Backgrounder: DEALLOC CALLED FOR ALERT");
+    id currentApp = nil, otherApps = nil;
+    object_getInstanceVariable(self, "currentApp", reinterpret_cast<void **>(&currentApp));
+    object_getInstanceVariable(self, "otherApps", reinterpret_cast<void **>(&otherApps));
+    [currentApp release];
+    [otherApps release];
 
     Class $SBAlert = objc_getClass("SBAlert");
     objc_super $super = {self, $SBAlert};
@@ -181,11 +283,12 @@ static void $BackgrounderAlert$dealloc(SBAlert *self, SEL sel)
 
 static id $BackgrounderAlert$alertDisplayViewWithSize$(SBAlert *self, SEL sel, CGSize size)
 {
-    SBApplication *application = nil;
-    object_getInstanceVariable(self, "application", reinterpret_cast<void **>(&application));
+    id currentApp = nil, otherApps = nil;
+    object_getInstanceVariable(self, "currentApp", reinterpret_cast<void **>(&currentApp));
+    object_getInstanceVariable(self, "otherApps", reinterpret_cast<void **>(&otherApps));
 
     Class $BackgrounderAlertDisplay = objc_getClass("BackgrounderAlertDisplay");
-    return [[[$BackgrounderAlertDisplay alloc] initWithSize:size application:application] autorelease];
+    return [[[$BackgrounderAlertDisplay alloc] initWithSize:size currentApp:currentApp otherApps:otherApps] autorelease];
 }
 
 //______________________________________________________________________________
@@ -196,21 +299,34 @@ void initTaskMenuPopup()
     // Create custom alert-display class
     Class $SBAlertDisplay(objc_getClass("SBAlertDisplay"));
     Class $BackgrounderAlertDisplay = objc_allocateClassPair($SBAlertDisplay, "BackgrounderAlertDisplay", 0);
-    class_addIvar($BackgrounderAlertDisplay, "application", sizeof(id), 0, "@");
-    class_addMethod($BackgrounderAlertDisplay, @selector(initWithSize:application:),
-            (IMP)&$BackgrounderAlertDisplay$initWithSize$application$, "@@:{CGSize=ff}@");
+    class_addIvar($BackgrounderAlertDisplay, "currentApp", sizeof(id), 0, "@");
+    class_addIvar($BackgrounderAlertDisplay, "otherApps", sizeof(id), 0, "@");
+    class_addMethod($BackgrounderAlertDisplay, @selector(initWithSize:currentApp:otherApps:),
+            (IMP)&$BackgrounderAlertDisplay$initWithSize$currentApp$otherApps$, "@@:{CGSize=ff}@@");
     class_addMethod($BackgrounderAlertDisplay, @selector(dealloc),
             (IMP)&$BackgrounderAlertDisplay$dealloc, "v@:");
     class_addMethod($BackgrounderAlertDisplay, @selector(alertDisplayBecameVisible),
             (IMP)&$BackgrounderAlertDisplay$alertDisplayBecameVisible, "v@:");
+    // UITable-releated methods
+    class_addMethod($BackgrounderAlertDisplay, @selector(numberOfSectionsInTableView:),
+            (IMP)&$BackgrounderAlertDisplay$numberOfSectionsInTableView$, "i@:@");
+    class_addMethod($BackgrounderAlertDisplay, @selector(tableView:titleForHeaderInSection:),
+            (IMP)&$BackgrounderAlertDisplay$tableView$titleForHeaderInSection$, "@@:@i");
+    class_addMethod($BackgrounderAlertDisplay, @selector(tableView:numberOfRowsInSection:),
+            (IMP)&$BackgrounderAlertDisplay$tableView$numberOfRowsInSection$, "i@:@i");
+    class_addMethod($BackgrounderAlertDisplay, @selector(tableView:cellForRowAtIndexPath:),
+            (IMP)&$BackgrounderAlertDisplay$tableView$cellForRowAtIndexPath$, "@@:@@");
+    class_addMethod($BackgrounderAlertDisplay, @selector(tableView:didSelectRowAtIndexPath:),
+            (IMP)&$BackgrounderAlertDisplay$tableView$didSelectRowAtIndexPath$, "@@:@@");
     objc_registerClassPair($BackgrounderAlertDisplay);
 
     // Create custom alert class
     Class $SBAlert(objc_getClass("SBAlert"));
     Class $BackgrounderAlert = objc_allocateClassPair($SBAlert, "BackgrounderAlert", 0);
-    class_addIvar($BackgrounderAlert, "application", sizeof(id), 0, "@");
-    class_addMethod($BackgrounderAlert, @selector(initWithApplication:),
-            (IMP)&$BackgrounderAlert$initWithApplication$, "@@:@");
+    class_addIvar($BackgrounderAlert, "currentApp", sizeof(id), 0, "@");
+    class_addIvar($BackgrounderAlert, "otherApps", sizeof(id), 0, "@");
+    class_addMethod($BackgrounderAlert, @selector(initWithCurrentApp:otherApps:),
+            (IMP)&$BackgrounderAlert$initWithCurrentApp$otherApps$, "@@:@@");
     class_addMethod($BackgrounderAlert, @selector(dealloc),
             (IMP)&$BackgrounderAlert$dealloc, "v@:");
     class_addMethod($BackgrounderAlert, @selector(alertDisplayViewWithSize:),

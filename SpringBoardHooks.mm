@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-12 23:24:33
+ * Last-modified: 2008-10-13 16:05:23
  */
 
 /**
@@ -115,11 +115,10 @@ static void cancelActivationTimer()
 static void dismissFeedback()
 {
     // Hide and release alert window (may be nil)
-    if (feedbackType == TASK_MENU_POPUP)
-        [alert deactivate];
-    else
+    if (feedbackType != TASK_MENU_POPUP) {
         [alert dismiss];
-    [alert release];
+        [alert release];
+    }
     alert = nil;
 }
 
@@ -139,12 +138,12 @@ static void $SpringBoard$backgrounderActivate(id self, SEL sel)
 
     id app = [displayStack topApplication];
     if (app) {
+        NSString *identifier = [app displayIdentifier];
         if (feedbackType == SIMPLE_POPUP) {
             // Tell the application to toggle backgrounding
             kill([app pid], SIGUSR1);
 
             // Store the backgrounding status of the application
-            NSString *identifier = [app displayIdentifier];
             BOOL isEnabled = [[activeApplications objectForKey:identifier] boolValue];
             [activeApplications setObject:[NSNumber numberWithBool:(!isEnabled)]
                 forKey:identifier];
@@ -162,8 +161,15 @@ static void $SpringBoard$backgrounderActivate(id self, SEL sel)
             [controller activateAlertItem:alert];
         } else if (feedbackType == TASK_MENU_POPUP) {
             // Display task menu popup
+            NSMutableArray *array = [NSMutableArray arrayWithArray:[activeApplications allKeys]];
+            // This array will be used for "other apps", so remove the active app
+            [array removeObject:identifier];
+            // SpringBoard should always be first in the list
+            int index = [array indexOfObject:@"com.apple.springboard"];
+            [array exchangeObjectAtIndex:index withObjectAtIndex:0];
+
             Class $SBAlert = objc_getClass("BackgrounderAlert");
-            alert = [[$SBAlert alloc] initWithApplication:app];
+            alert = [[[$SBAlert alloc] initWithCurrentApp:identifier otherApps:array] autorelease];
             [alert activate];
         }
     }
