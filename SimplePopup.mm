@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-09 18:51:28
+ * Last-modified: 2008-10-13 16:29:57
  */
 
 /**
@@ -45,7 +45,7 @@
 #import "SimplePopup.h"
 
 
-static id $BackgrounderAlertItem$initWithTitle$message$(id self, SEL sel, NSString *title, NSString *message)
+static id $BGAlertItem$initWithTitle$message$(id self, SEL sel, NSString *title, NSString *message)
 {
     Class $SBAlertItem = objc_getClass("SBAlertItem");
     objc_super $super = {self, $SBAlertItem};
@@ -57,7 +57,7 @@ static id $BackgrounderAlertItem$initWithTitle$message$(id self, SEL sel, NSStri
     return self;
 }
 
-static void $BackgrounderAlertItem$dealloc(id self, SEL sel)
+static void $BGAlertItem$dealloc(id self, SEL sel)
 {
     NSString *title = nil, *message = nil;
     object_getInstanceVariable(self, "title", reinterpret_cast<void **>(&title));
@@ -70,7 +70,7 @@ static void $BackgrounderAlertItem$dealloc(id self, SEL sel)
     self = objc_msgSendSuper(&$super, @selector(dealloc));
 }
 
-static void $BackgrounderAlertItem$configure$requirePasscodeForActions$(id self, SEL sel, BOOL configure, BOOL passcode)
+static void $BGAlertItem$configure$requirePasscodeForActions$(id self, SEL sel, BOOL configure, BOOL passcode)
 {
     NSString *title = nil, *message = nil;
     object_getInstanceVariable(self, "title", reinterpret_cast<void **>(&title));
@@ -87,16 +87,15 @@ void initSimplePopup()
 {
     // Create custom alert-item class
     Class $SBAlertItem(objc_getClass("SBAlertItem"));
-    Class $BackgrounderAlertItem = objc_allocateClassPair($SBAlertItem, "BackgrounderAlertItem", 0);
-    class_addIvar($BackgrounderAlertItem, "title", sizeof(id), 0, "@");
-    class_addIvar($BackgrounderAlertItem, "message", sizeof(id), 0, "@");
-    class_addMethod($BackgrounderAlertItem, @selector(initWithTitle:message:),
-            (IMP)&$BackgrounderAlertItem$initWithTitle$message$, "@@:@@");
-    class_addMethod($BackgrounderAlertItem, @selector(dealloc),
-            (IMP)&$BackgrounderAlertItem$dealloc, "v@:");
-    class_addMethod($BackgrounderAlertItem, @selector(configure:requirePasscodeForActions:),
-            (IMP)&$BackgrounderAlertItem$configure$requirePasscodeForActions$, "v@:cc");
-    objc_registerClassPair($BackgrounderAlertItem);
+    Class $BGAlertItem = objc_allocateClassPair($SBAlertItem, "BackgrounderAlertItem", 0);
+    class_addIvar($BGAlertItem, "title", sizeof(id), 0, "@");
+    class_addIvar($BGAlertItem, "message", sizeof(id), 0, "@");
+    class_addMethod($BGAlertItem, @selector(initWithTitle:message:),
+        (IMP)&$BGAlertItem$initWithTitle$message$, "@@:@@");
+    class_addMethod($BGAlertItem, @selector(dealloc), (IMP)&$BGAlertItem$dealloc, "v@:");
+    class_addMethod($BGAlertItem, @selector(configure:requirePasscodeForActions:),
+        (IMP)&$BGAlertItem$configure$requirePasscodeForActions$, "v@:cc");
+    objc_registerClassPair($BGAlertItem);
 }
 
 /* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */

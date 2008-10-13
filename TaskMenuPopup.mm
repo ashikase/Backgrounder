@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-13 16:21:41
+ * Last-modified: 2008-10-13 16:24:56
  */
 
 /**
@@ -80,7 +80,7 @@ typedef struct {
 #import <UIKit/UIView-Rendering.h>
 
 
-static id $BackgrounderAlertDisplay$initWithSize$(SBAlertDisplay *self, SEL sel, CGSize size)
+static id $BGAlertDisplay$initWithSize$(SBAlertDisplay *self, SEL sel, CGSize size)
 {
     CGRect rect = CGRectMake(0, 0, size.width, size.height);
 
@@ -148,7 +148,7 @@ static id $BackgrounderAlertDisplay$initWithSize$(SBAlertDisplay *self, SEL sel,
     return self;
 }
 
-static void $BackgrounderAlertDisplay$alertDisplayBecameVisible(SBAlertDisplay *self, SEL sel)
+static void $BGAlertDisplay$alertDisplayBecameVisible(SBAlertDisplay *self, SEL sel)
 {
     // FIXME: The proper method for animating an SBAlertDisplay is currently
     //        unknown; for now, the following method seems to work well enough
@@ -163,13 +163,13 @@ static void $BackgrounderAlertDisplay$alertDisplayBecameVisible(SBAlertDisplay *
 
 #pragma mark - UITableViewDataSource
 
-static int $BackgrounderAlertDisplay$numberOfSectionsInTableView$(id self, SEL sel, UITableView *tableView)
+static int $BGAlertDisplay$numberOfSectionsInTableView$(id self, SEL sel, UITableView *tableView)
 {
     // Two sections: "current" and "other" applications
 	return 2;
 }
 
-static NSString * $BackgrounderAlertDisplay$tableView$titleForHeaderInSection$(id self, SEL sel, UITableView *tableView, int section)
+static NSString * $BGAlertDisplay$tableView$titleForHeaderInSection$(id self, SEL sel, UITableView *tableView, int section)
 {
     if (section == 0)
         return @"Current Application";
@@ -177,7 +177,7 @@ static NSString * $BackgrounderAlertDisplay$tableView$titleForHeaderInSection$(i
         return @"Other Applications";
 }
 
-static int $BackgrounderAlertDisplay$tableView$numberOfRowsInSection$(id self, SEL sel, UITableView *tableView, int section)
+static int $BGAlertDisplay$tableView$numberOfRowsInSection$(id self, SEL sel, UITableView *tableView, int section)
 {
     if (section == 0) {
         return 1;
@@ -187,7 +187,7 @@ static int $BackgrounderAlertDisplay$tableView$numberOfRowsInSection$(id self, S
 }
 
 
-static UITableViewCell * $BackgrounderAlertDisplay$tableView$cellForRowAtIndexPath$(id self, SEL sel, UITableView *tableView, NSIndexPath *indexPath)
+static UITableViewCell * $BGAlertDisplay$tableView$cellForRowAtIndexPath$(id self, SEL sel, UITableView *tableView, NSIndexPath *indexPath)
 {
     static NSString *reuseIdentifier = @"TaskMenuCell";
 
@@ -226,7 +226,7 @@ static UITableViewCell * $BackgrounderAlertDisplay$tableView$cellForRowAtIndexPa
 
 #pragma mark - UITableViewCellDelegate
 
-static NSIndexPath * $BackgrounderAlertDisplay$tableView$didSelectRowAtIndexPath$(id self, SEL sel, UITableView *tableView, NSIndexPath *indexPath)
+static NSIndexPath * $BGAlertDisplay$tableView$didSelectRowAtIndexPath$(id self, SEL sel, UITableView *tableView, NSIndexPath *indexPath)
 {
 	return nil;
 }
@@ -234,7 +234,7 @@ static NSIndexPath * $BackgrounderAlertDisplay$tableView$didSelectRowAtIndexPath
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-static id $BackgrounderAlert$initWithCurrentApp$otherApps$(SBAlert *self, SEL sel, SBApplication *currentApp, NSArray *otherApps)
+static id $BGAlert$initWithCurrentApp$otherApps$(SBAlert *self, SEL sel, SBApplication *currentApp, NSArray *otherApps)
 {
     Class $SBAlert = objc_getClass("SBAlert");
     objc_super $super = {self, $SBAlert};
@@ -246,7 +246,7 @@ static id $BackgrounderAlert$initWithCurrentApp$otherApps$(SBAlert *self, SEL se
     return self;
 }
 
-static void $BackgrounderAlert$dealloc(SBAlert *self, SEL sel)
+static void $BGAlert$dealloc(SBAlert *self, SEL sel)
 {
     NSLog(@"Backgrounder: DEALLOC CALLED FOR ALERT");
     id currentApp = nil, otherApps = nil;
@@ -260,24 +260,24 @@ static void $BackgrounderAlert$dealloc(SBAlert *self, SEL sel)
     self = objc_msgSendSuper(&$super, @selector(dealloc));
 }
 
-static NSString * $BackgrounderAlert$currentApp(SBAlert *self, SEL sel)
+static NSString * $BGAlert$currentApp(SBAlert *self, SEL sel)
 {
     NSString *currentApp = nil;
     object_getInstanceVariable(self, "currentApp", reinterpret_cast<void **>(&currentApp));
     return currentApp;
 }
 
-static NSArray * $BackgrounderAlert$otherApps(SBAlert *self, SEL sel)
+static NSArray * $BGAlert$otherApps(SBAlert *self, SEL sel)
 {
     NSArray *otherApps = nil;
     object_getInstanceVariable(self, "otherApps", reinterpret_cast<void **>(&otherApps));
     return otherApps;
 }
 
-static id $BackgrounderAlert$alertDisplayViewWithSize$(SBAlert *self, SEL sel, CGSize size)
+static id $BGAlert$alertDisplayViewWithSize$(SBAlert *self, SEL sel, CGSize size)
 {
-    Class $BackgrounderAlertDisplay = objc_getClass("BackgrounderAlertDisplay");
-    return [[[$BackgrounderAlertDisplay alloc] initWithSize:size] autorelease];
+    Class $BGAlertDisplay = objc_getClass("BackgrounderAlertDisplay");
+    return [[[$BGAlertDisplay alloc] initWithSize:size] autorelease];
 }
 
 //______________________________________________________________________________
@@ -287,40 +287,40 @@ void initTaskMenuPopup()
 {
     // Create custom alert-display class
     Class $SBAlertDisplay(objc_getClass("SBAlertDisplay"));
-    Class $BackgrounderAlertDisplay = objc_allocateClassPair($SBAlertDisplay, "BackgrounderAlertDisplay", 0);
-    class_addMethod($BackgrounderAlertDisplay, @selector(initWithSize:),
-            (IMP)&$BackgrounderAlertDisplay$initWithSize$, "@@:{CGSize=ff}");
-    class_addMethod($BackgrounderAlertDisplay, @selector(alertDisplayBecameVisible),
-            (IMP)&$BackgrounderAlertDisplay$alertDisplayBecameVisible, "v@:");
+    Class $BGAlertDisplay = objc_allocateClassPair($SBAlertDisplay, "BackgrounderAlertDisplay", 0);
+    class_addMethod($BGAlertDisplay, @selector(initWithSize:),
+            (IMP)&$BGAlertDisplay$initWithSize$, "@@:{CGSize=ff}");
+    class_addMethod($BGAlertDisplay, @selector(alertDisplayBecameVisible),
+            (IMP)&$BGAlertDisplay$alertDisplayBecameVisible, "v@:");
     // UITable-releated methods
-    class_addMethod($BackgrounderAlertDisplay, @selector(numberOfSectionsInTableView:),
-            (IMP)&$BackgrounderAlertDisplay$numberOfSectionsInTableView$, "i@:@");
-    class_addMethod($BackgrounderAlertDisplay, @selector(tableView:titleForHeaderInSection:),
-            (IMP)&$BackgrounderAlertDisplay$tableView$titleForHeaderInSection$, "@@:@i");
-    class_addMethod($BackgrounderAlertDisplay, @selector(tableView:numberOfRowsInSection:),
-            (IMP)&$BackgrounderAlertDisplay$tableView$numberOfRowsInSection$, "i@:@i");
-    class_addMethod($BackgrounderAlertDisplay, @selector(tableView:cellForRowAtIndexPath:),
-            (IMP)&$BackgrounderAlertDisplay$tableView$cellForRowAtIndexPath$, "@@:@@");
-    class_addMethod($BackgrounderAlertDisplay, @selector(tableView:didSelectRowAtIndexPath:),
-            (IMP)&$BackgrounderAlertDisplay$tableView$didSelectRowAtIndexPath$, "@@:@@");
-    objc_registerClassPair($BackgrounderAlertDisplay);
+    class_addMethod($BGAlertDisplay, @selector(numberOfSectionsInTableView:),
+            (IMP)&$BGAlertDisplay$numberOfSectionsInTableView$, "i@:@");
+    class_addMethod($BGAlertDisplay, @selector(tableView:titleForHeaderInSection:),
+            (IMP)&$BGAlertDisplay$tableView$titleForHeaderInSection$, "@@:@i");
+    class_addMethod($BGAlertDisplay, @selector(tableView:numberOfRowsInSection:),
+            (IMP)&$BGAlertDisplay$tableView$numberOfRowsInSection$, "i@:@i");
+    class_addMethod($BGAlertDisplay, @selector(tableView:cellForRowAtIndexPath:),
+            (IMP)&$BGAlertDisplay$tableView$cellForRowAtIndexPath$, "@@:@@");
+    class_addMethod($BGAlertDisplay, @selector(tableView:didSelectRowAtIndexPath:),
+            (IMP)&$BGAlertDisplay$tableView$didSelectRowAtIndexPath$, "@@:@@");
+    objc_registerClassPair($BGAlertDisplay);
 
     // Create custom alert class
     Class $SBAlert(objc_getClass("SBAlert"));
-    Class $BackgrounderAlert = objc_allocateClassPair($SBAlert, "BackgrounderAlert", 0);
-    class_addIvar($BackgrounderAlert, "currentApp", sizeof(id), 0, "@");
-    class_addIvar($BackgrounderAlert, "otherApps", sizeof(id), 0, "@");
-    class_addMethod($BackgrounderAlert, @selector(initWithCurrentApp:otherApps:),
-            (IMP)&$BackgrounderAlert$initWithCurrentApp$otherApps$, "@@:@@");
-    class_addMethod($BackgrounderAlert, @selector(dealloc),
-            (IMP)&$BackgrounderAlert$dealloc, "v@:");
-    class_addMethod($BackgrounderAlert, @selector(currentApp),
-            (IMP)&$BackgrounderAlert$currentApp, "@@:");
-    class_addMethod($BackgrounderAlert, @selector(otherApps),
-            (IMP)&$BackgrounderAlert$otherApps, "@@:");
-    class_addMethod($BackgrounderAlert, @selector(alertDisplayViewWithSize:),
-            (IMP)&$BackgrounderAlert$alertDisplayViewWithSize$, "v@:{CGSize=ff}");
-    objc_registerClassPair($BackgrounderAlert);
+    Class $BGAlert = objc_allocateClassPair($SBAlert, "BackgrounderAlert", 0);
+    class_addIvar($BGAlert, "currentApp", sizeof(id), 0, "@");
+    class_addIvar($BGAlert, "otherApps", sizeof(id), 0, "@");
+    class_addMethod($BGAlert, @selector(initWithCurrentApp:otherApps:),
+            (IMP)&$BGAlert$initWithCurrentApp$otherApps$, "@@:@@");
+    class_addMethod($BGAlert, @selector(dealloc),
+            (IMP)&$BGAlert$dealloc, "v@:");
+    class_addMethod($BGAlert, @selector(currentApp),
+            (IMP)&$BGAlert$currentApp, "@@:");
+    class_addMethod($BGAlert, @selector(otherApps),
+            (IMP)&$BGAlert$otherApps, "@@:");
+    class_addMethod($BGAlert, @selector(alertDisplayViewWithSize:),
+            (IMP)&$BGAlert$alertDisplayViewWithSize$, "v@:{CGSize=ff}");
+    objc_registerClassPair($BGAlert);
 }
 
 /* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
