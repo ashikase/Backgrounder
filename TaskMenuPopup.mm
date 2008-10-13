@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-13 16:02:58
+ * Last-modified: 2008-10-13 16:21:41
  */
 
 /**
@@ -80,7 +80,7 @@ typedef struct {
 #import <UIKit/UIView-Rendering.h>
 
 
-static id $BackgrounderAlertDisplay$initWithSize$currentApp$otherApps$(SBAlertDisplay *self, SEL sel, CGSize size, NSString *currentApp, NSArray *otherApps)
+static id $BackgrounderAlertDisplay$initWithSize$(SBAlertDisplay *self, SEL sel, CGSize size)
 {
     CGRect rect = CGRectMake(0, 0, size.width, size.height);
 
@@ -88,9 +88,6 @@ static id $BackgrounderAlertDisplay$initWithSize$currentApp$otherApps$(SBAlertDi
     objc_super $super = {self, $SBAlertDisplay};
     self = objc_msgSendSuper(&$super, @selector(initWithFrame:), rect);
     if (self) {
-        object_setInstanceVariable(self, "currentApp", reinterpret_cast<void *>([currentApp retain])); 
-        object_setInstanceVariable(self, "otherApps", reinterpret_cast<void *>([otherApps retain])); 
-
         [self setBackgroundColor:[UIColor colorWithWhite:0.30 alpha:1]];
 
         // Get the status bar height (normally 0 (hidden) or 20 (shown))
@@ -151,19 +148,6 @@ static id $BackgrounderAlertDisplay$initWithSize$currentApp$otherApps$(SBAlertDi
     return self;
 }
 
-static void $BackgrounderAlertDisplay$dealloc(SBAlertDisplay *self, SEL sel)
-{
-    id currentApp = nil, otherApps = nil;
-    object_getInstanceVariable(self, "currentApp", reinterpret_cast<void **>(&currentApp));
-    object_getInstanceVariable(self, "otherApps", reinterpret_cast<void **>(&otherApps));
-    [currentApp release];
-    [otherApps release];
-
-    Class $SBAlertDisplay = objc_getClass("SBAlertDisplay");
-    objc_super $super = {self, $SBAlertDisplay};
-    self = objc_msgSendSuper(&$super, @selector(dealloc));
-}
-
 static void $BackgrounderAlertDisplay$alertDisplayBecameVisible(SBAlertDisplay *self, SEL sel)
 {
     // FIXME: The proper method for animating an SBAlertDisplay is currently
@@ -198,10 +182,7 @@ static int $BackgrounderAlertDisplay$tableView$numberOfRowsInSection$(id self, S
     if (section == 0) {
         return 1;
     } else {
-        id otherApps = nil;
-        object_getInstanceVariable(self, "otherApps", reinterpret_cast<void **>(&otherApps));
-
-        return [otherApps count];
+        return [[[self alert] otherApps] count];
     }
 }
 
@@ -220,11 +201,9 @@ static UITableViewCell * $BackgrounderAlertDisplay$tableView$cellForRowAtIndexPa
     // Get the display identifier of the application for this cell
     NSString *identifier = nil;
     if (indexPath.section == 0) {
-        object_getInstanceVariable(self, "currentApp", reinterpret_cast<void **>(&identifier));
+        identifier = [[self alert] currentApp];
     } else {
-        id otherApps = nil;
-        object_getInstanceVariable(self, "otherApps", reinterpret_cast<void **>(&otherApps));
-        identifier = [otherApps objectAtIndex:indexPath.row];
+        identifier = [[[self alert] otherApps] objectAtIndex:indexPath.row];
     }
 
     // Get the SBApplication object
@@ -281,14 +260,24 @@ static void $BackgrounderAlert$dealloc(SBAlert *self, SEL sel)
     self = objc_msgSendSuper(&$super, @selector(dealloc));
 }
 
+static NSString * $BackgrounderAlert$currentApp(SBAlert *self, SEL sel)
+{
+    NSString *currentApp = nil;
+    object_getInstanceVariable(self, "currentApp", reinterpret_cast<void **>(&currentApp));
+    return currentApp;
+}
+
+static NSArray * $BackgrounderAlert$otherApps(SBAlert *self, SEL sel)
+{
+    NSArray *otherApps = nil;
+    object_getInstanceVariable(self, "otherApps", reinterpret_cast<void **>(&otherApps));
+    return otherApps;
+}
+
 static id $BackgrounderAlert$alertDisplayViewWithSize$(SBAlert *self, SEL sel, CGSize size)
 {
-    id currentApp = nil, otherApps = nil;
-    object_getInstanceVariable(self, "currentApp", reinterpret_cast<void **>(&currentApp));
-    object_getInstanceVariable(self, "otherApps", reinterpret_cast<void **>(&otherApps));
-
     Class $BackgrounderAlertDisplay = objc_getClass("BackgrounderAlertDisplay");
-    return [[[$BackgrounderAlertDisplay alloc] initWithSize:size currentApp:currentApp otherApps:otherApps] autorelease];
+    return [[[$BackgrounderAlertDisplay alloc] initWithSize:size] autorelease];
 }
 
 //______________________________________________________________________________
@@ -299,12 +288,8 @@ void initTaskMenuPopup()
     // Create custom alert-display class
     Class $SBAlertDisplay(objc_getClass("SBAlertDisplay"));
     Class $BackgrounderAlertDisplay = objc_allocateClassPair($SBAlertDisplay, "BackgrounderAlertDisplay", 0);
-    class_addIvar($BackgrounderAlertDisplay, "currentApp", sizeof(id), 0, "@");
-    class_addIvar($BackgrounderAlertDisplay, "otherApps", sizeof(id), 0, "@");
-    class_addMethod($BackgrounderAlertDisplay, @selector(initWithSize:currentApp:otherApps:),
-            (IMP)&$BackgrounderAlertDisplay$initWithSize$currentApp$otherApps$, "@@:{CGSize=ff}@@");
-    class_addMethod($BackgrounderAlertDisplay, @selector(dealloc),
-            (IMP)&$BackgrounderAlertDisplay$dealloc, "v@:");
+    class_addMethod($BackgrounderAlertDisplay, @selector(initWithSize:),
+            (IMP)&$BackgrounderAlertDisplay$initWithSize$, "@@:{CGSize=ff}");
     class_addMethod($BackgrounderAlertDisplay, @selector(alertDisplayBecameVisible),
             (IMP)&$BackgrounderAlertDisplay$alertDisplayBecameVisible, "v@:");
     // UITable-releated methods
@@ -329,6 +314,10 @@ void initTaskMenuPopup()
             (IMP)&$BackgrounderAlert$initWithCurrentApp$otherApps$, "@@:@@");
     class_addMethod($BackgrounderAlert, @selector(dealloc),
             (IMP)&$BackgrounderAlert$dealloc, "v@:");
+    class_addMethod($BackgrounderAlert, @selector(currentApp),
+            (IMP)&$BackgrounderAlert$currentApp, "@@:");
+    class_addMethod($BackgrounderAlert, @selector(otherApps),
+            (IMP)&$BackgrounderAlert$otherApps, "@@:");
     class_addMethod($BackgrounderAlert, @selector(alertDisplayViewWithSize:),
             (IMP)&$BackgrounderAlert$alertDisplayViewWithSize$, "v@:{CGSize=ff}");
     objc_registerClassPair($BackgrounderAlert);
