@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-13 16:24:56
+ * Last-modified: 2008-10-18 12:10:12
  */
 
 /**
@@ -54,6 +54,7 @@
 #import <SpringBoard/SBApplicationController.h>
 #import <SpringBoard/SBStatusBarController.h>
 #import <SpringBoard/SBUIController.h>
+#import <SpringBoard/SpringBoard.h>
 
 #import <UIKit/NSIndexPath-UITableView.h>
 #import <UIKit/UIColor.h>
@@ -171,19 +172,12 @@ static int $BGAlertDisplay$numberOfSectionsInTableView$(id self, SEL sel, UITabl
 
 static NSString * $BGAlertDisplay$tableView$titleForHeaderInSection$(id self, SEL sel, UITableView *tableView, int section)
 {
-    if (section == 0)
-        return @"Current Application";
-    else
-        return @"Other Applications";
+    return (section == 0) ? @"Current Application" : @"Other Applications";
 }
 
 static int $BGAlertDisplay$tableView$numberOfRowsInSection$(id self, SEL sel, UITableView *tableView, int section)
 {
-    if (section == 0) {
-        return 1;
-    } else {
-        return [[[self alert] otherApps] count];
-    }
+    return (section == 0) ? 1 : [[[self alert] otherApps] count];
 }
 
 
@@ -226,9 +220,37 @@ static UITableViewCell * $BGAlertDisplay$tableView$cellForRowAtIndexPath$(id sel
 
 #pragma mark - UITableViewCellDelegate
 
-static NSIndexPath * $BGAlertDisplay$tableView$didSelectRowAtIndexPath$(id self, SEL sel, UITableView *tableView, NSIndexPath *indexPath)
+@interface SpringBoard (Backgrounder)
+- (void)setBackgroundingEnabled:(BOOL)enable forDisplayIdentifier:(NSString *)identifier;
+- (void)switchToAppWithDisplayIdentifier:(NSString *)identifier;
+@end
+
+static void $BGAlertDisplay$tableView$didSelectRowAtIndexPath$(id self, SEL sel, UITableView *tableView, NSIndexPath *indexPath)
 {
-	return nil;
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+
+    if (indexPath.section == 1) {
+        // Selected a row under "Other applications"
+
+        // Enable backgrounding for current application
+        Class $SpringBoard(objc_getClass("SpringBoard"));
+        SpringBoard *springBoard = [$SpringBoard sharedApplication];
+        [springBoard setBackgroundingEnabled:YES forDisplayIdentifier:[[self alert] currentApp]];
+
+        // Switch to selected application
+        Class $SBUIController(objc_getClass("SBUIController"));
+        SBUIController *uiCont = [$SBUIController sharedInstance];
+        if (indexPath.row == 0) {
+            // SpringBoard was selected
+            [uiCont quitTopApplication];
+        } else {
+            NSArray *otherApps = [[self alert] otherApps];
+            Class $SpringBoard(objc_getClass("SpringBoard"));
+            SpringBoard *sb = [$SpringBoard sharedApplication];
+            NSLog(@"Backgrounder: asking to swtich to: %@", [otherApps objectAtIndex:indexPath.row]);
+            [sb switchToAppWithDisplayIdentifier:[otherApps objectAtIndex:indexPath.row]];
+        }
+    }
 }
 
 //______________________________________________________________________________
@@ -302,7 +324,7 @@ void initTaskMenuPopup()
     class_addMethod($BGAlertDisplay, @selector(tableView:cellForRowAtIndexPath:),
             (IMP)&$BGAlertDisplay$tableView$cellForRowAtIndexPath$, "@@:@@");
     class_addMethod($BGAlertDisplay, @selector(tableView:didSelectRowAtIndexPath:),
-            (IMP)&$BGAlertDisplay$tableView$didSelectRowAtIndexPath$, "@@:@@");
+            (IMP)&$BGAlertDisplay$tableView$didSelectRowAtIndexPath$, "v@:@@");
     objc_registerClassPair($BGAlertDisplay);
 
     // Create custom alert class
