@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-18 12:10:12
+ * Last-modified: 2008-10-18 12:50:28
  */
 
 /**
@@ -54,7 +54,6 @@
 #import <SpringBoard/SBApplicationController.h>
 #import <SpringBoard/SBStatusBarController.h>
 #import <SpringBoard/SBUIController.h>
-#import <SpringBoard/SpringBoard.h>
 
 #import <UIKit/NSIndexPath-UITableView.h>
 #import <UIKit/UIColor.h>
@@ -79,6 +78,8 @@ typedef struct {
 #import <UIKit/UIView-Geometry.h>
 #import <UIKit/UIView-Hierarchy.h>
 #import <UIKit/UIView-Rendering.h>
+
+#import "SpringBoardHooks.h"
 
 
 static id $BGAlertDisplay$initWithSize$(SBAlertDisplay *self, SEL sel, CGSize size)
@@ -219,11 +220,6 @@ static UITableViewCell * $BGAlertDisplay$tableView$cellForRowAtIndexPath$(id sel
 }
 
 #pragma mark - UITableViewCellDelegate
-
-@interface SpringBoard (Backgrounder)
-- (void)setBackgroundingEnabled:(BOOL)enable forDisplayIdentifier:(NSString *)identifier;
-- (void)switchToAppWithDisplayIdentifier:(NSString *)identifier;
-@end
 
 static void $BGAlertDisplay$tableView$didSelectRowAtIndexPath$(id self, SEL sel, UITableView *tableView, NSIndexPath *indexPath)
 {

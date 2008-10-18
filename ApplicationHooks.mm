@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-12 10:53:26
+ * Last-modified: 2008-10-18 12:46:23
  */
 
 /**
@@ -69,7 +69,7 @@ static void $UIApplication$setBackgroundingEnabled$(id self, SEL sel, BOOL enabl
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-@protocol BackgrounderApp
+@interface UIApplication (Backgrounder_RenamedMethods)
 - (void)bg_applicationWillSuspend;
 - (void)bg_applicationDidResume;
 - (void)bg_applicationWillResignActive:(UIApplication *)application;
@@ -80,32 +80,32 @@ static void $UIApplication$setBackgroundingEnabled$(id self, SEL sel, BOOL enabl
 @end
 
 // Prevent execution of application's on-suspend/resume methods
-static void $UIApplication$applicationWillSuspend(UIApplication<BackgrounderApp> *self, SEL sel)
+static void $UIApplication$applicationWillSuspend(UIApplication *self, SEL sel)
 {
     if (!backgroundingEnabled)
         [self bg_applicationWillSuspend];
 }
 
-static void $UIApplication$applicationDidResume(UIApplication<BackgrounderApp> *self, SEL sel)
+static void $UIApplication$applicationDidResume(UIApplication *self, SEL sel)
 {
     if (!backgroundingEnabled)
         [self bg_applicationDidResume];
 }
 
-static void $UIApplication$applicationWillResignActive$(UIApplication<BackgrounderApp> *self, SEL sel, id application)
+static void $UIApplication$applicationWillResignActive$(UIApplication *self, SEL sel, id application)
 {
     if (!backgroundingEnabled)
         [self bg_applicationWillResignActive:application];
 }
 
-static void $UIApplication$applicationDidBecomeActive$(UIApplication<BackgrounderApp> *self, SEL sel, id application)
+static void $UIApplication$applicationDidBecomeActive$(UIApplication *self, SEL sel, id application)
 {
     if (!backgroundingEnabled)
         [self bg_applicationDidBecomeActive:application];
 }
 
 // Overriding this method prevents the application from quitting on suspend
-static void $UIApplication$applicationSuspend$(UIApplication<BackgrounderApp> *self, SEL sel, GSEvent *event)
+static void $UIApplication$applicationSuspend$(UIApplication *self, SEL sel, GSEvent *event)
 {
     if (!backgroundingEnabled)
         [self bg_applicationSuspend:event];
@@ -113,13 +113,13 @@ static void $UIApplication$applicationSuspend$(UIApplication<BackgrounderApp> *s
 
 // FIXME: Tests make this appear unneeded... confirm
 #if 0
-static void $UIApplication$_setSuspended$(UIApplication<BackgrounderApp> *self, SEL sel, BOOL val)
+static void $UIApplication$_setSuspended$(UIApplication *self, SEL sel, BOOL val)
 {
     //[self bg__setSuspended:val];
 }
 #endif
 
-static void $UIApplication$_loadMainNibFile(UIApplication<BackgrounderApp> *self, SEL sel)
+static void $UIApplication$_loadMainNibFile(UIApplication *self, SEL sel)
 {
     // NOTE: This method always gets called, even if no NIB files are used.
     //       Also note that if an application overrides this method (unlikely,
