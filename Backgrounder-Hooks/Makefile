@@ -1,4 +1,4 @@
-NAME = Backgrounder
+NAME = Backgrounder-Hooks
 
 # These paths must be changed to match the compilation environment
 SYS_PATH = /opt/iPhone/sys
@@ -10,24 +10,24 @@ LDFLAGS = -lobjc \
 		  -framework CoreFoundation \
 		  -framework Foundation \
 		  -framework UIKit \
-		  -framework GraphicsServices \
-		  -framework CoreGraphics \
 		  -F$(SYS_PATH)/System/Library/PrivateFrameworks \
 		  -L$(SUB_PATH) -lsubstrate
 
-SRCS = \
-	ApplicationHooks.mm \
-	main.mm \
-	SimplePopup.mm \
-	SpringBoardHooks.mm \
-	TaskMenuPopup.mm
+SRCS  = \
+		main.mm \
+		ApplicationHooks.mm
 
 all: $(NAME).dylib $(control)
 
 clean:
 	rm -f $(NAME).dylib
 
+# Replace 'iphone' with the IP or hostname of your device
+install:
+	ssh root@iphone rm -f /Library/MobileSubstrate/DynamicLibraries/$(NAME).dylib
+	scp $(NAME).dylib root@iphone:/Library/MobileSubstrate/DynamicLibraries/
+
 $(NAME).dylib: $(SRCS)
-	$(CXX) -dynamiclib $(CXXFLAGS) -o $@ $(filter %.mm,$^) -init _$(NAME)Initialize $(LDFLAGS)
+	$(CXX) -dynamiclib $(CXXFLAGS) -o $@ $(filter %.mm,$^) -init _BackgrounderHooksInitialize $(LDFLAGS)
 
 .PHONY: all clean

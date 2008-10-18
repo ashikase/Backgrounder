@@ -2,11 +2,14 @@
 
 set -e
 
-FILE_NAME=Backgrounder.dylib
+BASEDIR="${PWD}"
+SUBDIRS="Backgrounder Backgrounder-Hooks"
 
-make clean
-make 
-ssh root@iphone rm -f /Library/MobileSubstrate/DynamicLibraries/${FILE_NAME}
-/opt/iPhone/ldid -S ${FILE_NAME}
-scp ${FILE_NAME} root@iphone:/Library/MobileSubstrate/DynamicLibraries/
-ssh root@iphone /usr/bin/restart
+for LIB in ${SUBDIRS}; do
+    cd "${BASEDIR}/${LIB}"
+    make clean
+    make 
+    /opt/iPhone/ldid -S ${LIB}.dylib
+    make install
+    ssh root@iphone /usr/bin/restart
+done
