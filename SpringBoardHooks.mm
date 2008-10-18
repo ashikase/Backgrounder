@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-13 16:25:46
+ * Last-modified: 2008-10-18 12:16:15
  */
 
 /**
@@ -50,8 +50,10 @@
 #import <Foundation/NSTimer.h>
 
 #import <SpringBoard/SBApplication.h>
+#import <SpringBoard/SBApplicationController.h>
 #import <SpringBoard/SBAlertItemsController.h>
 #import <SpringBoard/SBDisplayStack.h>
+#import <SpringBoard/SBUIController.h>
 #import <SpringBoard/SpringBoard.h>
 
 #import "SimplePopup.h"
@@ -83,18 +85,43 @@ NSMutableDictionary *activeApplications = nil;
 
 @protocol BackgrounderSBStack
 - (id)bg_init;
+- (id)bg_dealloc;
 @end
 
-static SBDisplayStack *displayStack = nil;
+NSMutableArray *displayStacks = nil;
 
 static id $SBDisplayStack$init(SBDisplayStack<BackgrounderSBStack> *self, SEL sel)
 {
-    // NOTE: SpringBoard appears to create five stacks at startup;
-    //       the first stack is for applications (the others, unknown)
-    id ret = [self bg_init];
-    if (!displayStack)
-        displayStack = ret;
-    return ret;
+    id stack = [self bg_init];
+    [displayStacks addObject:stack];
+    NSLog(@"Backgrounder: initialized display stack: %@", stack);
+    return stack;
+}
+
+static void $SBDisplayStack$dealloc(SBDisplayStack<BackgrounderSBStack> *self, SEL sel)
+{
+    [displayStacks removeObject:self];
+    [self bg_dealloc];
+}
+
+//______________________________________________________________________________
+//______________________________________________________________________________
+
+@protocol BackgrounderSBUI
+- (void)bg_animateLaunchApplication:(id)app;
+@end
+
+static void $SBUIController$animateLaunchApplication$(SBUIController<BackgrounderSBUI> *self, SEL sel, id app)
+{
+    if ([app pid] != -1) {
+        // Application is backgrounded; don't animate
+        [app setActivationSetting:0x40 value:nil];
+        [app setActivationSetting:0x80 value:nil];
+        [[displayStacks objectAtIndex:2] pushDisplay:app];
+    } else {
+        // Normal launch
+        [self bg_animateLaunchApplication:app];
+    }
 }
 
 //______________________________________________________________________________
@@ -114,11 +141,15 @@ static void cancelActivationTimer()
 
 static void dismissFeedback()
 {
+    // FIXME: If feedback types other than simple and task-menu are added,
+    //        this method will need to be updated
+
     // Hide and release alert window (may be nil)
-    if (feedbackType != TASK_MENU_POPUP) {
+    if (feedbackType == TASK_MENU_POPUP)
+        [alert deactivate];
+    else
         [alert dismiss];
-        [alert release];
-    }
+    [alert release];
     alert = nil;
 }
 
@@ -129,58 +160,17 @@ static void dismissFeedback()
 - (void)bg_menuButtonUp:(GSEvent *)event;
 - (void)bg__handleMenuButtonEvent;
 - (void)bg_handleMenuDoubleTap;
+- (void)setBackgroundingEnabled:(BOOL)enable forDisplayIdentifier:(NSString *)identifier;
 - (void)backgrounderActivate;
+- (void)switchToAppWithDisplayIdentifier:(NSString *)identifier;
 @end
-
-static void $SpringBoard$backgrounderActivate(id self, SEL sel)
-{
-    NSLog(@"Backgrounder: %s", __FUNCTION__);
-
-    id app = [displayStack topApplication];
-    if (app) {
-        NSString *identifier = [app displayIdentifier];
-        if (feedbackType == SIMPLE_POPUP) {
-            // Tell the application to toggle backgrounding
-            kill([app pid], SIGUSR1);
-
-            // Store the backgrounding status of the application
-            BOOL isEnabled = [[activeApplications objectForKey:identifier] boolValue];
-            [activeApplications setObject:[NSNumber numberWithBool:(!isEnabled)]
-                forKey:identifier];
-
-            // Display simple popup
-            NSString *status = [NSString stringWithFormat:@"Backgrounding %s",
-                     (isEnabled ? "Disabled" : "Enabled")];
-
-            Class $BGAlertItem = objc_getClass("BackgrounderAlertItem");
-            alert = [[$BGAlertItem alloc] initWithTitle:status
-                message:@"(Continue holding to force-quit)"];
-
-            Class $SBAlertItemsController(objc_getClass("SBAlertItemsController"));
-            SBAlertItemsController *controller = [$SBAlertItemsController sharedInstance];
-            [controller activateAlertItem:alert];
-        } else if (feedbackType == TASK_MENU_POPUP) {
-            // Display task menu popup
-            NSMutableArray *array = [NSMutableArray arrayWithArray:[activeApplications allKeys]];
-            // This array will be used for "other apps", so remove the active app
-            [array removeObject:identifier];
-            // SpringBoard should always be first in the list
-            int index = [array indexOfObject:@"com.apple.springboard"];
-            [array exchangeObjectAtIndex:index withObjectAtIndex:0];
-
-            Class $SBAlert = objc_getClass("BackgrounderAlert");
-            alert = [[[$SBAlert alloc] initWithCurrentApp:identifier otherApps:array] autorelease];
-            [alert activate];
-        }
-    }
-}
 
 static void $SpringBoard$menuButtonDown$(SpringBoard<BackgrounderSB> *self, SEL sel, GSEvent *event)
 {
     NSLog(@"Backgrounder: %s", __FUNCTION__);
 
     if (invocationMethod == HOME_SHORT_PRESS) {
-        if ([displayStack topApplication] != nil)
+        if ([[displayStacks objectAtIndex:0] topApplication] != nil)
             // Setup toggle-delay timer
             activationTimer = [[NSTimer scheduledTimerWithTimeInterval:0.7f
                 target:self selector:@selector(backgrounderActivate)
@@ -205,7 +195,7 @@ static void $SpringBoard$_handleMenuButtonEvent(SpringBoard<BackgrounderSB> *sel
 {
     NSLog(@"Backgrounder: %s", __FUNCTION__);
 
-    if ([displayStack topApplication] != nil) {
+    if ([[displayStacks objectAtIndex:0] topApplication] != nil) {
         Ivar ivar = class_getInstanceVariable([self class], "_menuButtonClickCount");
         unsigned int *_menuButtonClickCount = (unsigned int *)((char *)self + ivar_getOffset(ivar));
 
@@ -230,7 +220,7 @@ static void $SpringBoard$handleMenuDoubleTap(SpringBoard<BackgrounderSB> *self, 
 {
     NSLog(@"Backgrounder: %s", __FUNCTION__);
 
-    if ([displayStack topApplication] != nil && alert == nil)
+    if ([[displayStacks objectAtIndex:0] topApplication] != nil && alert == nil)
         // Is an application and popup is not visible; toggle backgrounding
         [self backgrounderActivate];
     else {
@@ -242,6 +232,12 @@ static void $SpringBoard$handleMenuDoubleTap(SpringBoard<BackgrounderSB> *self, 
 
 static void $SpringBoard$applicationDidFinishLaunching$(SpringBoard<BackgrounderSB> *self, SEL sel, id application)
 {
+    // NOTE: SpringBoard creates five stacks at startup:
+    //       - first: visible displays
+    //       - third: displays being activated
+    //       - xxxxx: displays being deactivated
+    displayStacks = [[NSMutableArray alloc] initWithCapacity:5];
+
     // NOTE: The initial capacity value was chosen to hold the default active
     //       apps (SpringBoard, MobilePhone, and MobileMail) plus two others
     activeApplications = [[NSMutableDictionary alloc] initWithCapacity:5];
@@ -277,7 +273,95 @@ static void $SpringBoard$applicationDidFinishLaunching$(SpringBoard<Backgrounder
 static void $SpringBoard$dealloc(SpringBoard<BackgrounderSB> *self, SEL sel)
 {
     [activeApplications release];
+    [displayStacks release];
     [self bg_dealloc];
+}
+
+static void $SpringBoard$backgrounderActivate(id self, SEL sel)
+{
+    NSLog(@"Backgrounder: %s", __FUNCTION__);
+
+    id app = [[displayStacks objectAtIndex:0] topApplication];
+    if (app) {
+        NSString *identifier = [app displayIdentifier];
+        if (feedbackType == SIMPLE_POPUP) {
+            BOOL isEnabled = [[activeApplications objectForKey:identifier] boolValue];
+            [self setBackgroundingEnabled:(!isEnabled) forDisplayIdentifier:identifier];
+
+            // Display simple popup
+            NSString *status = [NSString stringWithFormat:@"Backgrounding %s",
+                     (isEnabled ? "Disabled" : "Enabled")];
+
+            Class $BGAlertItem = objc_getClass("BackgrounderAlertItem");
+            alert = [[$BGAlertItem alloc] initWithTitle:status
+                message:@"(Continue holding to force-quit)"];
+
+            Class $SBAlertItemsController(objc_getClass("SBAlertItemsController"));
+            SBAlertItemsController *controller = [$SBAlertItemsController sharedInstance];
+            [controller activateAlertItem:alert];
+        } else if (feedbackType == TASK_MENU_POPUP) {
+            // Display task menu popup
+            NSMutableArray *array = [NSMutableArray arrayWithArray:[activeApplications allKeys]];
+            // This array will be used for "other apps", so remove the active app
+            [array removeObject:identifier];
+            // SpringBoard should always be first in the list
+            int index = [array indexOfObject:@"com.apple.springboard"];
+            [array exchangeObjectAtIndex:index withObjectAtIndex:0];
+
+            Class $SBAlert = objc_getClass("BackgrounderAlert");
+            alert = [[$SBAlert alloc] initWithCurrentApp:identifier otherApps:array];
+            [alert activate];
+        }
+    }
+}
+
+static void $SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$(id self, SEL sel, BOOL enable, NSString *identifier)
+{
+    NSNumber *object = [activeApplications objectForKey:identifier];
+    if (object != nil) {
+        BOOL isEnabled = [object boolValue];
+        if (isEnabled != enable) {
+            // Tell the application to change its backgrounding status
+            Class $SBApplicationController(objc_getClass("SBApplicationController"));
+            SBApplicationController *appCont = [$SBApplicationController sharedInstance];
+            SBApplication *app = [appCont applicationWithDisplayIdentifier:identifier];
+            kill([app pid], SIGUSR1);
+
+            // Store the new backgrounding status of the application
+            [activeApplications setObject:[NSNumber numberWithBool:(!isEnabled)]
+                forKey:identifier];
+        }
+    }
+}
+
+static void $SpringBoard$switchToAppWithDisplayIdentifier$(id self, SEL sel,NSString *identifier)
+{
+    Class $SBApplicationController(objc_getClass("SBApplicationController"));
+    SBApplicationController *appCont = [$SBApplicationController sharedInstance];
+    SBApplication *otherApp = [appCont applicationWithDisplayIdentifier:identifier];
+
+    if (otherApp) {
+        [otherApp setActivationSetting:0x20000000 flag:YES]; // appToApp
+        [otherApp setActivationSetting:0x20 flag:YES]; // suspendOthers
+        //[otherApp setActivationSetting:0x200 flag:YES];
+        [otherApp setActivationSetting:0x40 value:nil]; // statusbarmode
+        [otherApp setActivationSetting:0x80 value:nil]; // statusBarOrientation
+
+        // NOTE: Must set animation flag for deactivation, otherwise
+        //       application window does not disappear (reason yet unknown)
+        SBApplication *currApp = [[displayStacks objectAtIndex:0] topApplication];
+        [currApp setDeactivationSetting:0x2 flag:YES]; // animate
+        [currApp setDeactivationSetting:0x10000 flag:YES]; // appToApp
+        //[currApp setDeactivationSetting:0x100 value:[NSNumber numberWithDouble:0.01]];
+        //[currApp setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0.4]];
+
+        // The appToApp flag will cause activation to wait until the current
+        // application deactivates
+        [[displayStacks objectAtIndex:2] pushDisplay:otherApp];
+
+        // Deactivate the current app
+        [[displayStacks objectAtIndex:3] pushDisplay:currApp];
+    }
 }
 
 //______________________________________________________________________________
@@ -287,7 +371,7 @@ static void $SpringBoard$dealloc(SpringBoard<BackgrounderSB> *self, SEL sel)
 - (BOOL)bg_shouldLaunchPNGless;
 - (void)bg_launchSucceeded;
 - (void)bg_exitedCommon;
-- (BOOL)bg_kill;
+- (BOOL)bg_deactivate;
 - (void)bg__startTerminationWatchdogTimer;
 @end
 
@@ -300,7 +384,6 @@ static BOOL $SBApplication$shouldLaunchPNGless(SBApplication<BackgrounderSBApp> 
 static void $SBApplication$launchSucceeded(SBApplication<BackgrounderSBApp> *self, SEL sel)
 {
     NSString *identifier = [self displayIdentifier];
-
     if ([activeApplications objectForKey:identifier] == nil) {
         // Initial launch; check if this application defaults to backgrounding
         CFPropertyListRef array = CFPreferencesCopyAppValue(CFSTR("enabledApplications"), CFSTR(APP_ID));
@@ -328,11 +411,11 @@ static void $SBApplication$exitedCommon(SBApplication<BackgrounderSBApp> *self, 
     [self bg_exitedCommon];
 }
 
-static BOOL $SBApplication$kill(SBApplication<BackgrounderSBApp> *self, SEL sel)
+static BOOL $SBApplication$deactivate(SBApplication<BackgrounderSBApp> *self, SEL sel)
 {
-    // Hide and destroy the popup alert
+    // Make sure that any feedback (popups) is dismissed before exiting
     dismissFeedback();
-    return [self bg_kill];
+    return [self bg_deactivate];
 }
 
 static void $SBApplication$_startTerminationWatchdogTimer(SBApplication<BackgrounderSBApp> *self, SEL sel)
@@ -349,6 +432,10 @@ void initSpringBoardHooks()
 {
     Class $SBDisplayStack(objc_getClass("SBDisplayStack"));
     MSHookMessage($SBDisplayStack, @selector(init), (IMP)&$SBDisplayStack$init, "bg_");
+    MSHookMessage($SBDisplayStack, @selector(dealloc), (IMP)&$SBDisplayStack$dealloc, "bg_");
+
+    Class $SBUIController(objc_getClass("SBUIController"));
+    MSHookMessage($SBUIController, @selector(animateLaunchApplication:), (IMP)&$SBUIController$animateLaunchApplication$, "bg_");
 
     Class $SpringBoard(objc_getClass("SpringBoard"));
     MSHookMessage($SpringBoard, @selector(applicationDidFinishLaunching:), (IMP)&$SpringBoard$applicationDidFinishLaunching$, "bg_");
@@ -356,13 +443,16 @@ void initSpringBoardHooks()
     MSHookMessage($SpringBoard, @selector(menuButtonDown:), (IMP)&$SpringBoard$menuButtonDown$, "bg_");
     MSHookMessage($SpringBoard, @selector(menuButtonUp:), (IMP)&$SpringBoard$menuButtonUp$, "bg_");
     MSHookMessage($SpringBoard, @selector(_handleMenuButtonEvent), (IMP)&$SpringBoard$_handleMenuButtonEvent, "bg_");
+    class_addMethod($SpringBoard, @selector(setBackgroundingEnabled:forDisplayIdentifier:),
+        (IMP)&$SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$, "v@:c@");
     class_addMethod($SpringBoard, @selector(backgrounderActivate), (IMP)&$SpringBoard$backgrounderActivate, "v@:");
+    class_addMethod($SpringBoard, @selector(switchToAppWithDisplayIdentifier:), (IMP)&$SpringBoard$switchToAppWithDisplayIdentifier$, "v@:@");
 
     Class $SBApplication(objc_getClass("SBApplication"));
     MSHookMessage($SBApplication, @selector(shouldLaunchPNGless), (IMP)&$SBApplication$shouldLaunchPNGless, "bg_");
     MSHookMessage($SBApplication, @selector(launchSucceeded), (IMP)&$SBApplication$launchSucceeded, "bg_");
+    MSHookMessage($SBApplication, @selector(deactivate), (IMP)&$SBApplication$deactivate, "bg_");
     MSHookMessage($SBApplication, @selector(exitedCommon), (IMP)&$SBApplication$exitedCommon, "bg_");
-    MSHookMessage($SBApplication, @selector(kill), (IMP)&$SBApplication$kill, "bg_");
     MSHookMessage($SBApplication, @selector(_startTerminationWatchdogTimer), (IMP)&$SBApplication$_startTerminationWatchdogTimer, "bg_");
 }
 
