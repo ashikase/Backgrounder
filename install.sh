@@ -11,5 +11,6 @@ for LIB in ${SUBDIRS}; do
     make 
     /opt/iPhone/ldid -S ${LIB}.dylib
     make install
-    ssh root@iphone /usr/bin/restart
 done
+
+ssh root@iphone /usr/bin/restart
