@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-19 22:22:08
+ * Last-modified: 2008-10-20 11:38:14
  */
 
 /**
@@ -77,47 +77,18 @@ typedef struct {} CDAnonymousStruct14;
 #import <UIKit/UIView-Rendering.h>
 #import <UIKit/UIViewController-UINavigationControllerItem.h>
 
-extern int SBSSpringBoardServerPort();
-//extern int SBApplicationDisplayIdentifiers(int, unsigned short, unsigned short, char **);
-extern int SBLocalizedApplicationNameForDisplayIdentifier(int, const char *, char *, int);
-extern int SBIconImagePathForDisplayIdentifier(int, const char *, char *, int);
+extern id SBSCopyApplicationDisplayIdentifiers(BOOL onlyActive, BOOL unknown);
+extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
+extern NSString * SBSCopyIconImagePathForDisplayIdentifier(NSString *identifier);
 
 
 static NSMutableArray *displayIdentifiers = nil;
 
-static void loadIdentifiersFromList(NSDictionary *list)
-{
-    NSArray *iconMatrix = [list objectForKey:@"iconMatrix"];
-    for (NSArray *row in iconMatrix)
-        for (id entry in row) {
-            //NSLog(@"Backgrounder: row: %s, %@", object_getClassName(entry), entry);
-            if ([entry isKindOfClass:[NSDictionary class]]) {
-                NSString *identifier = [entry objectForKey:@"displayIdentifier"];
-                if (identifier) {
-                    // Check if identifier is a UUID (and thus a webclip)
-                    NSArray *comp = [identifier componentsSeparatedByString:@"-"];
-                    if ([comp count] != 5)
-                        [displayIdentifiers addObject:identifier];
-                }
-            }
-        }
-}
-
 static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 {
-    char buf_a[1024] = {0}, buf_b[1024] = {0};;
-
-    int port = SBSSpringBoardServerPort();
-    (void)SBLocalizedApplicationNameForDisplayIdentifier(port, [a UTF8String], buf_a, 1024);
-    (void)SBLocalizedApplicationNameForDisplayIdentifier(port, [b UTF8String], buf_b, 1024);
-
-    int ret = strcasecmp(buf_a, buf_b);
-    if (ret > 0)
-        return NSOrderedDescending;
-    else if (ret < 0)
-        return NSOrderedAscending;
-    else
-        return NSOrderedSame;
+    NSString *name_a = SBSCopyLocalizedApplicationNameForDisplayIdentifier(a);
+    NSString *name_b = SBSCopyLocalizedApplicationNameForDisplayIdentifier(b);
+    return [name_a caseInsensitiveCompare:name_b];
 }
 
 @interface HtmlAlertView : UIAlertView
@@ -165,20 +136,9 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
                 action:@selector(helpButtonTapped)]];
 
         // Enumerate applications
-        displayIdentifiers = [[NSMutableArray alloc] initWithCapacity:20];
-        CFPropertyListRef iconState = CFPreferencesCopyAppValue(CFSTR("iconState"), CFSTR("com.apple.springboard"));
-        id dock = [(NSDictionary *)iconState objectForKey:@"buttonBar"];
-        loadIdentifiersFromList(dock);
-        id iconLists = [(NSDictionary *)iconState objectForKey:@"iconLists"];
-        for (id list in iconLists)
-            loadIdentifiersFromList(list);
-        [displayIdentifiers sortUsingFunction:compareDisplayNames context:NULL];
-#if 0
-        char **buf = NULL;
-        int port = SBSSpringBoardServerPort();
-        int ret = SBApplicationDisplayIdentifiers(port, 10, 10, buf);
-        NSLog(@"Backgrounder: RETURN val: %d", ret);
-#endif
+        id array = SBSCopyApplicationDisplayIdentifiers(NO, NO);
+        displayIdentifiers = [[array sortedArrayUsingFunction:compareDisplayNames context:NULL] retain];
+        [array release];
     }
     return self;
 }
@@ -231,18 +191,14 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
         // Cell does not exist, create a new one
         cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
 
-    int port = SBSSpringBoardServerPort();
+    NSString *identifier = [displayIdentifiers objectAtIndex:indexPath.row];
 
-    const char *identifier = [[displayIdentifiers objectAtIndex:indexPath.row] UTF8String];
-    char buf[1024] = {0};
+    NSString *displayName = SBSCopyLocalizedApplicationNameForDisplayIdentifier(identifier);
+    [cell setText:displayName];
 
-    int ret = SBLocalizedApplicationNameForDisplayIdentifier(port, identifier, buf, 1024);
-    if (ret == 0)
-        [cell setText:[NSString stringWithUTF8String:buf]];
-
-    ret = SBIconImagePathForDisplayIdentifier(port, identifier, buf, 1024);
-    if (ret == 0) {
-        UIImage *icon = [UIImage imageWithContentsOfFile:[NSString stringWithUTF8String:buf]];
+    NSString *iconPath = SBSCopyIconImagePathForDisplayIdentifier(identifier);
+    if (iconPath != nil) {
+        UIImage *icon = [UIImage imageWithContentsOfFile:iconPath];
         icon = [icon _imageScaledToSize:CGSizeMake(35, 36) interpolationQuality:0];
         [cell setImage:icon];
     }
