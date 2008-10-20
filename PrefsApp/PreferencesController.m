@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-20 19:51:17
+ * Last-modified: 2008-10-20 21:49:12
  */
 
 /**
@@ -402,6 +402,8 @@
 
 @implementation PreferencesController
 
+@synthesize displayIdentifiers;
+
 - (id)init
 {
     self = [super init];
@@ -417,6 +419,11 @@
     return self;
 }
 
+- (void)dealloc
+{
+    [displayIdentifiers release];
+    [super dealloc];
+}
 @end
 
 /* vim: set syntax=objc sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */

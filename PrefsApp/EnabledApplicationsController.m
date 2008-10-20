@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-20 11:38:14
+ * Last-modified: 2008-10-20 21:57:30
  */
 
 /**
@@ -49,11 +49,11 @@
 #import <CoreFoundation/CFPreferences.h>
 
 #import <Foundation/NSArray.h>
-#import <Foundation/NSDictionary.h>
-#import <Foundation/NSRange.h>
+#import <Foundation/NSRunLoop.h>
 #import <Foundation/NSString.h>
 
 #import <UIKit/NSIndexPath-UITableView.h>
+#import <UIKit/UIActivityIndicatorView.h>
 @protocol UIAlertViewDelegate;
 typedef struct {} CDAnonymousStruct7;
 #import <UIKit/UIAlertView.h>
@@ -61,8 +61,10 @@ typedef struct {} CDAnonymousStruct7;
 typedef struct {} CDAnonymousStruct2;
 #import <UIKit/UIBarButtonItem.h>
 #import <UIKit/UIColor.h>
+#import <UIKit/UIFont.h>
 #import <UIKit/UIImage.h>
 #import <UIKit/UIImage-UIImageInternal.h>
+#import <UIKit/UILabel.h>
 #import <UIKit/UINavigationController.h>
 #import <UIKit/UINavigationItem.h>
 #import <UIKit/UIScreen.h>
@@ -77,12 +79,12 @@ typedef struct {} CDAnonymousStruct14;
 #import <UIKit/UIView-Rendering.h>
 #import <UIKit/UIViewController-UINavigationControllerItem.h>
 
+#import "PreferencesController.h"
+
 extern id SBSCopyApplicationDisplayIdentifiers(BOOL onlyActive, BOOL unknown);
 extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
 extern NSString * SBSCopyIconImagePathForDisplayIdentifier(NSString *identifier);
 
-
-static NSMutableArray *displayIdentifiers = nil;
 
 static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 {
@@ -134,11 +136,6 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
              [[UIBarButtonItem alloc] initWithTitle:@"Help" style:5
                 target:self
                 action:@selector(helpButtonTapped)]];
-
-        // Enumerate applications
-        id array = SBSCopyApplicationDisplayIdentifiers(NO, NO);
-        displayIdentifiers = [[array sortedArrayUsingFunction:compareDisplayNames context:NULL] retain];
-        [array release];
     }
     return self;
 }
@@ -159,9 +156,56 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
     [table setDelegate:nil];
     [table release];
 
-    [displayIdentifiers release];
-
     [super dealloc];
+}
+
+- (void)enumerateApplications
+{
+    NSArray *array = SBSCopyApplicationDisplayIdentifiers(NO, NO);
+    NSArray *sortedArray = [array sortedArrayUsingFunction:compareDisplayNames context:NULL];
+    [[self navigationController] setDisplayIdentifiers:sortedArray];
+    [array release];
+    [table reloadData];
+
+    // Remove the progress indicator
+    [busyIndicator dismiss];
+    [busyIndicator release];
+}
+
+- (void)viewDidAppear:(BOOL)animated
+{
+    if ([[self navigationController] displayIdentifiers] != nil)
+        // Application list already loaded
+        return;
+
+    // Create a progress indicator
+    busyIndicator = [[UIAlertView alloc] init];
+    [busyIndicator setAlertSheetStyle:2];
+    [busyIndicator setDimsBackground:false];
+    [busyIndicator setRunsModal:false];
+
+    UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:0];
+    [spinner setCenter:CGPointMake(29, 44)];
+    [spinner startAnimating];
+    [busyIndicator addSubview:spinner];
+    [spinner release];
+
+    UILabel *label = [[UILabel alloc] init];
+    [label setFont:[UIFont boldSystemFontOfSize:20.0f]];
+    [label setText:@"Loading applications..."];
+    [label setTextColor:[UIColor whiteColor]];
+    [label setBackgroundColor:[UIColor clearColor]];
+    [label sizeToFit];
+    [label setCenter:CGPointMake(166, 44)];
+    [busyIndicator addSubview:label];
+    [label release];
+
+    // Show the indicator
+    [busyIndicator popupAlertAnimated:NO];
+
+    // Enumerate applications
+    // NOTE: Must call via performSelector, or busy indicator does not show in time
+    [self performSelector:@selector(enumerateApplications) withObject:nil afterDelay:0.1f];
 }
 
 #pragma mark - UITableViewDataSource
@@ -178,7 +222,7 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    return [displayIdentifiers count];
+    return [[[self navigationController] displayIdentifiers] count];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -191,7 +235,7 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
         // Cell does not exist, create a new one
         cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
 
-    NSString *identifier = [displayIdentifiers objectAtIndex:indexPath.row];
+    NSString *identifier = [[[self navigationController] displayIdentifiers] objectAtIndex:indexPath.row];
 
     NSString *displayName = SBSCopyLocalizedApplicationNameForDisplayIdentifier(identifier);
     [cell setText:displayName];
