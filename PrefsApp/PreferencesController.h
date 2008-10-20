@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-20 21:55:12
+ * Last-modified: 2008-10-20 22:11:09
  */
 
 /**
@@ -40,6 +40,8 @@
  */
 
 #import <UIKit/UINavigationController.h>
+
+@class NSArray;
 
 @interface PreferencesController : UINavigationController 
 {

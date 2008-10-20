@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-20 21:57:30
+ * Last-modified: 2008-10-20 22:40:33
  */
 
 /**
@@ -79,6 +79,7 @@ typedef struct {} CDAnonymousStruct14;
 #import <UIKit/UIView-Rendering.h>
 #import <UIKit/UIViewController-UINavigationControllerItem.h>
 
+#import "Preferences.h"
 #import "PreferencesController.h"
 
 extern id SBSCopyApplicationDisplayIdentifiers(BOOL onlyActive, BOOL unknown);
@@ -136,6 +137,10 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
              [[UIBarButtonItem alloc] initWithTitle:@"Help" style:5
                 target:self
                 action:@selector(helpButtonTapped)]];
+
+        // Get a copy of the list of currently enabled applications
+        enabledApplications = [[NSMutableArray alloc]
+            initWithArray:[[Preferences sharedInstance] enabledApplications]];
     }
     return self;
 }
@@ -155,6 +160,8 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
     [table setDataSource:nil];
     [table setDelegate:nil];
     [table release];
+
+    [enabledApplications release];
 
     [super dealloc];
 }
@@ -208,6 +215,12 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
     [self performSelector:@selector(enumerateApplications) withObject:nil afterDelay:0.1f];
 }
 
+- (void)viewWillDisappear:(BOOL)animated
+{
+    if (isModified)
+        [[Preferences sharedInstance] setEnabledApplications:enabledApplications];
+}
+
 #pragma mark - UITableViewDataSource
 
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
@@ -248,7 +261,8 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
     }
 
     UISwitch *toggle = [[UISwitch alloc] init];
-    //[toggle setOn:[[Preferences sharedInstance] shouldSuspend]];
+    [toggle setOn:[enabledApplications containsObject:identifier]];
+    [toggle addTarget:self action:@selector(switchToggled:) forControlEvents:64];
     [cell setAccessoryView:toggle];
     [toggle release];
 
@@ -277,6 +291,21 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
         htmlBody:@"This is some<br/>Neat stuff"] autorelease];
 //"Normally, backgrounding must be enabled manually for every new instance of an application. By selecting enabling an application on this screen (by setting its switch to ON), that application will automatically have backgrounding enabled upon launch."
     [alert show];
+}
+
+#pragma mark - Switch delegate
+
+- (void)switchToggled:(UISwitch *)control
+{
+    NSArray *displayIdentifiers = [[self navigationController] displayIdentifiers];
+
+    NSIndexPath *indexPath = [table indexPathForCell:[control superview]];
+    NSString *identifier = [displayIdentifiers objectAtIndex:indexPath.row];
+    if ([control isOn])
+        [enabledApplications addObject:identifier];
+    else
+        [enabledApplications removeObject:identifier];
+    isModified = YES;
 }
 
 @end
