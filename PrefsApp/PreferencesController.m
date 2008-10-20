@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-20 21:49:12
+ * Last-modified: 2008-10-20 23:04:39
  */
 
 /**
@@ -67,26 +67,9 @@
 #import "Preferences.h"
 
 
-@interface AboutPage : UIViewController
-{
-    UIPreferencesTable *table;
-}
-@end
-
-//______________________________________________________________________________
-//______________________________________________________________________________
-
 @interface PreferencesPage : UIViewController
 {
-#if 0
-    UIPreferencesTable *table;
-
-    PreferencesGroup *terminalGroup;
-
-    UIPreferencesControlTableCell *shortcutCell[MAX_PAGES];
-#else
     UITableView *table;
-#endif
 }
 
 @end
@@ -107,40 +90,9 @@
 
 - (void)loadView
 {
-#if 0
-    PreferencesDataSource *prefSource = [[PreferencesDataSource alloc] init];
-    PreferencesGroup *group;
-
-    // ----------------------------------------------------- toggle page buttons
- 
-#if 0
-    group = [PreferencesGroup groupWithTitle:@"Shortcuts" icon:nil];
-    for (int i = 0; i < MAX_PAGES; i++) {
-        ShortcutConfig *config = [Preferences configForShortcut:i];
-        shortcutCell[i] = [group addSwitch:config.name target:self action:@selector(shortcutSwitched:)];
-        [[shortcutCell[i] control] setOn:config.enabled];
-    }
-
-    [prefSource addGroup:group];
-#endif
-
-    // ---------------------------------------------------------- help & credits
-
-    group = [PreferencesGroup groupWithTitle:@"Help" icon:nil];
-    [group addPageButton:@"Documentation"];
-    [group addPageButton:@"About"];
-    [prefSource addGroup:group];
-
-    // -------------------------------------------------------- the table itself
-
-    table = [[UIPreferencesTable alloc]
-        initWithFrame:[[UIScreen mainScreen] applicationFrame]];
-    [table setDataSource:prefSource];
-#else
     table = [[UITableView alloc]
         initWithFrame:[[UIScreen mainScreen] applicationFrame] style:1];
     [table setDataSource:self];
-#endif
     [table setDelegate:self];
     [table reloadData];
     [self setView:table];
@@ -155,6 +107,15 @@
     [super dealloc];
 }
 
+- (void)setSaveButtonEnabled:(BOOL)enable
+{
+    UIBarButtonItem *item = nil;
+    if (enable)
+        item = [[UIBarButtonItem alloc] initWithTitle:@"Save" style:2
+            target:self action:@selector(saveButtonClicked)];
+    [[self navigationItem] setLeftBarButtonItem:item];
+}
+
 - (void)viewWillAppear:(BOOL)animated
 {
     // Reset the table by deselecting the current selection
@@ -162,58 +123,7 @@
 
     // If preferences have changed, show the save button
     if ([[Preferences sharedInstance] isModified])
-        [[self navigationItem] setLeftBarButtonItem:
-             [[UIBarButtonItem alloc] initWithTitle:@"Save" style:2
-                target:self action:@selector(saveButtonClicked)]];
-}
-
-#pragma mark Delegate methods
-
-- (void)shortcutSwitched:(UISwitch *)control
-{
-#if 0
-    NSLog(@"SuperJumpsPrefs: You toggled a switch!");
-    for (int i = 0; i < MAX_PAGES; i++) {
-        if (control == [shortcutCell[i] control]) {
-            ShortcutConfig *config = [Preferences configForShortcut:i];
-            config.enabled = [control isOn];
-            break;
-        }
-    }
-#endif
-}
-
-- (void)tableRowSelected:(NSNotification *)notification
-{
-    int row = [[notification object] selectedRow];
-    UIPreferencesTableCell *cell = [table cellAtRow:row column:0];
-    if (cell) {
-        NSString *title = [cell title];
-        UIViewController *vc = nil;
-
-#if 0
-        if ([title isEqualToString:@"Menu"])
-            vc = [[MenuPrefsPage alloc] initWithMenu:nil title:nil];
-        else if ([title isEqualToString:@"Gestures"])
-            vc = [[GesturePrefsPage alloc] initWithSwipes:0];
-        else if ([title isEqualToString:@"Long Swipes"])
-            vc = [[GesturePrefsPage alloc]initWithSwipes:1];
-        else if ([title isEqualToString:@"Two Finger Swipes"])
-            vc = [[GesturePrefsPage alloc]initWithSwipes:2];
-        else if ([title isEqualToString:@"About"])
-            vc = [[AboutPage alloc] init];
-        else {
-            // Must be a Terminal cell
-            terminalIndex = [[title substringFromIndex:9] intValue] - 1;
-            vc = [[TerminalPrefsPage alloc] initWithIndex:terminalIndex];
-        }
-
-        if (vc) {
-            [[self navigationController] pushViewController:vc animated:YES];
-            [vc release];
-        }
-#endif
-    }
+        [self setSaveButtonEnabled:YES];
 }
 
 #pragma mark - UITableViewDataSource
@@ -287,6 +197,7 @@
                 [cell setSelectionStyle:0];
                 UISwitch *toggle = [[UISwitch alloc] init];
                 [toggle setOn:[[Preferences sharedInstance] shouldSuspend]];
+                [toggle addTarget:self action:@selector(switchToggled:) forControlEvents:64];
                 [cell setAccessoryView:toggle];
                 [toggle release];
             }
@@ -393,6 +304,15 @@
     else
         // Exit to SpringBoard
         [[UIApplication sharedApplication] suspendWithAnimation:NO];
+}
+
+#pragma mark - Switch delegate
+
+- (void)switchToggled:(UISwitch *)control
+{
+    [[Preferences sharedInstance] setShouldSuspend:[control isOn]];
+    if ([[Preferences sharedInstance] isModified])
+        [self setSaveButtonEnabled:YES];
 }
 
 @end
