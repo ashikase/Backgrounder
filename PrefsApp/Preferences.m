@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-19 22:55:10
+ * Last-modified: 2008-10-20 19:47:41
  */
 
 /**
@@ -144,36 +144,36 @@ static NSArray *allowedFeedbackTypes = nil;
 {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     
-    NSString *value = [defaults stringForKey:@"invocationMethod"];
-    unsigned int index = [allowedInvocationMethods indexOfObject:value];
-    self.invocationMethod = (index == NSNotFound) ? 0 : index;
+    NSString *prefString = [defaults stringForKey:@"invocationMethod"];
+    unsigned int index = [allowedInvocationMethods indexOfObject:prefString];
+    invocationMethod = (index == NSNotFound) ? 0 : index;
 
-    value = [defaults stringForKey:@"feedbackType"];
-    index = [allowedFeedbackTypes indexOfObject:value];
-    self.feedbackType = (index == NSNotFound) ? 0 : index;
+    prefString = [defaults stringForKey:@"feedbackType"];
+    index = [allowedFeedbackTypes indexOfObject:prefString];
+    feedbackType = (index == NSNotFound) ? 0 : index;
 
-    self.shouldSuspend = [defaults boolForKey:@"shouldSuspend"];
-    self.enabledApplications = [defaults arrayForKey:@"enabledApplications"];
+    shouldSuspend = [defaults boolForKey:@"shouldSuspend"];
+    enabledApplications = [[defaults arrayForKey:@"enabledApplications"] retain];
 }
 
 - (void)writeUserDefaults
 {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
 
-    NSString *value = nil;
+    NSString *prefString = nil;
     @try {
-        value = [allowedInvocationMethods objectAtIndex:feedbackType];
-        if (value)
-            [defaults setObject:value forKey:@"invocationMethod"];
+        prefString = [allowedInvocationMethods objectAtIndex:invocationMethod];
+        if (prefString)
+            [defaults setObject:prefString forKey:@"invocationMethod"];
     }
     @catch (NSException *exception) {
         // Ignore the exception (assumed to be NSRangeException)
     }
 
     @try {
-        value = [allowedFeedbackTypes objectAtIndex:feedbackType];
-        if (value)
-            [defaults setObject:value forKey:@"feedbackType"];
+        prefString = [allowedFeedbackTypes objectAtIndex:feedbackType];
+        if (prefString)
+            [defaults setObject:prefString forKey:@"feedbackType"];
     }
     @catch (NSException *exception) {
         // Ignore the exception (assumed to be NSRangeException)

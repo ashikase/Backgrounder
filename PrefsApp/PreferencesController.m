@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-18 22:24:17
+ * Last-modified: 2008-10-20 19:51:17
  */
 
 /**
@@ -74,84 +74,6 @@
 @end
 
 //______________________________________________________________________________
-
-@implementation AboutPage
-
-- (id)init
-{
-    self = [super initWithNibName:nil bundle:nil];
-    if (self) {
-        [self setTitle:@"About"];
-    }
-    return self;
-}
-
-- (void)loadView
-{
-#if 0
-    PreferencesDataSource *prefSource = [[[PreferencesDataSource alloc] init] retain];
-    PreferencesGroup *group;
-
-#if 0
-    group = [PreferencesGroup groupWithTitle:@"MobileTerminal" icon:nil];
-    [group addValueField:@"Version" value:[NSString stringWithFormat:@"1.0 (%@)", SVN_VERSION]];
-    [prefSource addGroup:group];
-#endif
-
-    group = [PreferencesGroup groupWithTitle:@"Homepage" icon:nil];
-    [group addPageButton:@"code.google.com/p/iphone-backgrounder"];
-    [prefSource addGroup:group];
-
-    group = [PreferencesGroup groupWithTitle:@"Contributors" icon:nil];
-    [group addValueField:nil value:@"ashikase"];
-    [prefSource addGroup:group];
-
-    group = [PreferencesGroup groupWithTitle:@"Acknowledgements" icon:nil];
-    [group addValueField:nil value:@"saurik - for Mobile Substrate"];
-    [group addValueField:nil value:@"BigBoss - for hosting"];
-    [group addValueField:nil value:@"End uers - for feedback and kind words"];
-    [prefSource addGroup:group];
-
-    table = [[UIPreferencesTable alloc]
-        initWithFrame:[[UIScreen mainScreen] applicationFrame]];
-    [table setDataSource:prefSource];
-    [table setDelegate:self];
-    [table reloadData];
-    [self setView:table];
-    [table release];
-#endif
-}
-
-- (void)dealloc
-{
-#if 0
-    [table setDataSource:nil];
-    [table setDelegate:nil];
-    [table release];
-#endif
-
-    [super dealloc];
-}
-
-- (void)viewWillAppear:(BOOL)animated
-{
-    // Reset the table by deselecting the current selection
-}
-
-#pragma mark Delegate methods
-
-- (void)tableRowSelected:(NSNotification *)notification
-{
-#if 0
-    if ( [[self view] selectedRow] == 3 )
-        [[UIApplication sharedApplication] openURL:
-                         [NSURL URLWithString:@"http://code.google.com/p/iphone-backgrounder/"]];
-#endif
-}
-
-@end
-
-//______________________________________________________________________________
 //______________________________________________________________________________
 
 @interface PreferencesPage : UIViewController
@@ -178,10 +100,6 @@
     self = [super initWithNibName:nil bundle:nil];
     if (self) {
         [self setTitle:@"Backgrounder Prefs"];
-        [[self navigationItem] setLeftBarButtonItem:
-             [[UIBarButtonItem alloc] initWithTitle:@"Save" style:5
-                target:self
-                action:@selector(saveButtonClicked)]];
         [[self navigationItem] setBackButtonTitle:@"Back"];
     }
     return self;
@@ -241,6 +159,12 @@
 {
     // Reset the table by deselecting the current selection
     [table deselectRowAtIndexPath:[table indexPathForSelectedRow] animated:YES];
+
+    // If preferences have changed, show the save button
+    if ([[Preferences sharedInstance] isModified])
+        [[self navigationItem] setLeftBarButtonItem:
+             [[UIBarButtonItem alloc] initWithTitle:@"Save" style:2
+                target:self action:@selector(saveButtonClicked)]];
 }
 
 #pragma mark Delegate methods
@@ -296,7 +220,6 @@
 
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-    // Two sections: "current" and "other" applications
 	return 3;
 }
 
@@ -320,10 +243,10 @@
     switch (section) {
         case 0:
             // General
-            return 3;
+            return 2;
         case 1:
             // Applications
-            return 1;
+            return 2;
         case 2:
             // Help
             return 1;
@@ -350,8 +273,14 @@
             // General
             if (indexPath.row == 0) {
                 [cell setText:@"Invocation method"];
-            } else if (indexPath.row == 1) {
+            } else {
                 [cell setText:@"Feedback type"];
+            }
+            break;
+        case 1:
+            // Applications
+            if (indexPath.row == 0) {
+                [cell setText:@"Enabled at launch"];
             } else {
                 [cell setText:@"Suspend on toggle"];
                 [cell setAccessoryType:0];
@@ -362,13 +291,9 @@
                 [toggle release];
             }
             break;
-        case 1:
-            // Applications
-            [cell setText:@"Enabled at launch"];
-            break;
         case 2:
             // Help
-            [cell setText:@"Project Homepage"];
+            [cell setText:@"Visit the Project Homepage"];
             break;
     }
 
@@ -447,7 +372,10 @@
 
 - (void)saveButtonClicked
 {
+    // Save the preferences to disk
     [[Preferences sharedInstance] writeUserDefaults];
+
+    // Ask if user wants to restart now
     UIActionSheet *sheet = [[[UIActionSheet alloc]
         initWithTitle:@"SpringBoard must be restarted for changes to take effect."
              delegate:self cancelButtonTitle:@"Return to SpringBoard" destructiveButtonTitle:@"Restart Now" otherButtonTitles:nil] autorelease];
@@ -460,7 +388,11 @@
 - (void)actionSheet:(UIActionSheet *)sheet didDismissWithButtonIndex:(int)index
 {
     if (index == 0)
-        [[UIApplication sharedApplication] terminateWithSuccess];
+        // Kill SpringBoard (will be relaunched automatically)
+        system("/usr/bin/killall SpringBoard");
+    else
+        // Exit to SpringBoard
+        [[UIApplication sharedApplication] suspendWithAnimation:NO];
 }
 
 @end
@@ -483,12 +415,6 @@
             [[[PreferencesPage alloc] init] autorelease] animated:NO];
     }
     return self;
-}
-
-- (void)viewWillDisappear:(BOOL)animated
-{
-    // Save the preferences to disk
-    [[Preferences sharedInstance] writeUserDefaults];
 }
 
 @end
