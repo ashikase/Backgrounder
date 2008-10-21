@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-21 21:49:39
+ * Last-modified: 2008-10-21 23:22:24
  */
 
 /**
@@ -213,6 +213,7 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
     if (cell == nil)
         // Cell does not exist, create a new one
         cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
+    [cell setSelectionStyle:0];
 
     NSString *identifier = [[[self navigationController] displayIdentifiers] objectAtIndex:indexPath.row];
 
@@ -233,13 +234,6 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
     [toggle release];
 
     return cell;
-}
-
-#pragma mark - UITableViewCellDelegate
-
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    [[self navigationController] popToRootViewControllerAnimated:YES];
 }
 
 #pragma mark - Navigation bar delegates
