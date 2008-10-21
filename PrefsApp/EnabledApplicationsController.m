@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-20 22:40:33
+ * Last-modified: 2008-10-21 21:49:39
  */
 
 /**
@@ -49,15 +49,12 @@
 #import <CoreFoundation/CFPreferences.h>
 
 #import <Foundation/NSArray.h>
+#import <Foundation/NSBundle.h>
 #import <Foundation/NSRunLoop.h>
 #import <Foundation/NSString.h>
 
 #import <UIKit/NSIndexPath-UITableView.h>
 #import <UIKit/UIActivityIndicatorView.h>
-@protocol UIAlertViewDelegate;
-typedef struct {} CDAnonymousStruct7;
-#import <UIKit/UIAlertView.h>
-#import <UIKit/UIAlertView-Private.h>
 typedef struct {} CDAnonymousStruct2;
 #import <UIKit/UIBarButtonItem.h>
 #import <UIKit/UIColor.h>
@@ -72,12 +69,13 @@ typedef struct {} CDAnonymousStruct2;
 @protocol UITableViewDataSource;
 #import <UIKit/UITableView.h>
 #import <UIKit/UITableViewCell.h>
-typedef struct {} CDAnonymousStruct14;
-#import <UIKit/UITextView.h>
 #import <UIKit/UIView-Geometry.h>
 #import <UIKit/UIView-Hierarchy.h>
 #import <UIKit/UIView-Rendering.h>
 #import <UIKit/UIViewController-UINavigationControllerItem.h>
+
+#import "HtmlAlertView.h"
+#import <UIKit/UIAlertView-Private.h>
 
 #import "Preferences.h"
 #import "PreferencesController.h"
@@ -93,38 +91,6 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
     NSString *name_b = SBSCopyLocalizedApplicationNameForDisplayIdentifier(b);
     return [name_a caseInsensitiveCompare:name_b];
 }
-
-@interface HtmlAlertView : UIAlertView
-@end
-
-@implementation HtmlAlertView
-
-- (id)initWithTitle:(NSString *)title htmlBody:(NSString *)htmlBody
-{
-    self = [super init];
-    if (self) {
-        [self setTitle:title];
-        [self addButtonWithTitle:@"Close"];
-        [self setCancelButtonIndex:0];
-
-        UITextView *textView = [[UITextView alloc] initWithFrame:
-            CGRectMake(0, 0, 200, 200)];
-        [textView setContentToHTMLString:htmlBody];
-        [textView sizeToFit];
-        NSLog(@"Backgrounder: title width: %f, height: %f", [textView bounds].size.width, [textView bounds].size.height);
-        [textView setTextColor:[UIColor whiteColor]];
-        [textView setBackgroundColor:[UIColor clearColor]];
-        [self addSubview:textView];
-        [textView release];
-
-        Ivar ivar = class_getInstanceVariable([self class], "_bodyTextHeight");
-        float *bodyTextHeight = (float *)((char *)self + ivar_getOffset(ivar));
-        *bodyTextHeight = 200.0f;
-    }
-    return self;
-}
-
-@end
 
 @implementation EnabledApplicationsController
 
@@ -280,17 +246,14 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 
 - (void)helpButtonTapped
 {
-#if 0
-    UIAlertView *alert = [[[UIAlertView alloc]
-        initWithTitle:@"Help" message:nil
-             delegate:nil cancelButtonTitle:@"Close" otherButtonTitles:nil] autorelease];
-#endif
-    //UIAlertView *alert = [[[UIAlertView alloc] initWithFrame:CGRectMake(0, 0, 300, 300)] autorelease];
-    HtmlAlertView *alert = [[[HtmlAlertView alloc]
-        initWithTitle:@"Explanation"
-        htmlBody:@"This is some<br/>Neat stuff"] autorelease];
-//"Normally, backgrounding must be enabled manually for every new instance of an application. By selecting enabling an application on this screen (by setting its switch to ON), that application will automatically have backgrounding enabled upon launch."
-    [alert show];
+    // Create and show help popup
+    NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
+    NSString *filePath = [bundlePath stringByAppendingString:@"/enabledApplications.html"];
+
+    HtmlAlertView *alertView = [[[HtmlAlertView alloc]
+        initWithContentsOfFile:filePath title:@"Explanation"] autorelease];
+
+    [alertView show];
 }
 
 #pragma mark - Switch delegate
