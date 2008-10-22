@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-22 16:51:53
+ * Last-modified: 2008-10-22 19:06:18
  */
 
 /**
@@ -127,8 +127,8 @@ typedef struct {} CDAnonymousStruct2;
 {
     UIBarButtonItem *item = nil;
     if (enable)
-        item = [[UIBarButtonItem alloc] initWithTitle:@"Save" style:2
-            target:self action:@selector(saveButtonClicked)];
+        item = [[[UIBarButtonItem alloc] initWithTitle:@"Save" style:2
+            target:self action:@selector(saveButtonClicked)] autorelease];
     [[self navigationItem] setLeftBarButtonItem:item];
 }
 
@@ -161,7 +161,6 @@ typedef struct {} CDAnonymousStruct2;
         default:
             return nil;
     }
-    return (section == 0) ? @"Current Application" : @"Other Applications";
 }
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
@@ -231,32 +230,6 @@ typedef struct {} CDAnonymousStruct2;
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-#if 0
-    [tableView deselectRowAtIndexPath:indexPath animated:YES];
-
-    if (indexPath.section == 1) {
-        // Selected a row under "Other applications"
-
-        // Enable backgrounding for current application
-        Class $SpringBoard(objc_getClass("SpringBoard"));
-        SpringBoard *springBoard = [$SpringBoard sharedApplication];
-        [springBoard setBackgroundingEnabled:YES forDisplayIdentifier:[[self alert] currentApp]];
-
-        // Switch to selected application
-        Class $SBUIController(objc_getClass("SBUIController"));
-        SBUIController *uiCont = [$SBUIController sharedInstance];
-        if (indexPath.row == 0) {
-            // SpringBoard was selected
-            [uiCont quitTopApplication];
-        } else {
-            NSArray *otherApps = [[self alert] otherApps];
-            Class $SpringBoard(objc_getClass("SpringBoard"));
-            SpringBoard *sb = [$SpringBoard sharedApplication];
-            NSLog(@"Backgrounder: asking to swtich to: %@", [otherApps objectAtIndex:indexPath.row]);
-            [sb switchToAppWithDisplayIdentifier:[otherApps objectAtIndex:indexPath.row]];
-        }
-    }
-#else
     switch (indexPath.section) {
         case 0:
             // General
@@ -292,7 +265,6 @@ typedef struct {} CDAnonymousStruct2;
                 break;
             break;
     }
-#endif
 }
 
 #pragma mark - Navigation bar delegates
