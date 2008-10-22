@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-20 23:04:39
+ * Last-modified: 2008-10-22 16:51:53
  */
 
 /**
@@ -41,18 +41,28 @@
 
 #import "PreferencesController.h"
 
-#import <UIKit/UIKit.h>
+#include <stdlib.h>
+
+#import <CoreGraphics/CGGeometry.h>
+
+#import <Foundation/NSBundle.h>
+#import <Foundation/NSRange.h>
+#import <Foundation/NSURL.h>
+
+// FIXME: move CDAnonymousStruct typedefs to a separate header file
+#import "HtmlAlertView.h"
 
 #import <UIKit/NSIndexPath-UITableView.h>
 @protocol UIActionSheetDelegate;
 #import <UIKit/UIActionSheet.h>
+#import <UIKit/UIApplication.h>
+typedef struct {} CDAnonymousStruct2;
 #import <UIKit/UIBarButtonItem.h>
 #import <UIKit/UIBezierPath-UIInternal.h>
 #import <UIKit/UIFieldEditor.h>
 #import <UIKit/UIFont.h>
-#import <UIKit/UIOldSliderControl.h>
-#import <UIKit/UIPreferencesControlTableCell.h>
-#import <UIKit/UIPreferencesTextTableCell.h>
+#import <UIKit/UINavigationBar.h>
+#import <UIKit/UINavigationItem.h>
 #import <UIKit/UIScreen.h>
 #import <UIKit/UISimpleTableCell.h>
 #import <UIKit/UISwitch.h>
@@ -65,6 +75,8 @@
 #import "FeedbackTypeController.h"
 #import "InvocationMethodController.h"
 #import "Preferences.h"
+
+#define HELP_FILE "/mainPage.html"
 
 
 @interface PreferencesPage : UIViewController
@@ -84,6 +96,10 @@
     if (self) {
         [self setTitle:@"Backgrounder Prefs"];
         [[self navigationItem] setBackButtonTitle:@"Back"];
+        [[self navigationItem] setRightBarButtonItem:
+             [[UIBarButtonItem alloc] initWithTitle:@"Help" style:5
+                target:self
+                action:@selector(helpButtonTapped)]];
     }
     return self;
 }
@@ -141,7 +157,7 @@
         case 1:
             return @"Applications";
         case 2:
-            return @"Help";
+            return @"Other";
         default:
             return nil;
     }
@@ -203,8 +219,8 @@
             }
             break;
         case 2:
-            // Help
-            [cell setText:@"Visit the Project Homepage"];
+            // Other
+            [cell setText:@"Visit the project homepage"];
             break;
     }
 
@@ -267,7 +283,7 @@
             }
             break;
         case 2:
-            // Help
+            // Other
             if (indexPath.row == 0)
                 // Documentation
                 [[UIApplication sharedApplication] openURL:
@@ -313,6 +329,20 @@
     [[Preferences sharedInstance] setShouldSuspend:[control isOn]];
     if ([[Preferences sharedInstance] isModified])
         [self setSaveButtonEnabled:YES];
+}
+
+#pragma mark - Navigation bar delegates
+
+- (void)helpButtonTapped
+{
+    // Create and show help popup
+    NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
+    NSString *filePath = [bundlePath stringByAppendingString:@HELP_FILE];
+
+    HtmlAlertView *alertView = [[[HtmlAlertView alloc]
+        initWithContentsOfFile:filePath title:@"Explanation"] autorelease];
+
+    [alertView show];
 }
 
 @end

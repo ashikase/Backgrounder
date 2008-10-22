@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-21 23:22:24
+ * Last-modified: 2008-10-22 16:53:18
  */
 
 /**
@@ -83,6 +83,8 @@ typedef struct {} CDAnonymousStruct2;
 extern id SBSCopyApplicationDisplayIdentifiers(BOOL onlyActive, BOOL unknown);
 extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
 extern NSString * SBSCopyIconImagePathForDisplayIdentifier(NSString *identifier);
+
+#define HELP_FILE "/enabledApplications.html"
 
 
 static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
@@ -236,20 +238,6 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
     return cell;
 }
 
-#pragma mark - Navigation bar delegates
-
-- (void)helpButtonTapped
-{
-    // Create and show help popup
-    NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
-    NSString *filePath = [bundlePath stringByAppendingString:@"/enabledApplications.html"];
-
-    HtmlAlertView *alertView = [[[HtmlAlertView alloc]
-        initWithContentsOfFile:filePath title:@"Explanation"] autorelease];
-
-    [alertView show];
-}
-
 #pragma mark - Switch delegate
 
 - (void)switchToggled:(UISwitch *)control
@@ -263,6 +251,20 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
     else
         [enabledApplications removeObject:identifier];
     isModified = YES;
+}
+
+#pragma mark - Navigation bar delegates
+
+- (void)helpButtonTapped
+{
+    // Create and show help popup
+    NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
+    NSString *filePath = [bundlePath stringByAppendingString:@HELP_FILE];
+
+    HtmlAlertView *alertView = [[[HtmlAlertView alloc]
+        initWithContentsOfFile:filePath title:@"Explanation"] autorelease];
+
+    [alertView show];
 }
 
 @end

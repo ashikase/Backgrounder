@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-19 23:08:35
+ * Last-modified: 2008-10-22 16:52:27
  */
 
 /**
@@ -44,18 +44,25 @@
 #import <CoreGraphics/CGGeometry.h>
 #import <QuartzCore/CALayer.h>
 
+#import <Foundation/NSBundle.h>
 #import <Foundation/NSRange.h>
+#import <Foundation/NSString.h>
 
 #import <UIKit/NSIndexPath-UITableView.h>
-#import <UIKit/UINavigationController.h>
-#import <UIKit/UIScreen.h>
 typedef struct {} CDAnonymousStruct2;
+#import <UIKit/UIBarButtonItem.h>
+#import <UIKit/UINavigationController.h>
+#import <UIKit/UINavigationItem.h>
+#import <UIKit/UIScreen.h>
 @protocol UITableViewDataSource;
 #import <UIKit/UITableView.h>
 #import <UIKit/UITableViewCell.h>
 #import <UIKit/UIViewController-UINavigationControllerItem.h>
 
+#import "HtmlAlertView.h"
 #import "Preferences.h"
+
+#define HELP_FILE "/feedbackType.html"
 
 
 @implementation FeedbackTypeController
@@ -65,6 +72,10 @@ typedef struct {} CDAnonymousStruct2;
     self = [super initWithNibName:nil bundle:nil];
     if (self) {
         [self setTitle:@"Feedback Type"];
+        [[self navigationItem] setRightBarButtonItem:
+             [[UIBarButtonItem alloc] initWithTitle:@"Help" style:5
+                target:self
+                action:@selector(helpButtonTapped)]];
     }
     return self;
 }
@@ -137,6 +148,20 @@ typedef struct {} CDAnonymousStruct2;
         // Do not allow single tap method with simple popup
         [prefs setInvocationMethod:0];
     [[self navigationController] popToRootViewControllerAnimated:YES];
+}
+
+#pragma mark - Navigation bar delegates
+
+- (void)helpButtonTapped
+{
+    // Create and show help popup
+    NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
+    NSString *filePath = [bundlePath stringByAppendingString:@HELP_FILE];
+
+    HtmlAlertView *alertView = [[[HtmlAlertView alloc]
+        initWithContentsOfFile:filePath title:@"Explanation"] autorelease];
+
+    [alertView show];
 }
 
 @end
