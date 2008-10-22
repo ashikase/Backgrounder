@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-21 23:07:53
+ * Last-modified: 2008-10-22 11:27:31
  */
 
 /**
@@ -124,7 +124,7 @@ typedef struct {} CDAnonymousStruct14;
 
     // Create the HTML view
     UITextView *textView = [[UITextView alloc] initWithFrame:
-        CGRectMake(0, titleHeight, alertSize.width, alertSize.height - titleHeight - buttonHeight)];
+        CGRectMake(0, titleHeight, alertSize.width, alertSize.height - titleHeight - buttonHeight - 10)];
 
     NSString *content = nil;
     if (htmlString) {
