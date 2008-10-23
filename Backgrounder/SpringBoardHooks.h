@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-18 12:49:20
+ * Last-modified: 2008-10-23 15:15:09
  */
 
 /**
@@ -43,7 +43,7 @@
 
 @interface SpringBoard (Backgrounder)
 - (void)setBackgroundingEnabled:(BOOL)enable forDisplayIdentifier:(NSString *)identifier;
-- (void)backgrounderActivate;
+- (void)invokeBackgrounder;
 - (void)switchToAppWithDisplayIdentifier:(NSString *)identifier;
 @end
 
