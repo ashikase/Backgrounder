@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-18 13:27:31
+ * Last-modified: 2008-10-23 14:49:57
  */
 
 /**
@@ -131,6 +131,7 @@ static void $SBUIController$animateLaunchApplication$(SBUIController *self, SEL 
 
 // The alert window displays instructions when the home button is held down
 static NSTimer *activationTimer = nil;
+static BOOL activationTimerDidFire = NO;
 static id alert = nil;
 
 static void cancelActivationTimer()
@@ -168,12 +169,15 @@ static void $SpringBoard$menuButtonDown$(SpringBoard *self, SEL sel, GSEvent *ev
 {
     NSLog(@"Backgrounder: %s", __FUNCTION__);
 
+    // FIXME: If already invoked, should not set timer... right? (needs thought)
     if (invocationMethod == HOME_SHORT_PRESS) {
-        if ([[displayStacks objectAtIndex:0] topApplication] != nil)
+        if ([[displayStacks objectAtIndex:0] topApplication] != nil) {
             // Setup toggle-delay timer
             activationTimer = [[NSTimer scheduledTimerWithTimeInterval:0.7f
                 target:self selector:@selector(backgrounderActivate)
                 userInfo:nil repeats:NO] retain];
+            activationTimerDidFire = NO;
+        }
     }
 
     [self bg_menuButtonDown:event];
@@ -183,8 +187,8 @@ static void $SpringBoard$menuButtonUp$(SpringBoard *self, SEL sel, GSEvent *even
 {
     NSLog(@"Backgrounder: %s", __FUNCTION__);
 
-    if (invocationMethod == HOME_SHORT_PRESS)
-        // Stop activation timer (assuming that it has not already fired)
+    if (invocationMethod == HOME_SHORT_PRESS && !activationTimerDidFire)
+        // Stop activation timer
         cancelActivationTimer();
 
     [self bg_menuButtonUp:event];
@@ -192,27 +196,45 @@ static void $SpringBoard$menuButtonUp$(SpringBoard *self, SEL sel, GSEvent *even
 
 static void $SpringBoard$_handleMenuButtonEvent(SpringBoard *self, SEL sel)
 {
+    // Handle single tap
     NSLog(@"Backgrounder: %s", __FUNCTION__);
 
     if ([[displayStacks objectAtIndex:0] topApplication] != nil) {
+        // Is an application (not SpringBoard)
         Ivar ivar = class_getInstanceVariable([self class], "_menuButtonClickCount");
         unsigned int *_menuButtonClickCount = (unsigned int *)((char *)self + ivar_getOffset(ivar));
+        NSLog(@"Backgrounder: current value of buttonclick is %08x", *_menuButtonClickCount);
 
         // FIXME: This should be rearranged/cleaned-up, if possible
-        if (feedbackType == TASK_MENU_POPUP && alert != nil) {
-            // Hide and destroy the popup
-            dismissFeedback();
-            *_menuButtonClickCount = 0x8000;
-            return;
-        } else if (invocationMethod == HOME_SINGLE_TAP) {
-            [self  backgrounderActivate];
-        } else if (invocationMethod == HOME_SHORT_PRESS && !shouldSuspend) {
-            *_menuButtonClickCount = 0x8000;
-            return;
+        if (feedbackType == TASK_MENU_POPUP) {
+            if (alert != nil) {
+                // Task menu is visible
+                // FIXME: with short press, the task menu may have just been
+                // invoked...
+                if (activationTimerDidFire == NO)
+                    // Hide and destroy the task menu
+                    dismissFeedback();
+                *_menuButtonClickCount = 0x8000;
+            } else if (invocationMethod == HOME_SINGLE_TAP) {
+                // Invoke Backgrounder
+                [self backgrounderActivate];
+                *_menuButtonClickCount = 0x8000;
+            } else {
+                // Normal operation
+                [self bg__handleMenuButtonEvent];
+            }
+        } else { // SIMPLE_POPUP
+            if (invocationMethod == HOME_SINGLE_TAP) {
+                [self  backgrounderActivate];
+                *_menuButtonClickCount = 0x8000;
+            } else if (invocationMethod == HOME_SHORT_PRESS && !shouldSuspend) {
+                *_menuButtonClickCount = 0x8000;
+            }
         }
+    } else {
+        // Is SpringBoard
+        [self bg__handleMenuButtonEvent];
     }
-
-    [self bg__handleMenuButtonEvent];
 }
 
 static void $SpringBoard$handleMenuDoubleTap(SpringBoard *self, SEL sel)
@@ -280,6 +302,9 @@ static void $SpringBoard$backgrounderActivate(SpringBoard *self, SEL sel)
 {
     NSLog(@"Backgrounder: %s", __FUNCTION__);
 
+    if (invocationMethod == HOME_SHORT_PRESS)
+        activationTimerDidFire = YES;
+
     id app = [[displayStacks objectAtIndex:0] topApplication];
     if (app) {
         NSString *identifier = [app displayIdentifier];
@@ -292,8 +317,8 @@ static void $SpringBoard$backgrounderActivate(SpringBoard *self, SEL sel)
                      (isEnabled ? "Disabled" : "Enabled")];
 
             Class $BGAlertItem = objc_getClass("BackgrounderAlertItem");
-            alert = [[$BGAlertItem alloc] initWithTitle:status
-                message:@"(Continue holding to force-quit)"];
+            NSString *message = (invocationMethod == HOME_SHORT_PRESS) ? @"(Continue holding to force-quit)" : nil;
+            alert = [[$BGAlertItem alloc] initWithTitle:status message:message];
 
             Class $SBAlertItemsController(objc_getClass("SBAlertItemsController"));
             SBAlertItemsController *controller = [$SBAlertItemsController sharedInstance];
