@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-23 15:14:38
+ * Last-modified: 2008-10-25 10:06:34
  */
 
 /**
@@ -78,8 +78,6 @@ static int feedbackType = SIMPLE_POPUP;
 #define HOME_DOUBLE_TAP 2
 static int invocationMethod = HOME_SHORT_PRESS;
 
-static BOOL shouldSuspend = YES;
-
 NSMutableDictionary *activeApplications = nil;
 
 //______________________________________________________________________________
@@ -134,7 +132,7 @@ static NSTimer *invocationTimer = nil;
 static BOOL invocationTimerDidFire = NO;
 static id alert = nil;
 
-static void cancelActivationTimer()
+static void cancelInvocationTimer()
 {
     // Disable and release timer (may be nil)
     [invocationTimer invalidate];
@@ -189,7 +187,7 @@ static void $SpringBoard$menuButtonUp$(SpringBoard *self, SEL sel, GSEvent *even
 
     if (invocationMethod == HOME_SHORT_PRESS && !invocationTimerDidFire)
         // Stop activation timer
-        cancelActivationTimer();
+        cancelInvocationTimer();
 
     [self bg_menuButtonUp:event];
 }
@@ -207,27 +205,25 @@ static void $SpringBoard$_handleMenuButtonEvent(SpringBoard *self, SEL sel)
 
         // FIXME: This should be rearranged/cleaned-up, if possible
         if (feedbackType == TASK_MENU_POPUP) {
-            if (alert != nil) {
-                // Task menu is visible
+        if (alert != nil) {
+            // Task menu is visible
                 // FIXME: with short press, the task menu may have just been
                 // invoked...
                 if (invocationTimerDidFire == NO)
-                    // Hide and destroy the task menu
-                    dismissFeedback();
-                *_menuButtonClickCount = 0x8000;
-            } else if (invocationMethod == HOME_SINGLE_TAP) {
-                // Invoke Backgrounder
-                [self invokeBackgrounder];
-                *_menuButtonClickCount = 0x8000;
-            } else {
-                // Normal operation
-                [self bg__handleMenuButtonEvent];
-            }
+                // Hide and destroy the task menu
+                dismissFeedback();
+            *_menuButtonClickCount = 0x8000;
+        } else if (invocationMethod == HOME_SINGLE_TAP) {
+            // Invoke Backgrounder
+            [self invokeBackgrounder];
+            *_menuButtonClickCount = 0x8000;
+        } else {
+            // Normal operation
+            [self bg__handleMenuButtonEvent];
+        }
         } else { // SIMPLE_POPUP
             if (invocationMethod == HOME_SINGLE_TAP) {
                 [self  invokeBackgrounder];
-                *_menuButtonClickCount = 0x8000;
-            } else if (invocationMethod == HOME_SHORT_PRESS && !shouldSuspend) {
                 *_menuButtonClickCount = 0x8000;
             }
         }
