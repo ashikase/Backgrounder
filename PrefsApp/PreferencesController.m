@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-22 19:06:18
+ * Last-modified: 2008-10-23 21:32:07
  */
 
 /**
@@ -76,8 +76,6 @@ typedef struct {} CDAnonymousStruct2;
 #import "InvocationMethodController.h"
 #import "Preferences.h"
 
-#define HELP_FILE "/mainPage.html"
-
 
 @interface PreferencesPage : UIViewController
 {
@@ -96,10 +94,6 @@ typedef struct {} CDAnonymousStruct2;
     if (self) {
         [self setTitle:@"Backgrounder Prefs"];
         [[self navigationItem] setBackButtonTitle:@"Back"];
-        [[self navigationItem] setRightBarButtonItem:
-             [[UIBarButtonItem alloc] initWithTitle:@"Help" style:5
-                target:self
-                action:@selector(helpButtonTapped)]];
     }
     return self;
 }
@@ -171,9 +165,9 @@ typedef struct {} CDAnonymousStruct2;
             return 2;
         case 1:
             // Applications
-            return 2;
+            return 1;
         case 2:
-            // Help
+            // Other
             return 1;
         default:
             return 0;
@@ -204,8 +198,8 @@ typedef struct {} CDAnonymousStruct2;
             break;
         case 1:
             // Applications
-            if (indexPath.row == 0) {
-                [cell setText:@"Enabled at launch"];
+            [cell setText:@"Enabled at launch"];
+#if 0
             } else {
                 [cell setText:@"Suspend on toggle"];
                 [cell setAccessoryType:0];
@@ -216,6 +210,7 @@ typedef struct {} CDAnonymousStruct2;
                 [cell setAccessoryView:toggle];
                 [toggle release];
             }
+#endif
             break;
         case 2:
             // Other
@@ -242,9 +237,6 @@ typedef struct {} CDAnonymousStruct2;
                 // Feedback type
                 UIViewController *vc = [[[FeedbackTypeController alloc] init] autorelease];
                 [[self navigationController] pushViewController:vc animated:YES];
-                break;
-            } else {
-                // Suspend on toggle
                 break;
             }
             break;
@@ -296,26 +288,14 @@ typedef struct {} CDAnonymousStruct2;
 
 #pragma mark - Switch delegate
 
+#if 0
 - (void)switchToggled:(UISwitch *)control
 {
     [[Preferences sharedInstance] setShouldSuspend:[control isOn]];
     if ([[Preferences sharedInstance] isModified])
         [self setSaveButtonEnabled:YES];
 }
-
-#pragma mark - Navigation bar delegates
-
-- (void)helpButtonTapped
-{
-    // Create and show help popup
-    NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
-    NSString *filePath = [bundlePath stringByAppendingString:@HELP_FILE];
-
-    HtmlAlertView *alertView = [[[HtmlAlertView alloc]
-        initWithContentsOfFile:filePath title:@"Explanation"] autorelease];
-
-    [alertView show];
-}
+#endif
 
 @end
 
