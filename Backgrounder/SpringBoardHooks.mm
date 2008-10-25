@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-25 10:06:34
+ * Last-modified: 2008-10-26 01:28:41
  */
 
 /**
@@ -147,7 +147,7 @@ static void dismissFeedback()
 
     // Hide and release alert window (may be nil)
     if (feedbackType == TASK_MENU_POPUP)
-        [alert deactivate];
+        [[alert display] dismiss];
     else
         [alert dismiss];
     [alert release];

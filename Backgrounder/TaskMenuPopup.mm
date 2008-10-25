@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-18 12:50:28
+ * Last-modified: 2008-10-26 01:23:50
  */
 
 /**
@@ -163,6 +163,28 @@ static void $BGAlertDisplay$alertDisplayBecameVisible(SBAlertDisplay *self, SEL 
     //       implementation does nothing
 }
 
+static void $BGAlertDisplay$dismiss(SBAlertDisplay *self, SEL sel)
+{
+    // FIXME: The proper method for animating an SBAlertDisplay is currently
+    //        unknown; for now, the following method seems to work well enough
+
+    [UIView beginAnimations:nil context:NULL];
+    [UIView setAnimationDelegate:self];
+    [UIView setAnimationDidStopSelector:
+        @selector(alertDidAnimateOut:finished:context:)];
+    [self setOrigin:CGPointMake(0, [self bounds].size.height)];
+    [UIView commitAnimations];
+}
+
+static void $BGAlertDisplay$alertDidAnimateOut$finished$context$(SBAlertDisplay *self, SEL sel,
+    NSString *animationID, NSNumber *finished, void *context)
+{
+    // Continue dismissal by calling super's dismiss method
+    Class $SBAlertDisplay = objc_getClass("SBAlertDisplay");
+    objc_super $super = {self, $SBAlertDisplay};
+    objc_msgSendSuper(&$super, @selector(dismiss));
+}
+
 #pragma mark - UITableViewDataSource
 
 static int $BGAlertDisplay$numberOfSectionsInTableView$(id self, SEL sel, UITableView *tableView)
@@ -310,6 +332,10 @@ void initTaskMenuPopup()
             (IMP)&$BGAlertDisplay$initWithSize$, "@@:{CGSize=ff}");
     class_addMethod($BGAlertDisplay, @selector(alertDisplayBecameVisible),
             (IMP)&$BGAlertDisplay$alertDisplayBecameVisible, "v@:");
+    class_addMethod($BGAlertDisplay, @selector(dismiss),
+            (IMP)&$BGAlertDisplay$dismiss, "v@:");
+    class_addMethod($BGAlertDisplay, @selector(alertDidAnimateOut:finished:context:),
+            (IMP)&$BGAlertDisplay$alertDidAnimateOut$finished$context$, "v@:@@^v");
     // UITable-releated methods
     class_addMethod($BGAlertDisplay, @selector(numberOfSectionsInTableView:),
             (IMP)&$BGAlertDisplay$numberOfSectionsInTableView$, "i@:@");
@@ -337,7 +363,7 @@ void initTaskMenuPopup()
     class_addMethod($BGAlert, @selector(otherApps),
             (IMP)&$BGAlert$otherApps, "@@:");
     class_addMethod($BGAlert, @selector(alertDisplayViewWithSize:),
-            (IMP)&$BGAlert$alertDisplayViewWithSize$, "v@:{CGSize=ff}");
+            (IMP)&$BGAlert$alertDisplayViewWithSize$, "@@:{CGSize=ff}");
     objc_registerClassPair($BGAlert);
 }
 
