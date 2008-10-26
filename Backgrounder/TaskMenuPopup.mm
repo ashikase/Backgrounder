@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-26 01:23:50
+ * Last-modified: 2008-10-26 02:13:56
  */
 
 /**
@@ -245,8 +245,6 @@ static UITableViewCell * $BGAlertDisplay$tableView$cellForRowAtIndexPath$(id sel
 
 static void $BGAlertDisplay$tableView$didSelectRowAtIndexPath$(id self, SEL sel, UITableView *tableView, NSIndexPath *indexPath)
 {
-    [tableView deselectRowAtIndexPath:indexPath animated:YES];
-
     if (indexPath.section == 1) {
         // Selected a row under "Other applications"
 
