@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-26 02:05:00
+ * Last-modified: 2008-10-27 00:02:29
  */
 
 /**
@@ -374,8 +374,7 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
         SBApplication *currApp = [[displayStacks objectAtIndex:0] topApplication];
         [currApp setDeactivationSetting:0x2 flag:YES]; // animate
         [currApp setDeactivationSetting:0x10000 flag:YES]; // appToApp
-        //[currApp setDeactivationSetting:0x100 value:[NSNumber numberWithDouble:0.01]];
-        //[currApp setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0.4]];
+        [currApp setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0]];
 
         // The appToApp flag will cause activation to wait until the current
         // application deactivates
