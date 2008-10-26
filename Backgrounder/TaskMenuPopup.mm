@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-26 02:13:56
+ * Last-modified: 2008-10-26 22:48:48
  */
 
 /**
@@ -46,6 +46,9 @@
 #include <substrate.h>
 
 #import <CoreGraphics/CGAffineTransform.h>
+#import <CoreGraphics/CGBitmapContext.h>
+#import <CoreGraphics/CGContext.h>
+#import <CoreGraphics/CGImage.h>
 
 #import <Foundation/NSArray.h>
 #import <Foundation/NSString.h>
@@ -64,8 +67,12 @@ typedef struct {
     float bottom;
     float right;
 } CDAnonymousStruct2;
+#import <UIKit/UIButton.h>
+#import <UIKit/UIColor.h>
+#import <UIKit/UIFont.h>
 #import <UIKit/UIImage.h>
 #import <UIKit/UIImage-UIImageInternal.h>
+//#import <UIKit/UIImage-UIImagePrivate.h>
 #import <UIKit/UILabel.h>
 #import <UIKit/UINavigationBar.h>
 #import <UIKit/UINavigationBarBackground.h>
@@ -74,6 +81,7 @@ typedef struct {
 @protocol UITableViewDataSource;
 #import <UIKit/UITableView.h>
 #import <UIKit/UITableViewCell.h>
+//#import <UIKit/UITableViewCell-UITableViewCellStatic.h>
 #import <UIKit/UIView-Animation.h>
 #import <UIKit/UIView-Geometry.h>
 #import <UIKit/UIView-Hierarchy.h>
@@ -203,6 +211,39 @@ static int $BGAlertDisplay$tableView$numberOfRowsInSection$(id self, SEL sel, UI
     return (section == 0) ? 1 : [[[self alert] otherApps] count];
 }
 
+extern "C" UIImage * _UIImageWithName(NSString *name);
+
+static UIImage *imageForQuitButton()
+{
+    // Load the red circle image
+    CGImageRef circleRef = [_UIImageWithName(@"UIRemoveControlMinus.png") CGImage];
+    CGRect circleRect = CGRectMake(0, 0, CGImageGetWidth(circleRef), CGImageGetHeight(circleRef));
+
+    // Create a new context to draw to
+    CGContextRef context = CGBitmapContextCreate(NULL, circleRect.size.width, circleRect.size.height,
+            CGImageGetBitsPerComponent(circleRef), 4 * circleRect.size.width, CGImageGetColorSpace(circleRef),
+            CGImageGetAlphaInfo(circleRef));
+
+    // Draw the circle
+    CGContextDrawImage(context, circleRect, circleRef);
+
+    // Load and draw the minus sign
+    CGImageRef minusRef = [_UIImageWithName(@"UIRemoveControlMinusCenter.png") CGImage];
+    CGRect minusRect = CGRectMake(0, 0, CGImageGetWidth(minusRef), CGImageGetHeight(minusRef));
+    minusRect.origin.x = (circleRect.size.width - minusRect.size.width) / 2.0;
+    // NOTE: the offset starts at the lower left
+    minusRect.origin.y = 1 + (circleRect.size.height - minusRect.size.height) / 2.0;
+    CGContextDrawImage(context, minusRect, minusRef);
+
+    CGImageRef imageRef = CGBitmapContextCreateImage(context);
+
+    UIImage *image = [UIImage imageWithCGImage:imageRef];
+
+    CGContextRelease(context);
+    CGImageRelease(imageRef);
+
+    return image;
+}
 
 static UITableViewCell * $BGAlertDisplay$tableView$cellForRowAtIndexPath$(id self, SEL sel, UITableView *tableView, NSIndexPath *indexPath)
 {
@@ -217,26 +258,37 @@ static UITableViewCell * $BGAlertDisplay$tableView$cellForRowAtIndexPath$(id sel
 
     // Get the display identifier of the application for this cell
     NSString *identifier = nil;
-    if (indexPath.section == 0) {
+    if (indexPath.section == 0)
         identifier = [[self alert] currentApp];
-    } else {
+    else
         identifier = [[[self alert] otherApps] objectAtIndex:indexPath.row];
-    }
 
     // Get the SBApplication object
     Class $SBApplicationController(objc_getClass("SBApplicationController"));
     SBApplication *app = [[$SBApplicationController sharedInstance] applicationWithDisplayIdentifier:identifier];
 
-    // Set the cell text and image
+    // Set the cell's text to the name of the application
     [cell setText:[app displayName]];
-    UIImage *icon = nil;
+
+    // Set the cell's image to the application's icon image
+    UIImage *image = nil;
     if ([identifier isEqualToString:@"com.apple.springboard"]) {
-        icon = [UIImage imageWithContentsOfFile:@"/System/Library/CoreServices/SpringBoard.app/applelogo.png"];
-        icon = [icon _imageScaledToSize:CGSizeMake(59, 62) interpolationQuality:0];
+        image = [UIImage imageWithContentsOfFile:@"/System/Library/CoreServices/SpringBoard.app/applelogo.png"];
+        image = [image _imageScaledToSize:CGSizeMake(59, 62) interpolationQuality:0];
     } else {
-        icon = [UIImage imageWithContentsOfFile:[app pathForIcon]];
+        image = [UIImage imageWithContentsOfFile:[app pathForIcon]];
     }
-    [cell setImage:icon];
+    [cell setImage:image];
+
+    // Add a quit button to the cell
+    // NOTE: The button frame is set to be as tall as the row, and slightly
+    //       wider than the button image; this is doen to provide an easy-to-hit
+    //       "tap zone".
+    UIButton *button = [[UIButton alloc] initWithFrame:CGRectMake(0, 0, 35, 68)];
+    [button setImage:imageForQuitButton() forState:0];
+    [button addTarget:tableView action:@selector(_accessoryButtonAction:) forControlEvents:64];
+    [cell setAccessoryView:button];
+    [button release];
 
     return cell;
 }
@@ -267,6 +319,26 @@ static void $BGAlertDisplay$tableView$didSelectRowAtIndexPath$(id self, SEL sel,
             [sb switchToAppWithDisplayIdentifier:[otherApps objectAtIndex:indexPath.row]];
         }
     }
+}
+
+static void $BGAlertDisplay$tableView$accessoryButtonTappedForRowWithIndexPath$(id self, SEL sel, UITableView *tableView, NSIndexPath *indexPath)
+{
+    NSLog(@"Backgrounder: accessory tapped for cell in section %d, row %d", indexPath.section, indexPath.row);
+    #if 0
+    // Get the display identifier of the application for this cell
+    NSString *identifier = nil;
+    if (indexPath.section == 0)
+        identifier = [[self alert] currentApp];
+    else
+        identifier = [[[self alert] otherApps] objectAtIndex:indexPath.row];
+
+    // Get the SBApplication object
+    Class $SBApplicationController(objc_getClass("SBApplicationController"));
+    SBApplication *app = [[$SBApplicationController sharedInstance] applicationWithDisplayIdentifier:identifier];
+
+    // Quit the application
+    // FIXME: should pass this to SpringBoard (quitBackgroundedApplication?)
+    #endif
 }
 
 //______________________________________________________________________________
@@ -345,6 +417,8 @@ void initTaskMenuPopup()
             (IMP)&$BGAlertDisplay$tableView$cellForRowAtIndexPath$, "@@:@@");
     class_addMethod($BGAlertDisplay, @selector(tableView:didSelectRowAtIndexPath:),
             (IMP)&$BGAlertDisplay$tableView$didSelectRowAtIndexPath$, "v@:@@");
+    class_addMethod($BGAlertDisplay, @selector(tableView:accessoryButtonTappedForRowWithIndexPath:),
+            (IMP)&$BGAlertDisplay$tableView$accessoryButtonTappedForRowWithIndexPath$, "v@:@@");
     objc_registerClassPair($BGAlertDisplay);
 
     // Create custom alert class
