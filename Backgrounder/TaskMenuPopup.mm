@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-26 22:48:48
+ * Last-modified: 2008-10-26 23:35:58
  */
 
 /**
@@ -59,6 +59,7 @@
 #import <SpringBoard/SBUIController.h>
 
 #import <UIKit/NSIndexPath-UITableView.h>
+#import <UIKit/UIActivityIndicatorView.h>
 #import <UIKit/UIColor.h>
 #import <UIKit/UIFont.h>
 typedef struct {
@@ -312,10 +313,22 @@ static void $BGAlertDisplay$tableView$didSelectRowAtIndexPath$(id self, SEL sel,
             // SpringBoard was selected
             [uiCont quitTopApplication];
         } else {
+            // Show an indicator to fill the delay when switching applications
+            // FIXME: decrease/eliminate delay so that this is not needed
+            UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:1];
+            // NOTE: resize and offset spinner to cover quit button
+            [spinner setFrame:CGRectMake(6, 0, 21, 21)];
+            UIView *container = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 35, 21)];
+            [container addSubview:spinner];
+            [spinner startAnimating];
+            [spinner release];
+            [[tableView cellForRowAtIndexPath:indexPath] setAccessoryView:container];
+            [container release];
+
+            // Switch to other application
             NSArray *otherApps = [[self alert] otherApps];
             Class $SpringBoard(objc_getClass("SpringBoard"));
             SpringBoard *sb = [$SpringBoard sharedApplication];
-            NSLog(@"Backgrounder: asking to swtich to: %@", [otherApps objectAtIndex:indexPath.row]);
             [sb switchToAppWithDisplayIdentifier:[otherApps objectAtIndex:indexPath.row]];
         }
     }
