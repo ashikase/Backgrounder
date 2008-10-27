@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-26 23:35:58
+ * Last-modified: 2008-10-27 09:40:26
  */
 
 /**
@@ -336,8 +336,6 @@ static void $BGAlertDisplay$tableView$didSelectRowAtIndexPath$(id self, SEL sel,
 
 static void $BGAlertDisplay$tableView$accessoryButtonTappedForRowWithIndexPath$(id self, SEL sel, UITableView *tableView, NSIndexPath *indexPath)
 {
-    NSLog(@"Backgrounder: accessory tapped for cell in section %d, row %d", indexPath.section, indexPath.row);
-    #if 0
     // Get the display identifier of the application for this cell
     NSString *identifier = nil;
     if (indexPath.section == 0)
@@ -345,13 +343,9 @@ static void $BGAlertDisplay$tableView$accessoryButtonTappedForRowWithIndexPath$(
     else
         identifier = [[[self alert] otherApps] objectAtIndex:indexPath.row];
 
-    // Get the SBApplication object
-    Class $SBApplicationController(objc_getClass("SBApplicationController"));
-    SBApplication *app = [[$SBApplicationController sharedInstance] applicationWithDisplayIdentifier:identifier];
-
-    // Quit the application
-    // FIXME: should pass this to SpringBoard (quitBackgroundedApplication?)
-    #endif
+    Class $SpringBoard(objc_getClass("SpringBoard"));
+    SpringBoard *sb = [$SpringBoard sharedApplication];
+    [sb quitAppWithDisplayIdentifier:identifier];
 }
 
 //______________________________________________________________________________

@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-27 00:02:29
+ * Last-modified: 2008-10-27 00:11:10
  */
 
 /**
@@ -374,7 +374,7 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
         SBApplication *currApp = [[displayStacks objectAtIndex:0] topApplication];
         [currApp setDeactivationSetting:0x2 flag:YES]; // animate
         [currApp setDeactivationSetting:0x10000 flag:YES]; // appToApp
-        [currApp setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0]];
+        [currApp setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0]]; // animation duration
 
         // The appToApp flag will cause activation to wait until the current
         // application deactivates
@@ -382,6 +382,26 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
 
         // Deactivate the current app
         [[displayStacks objectAtIndex:3] pushDisplay:currApp];
+    }
+}
+
+static void $SpringBoard$quitAppWithDisplayIdentifier$(SpringBoard *self, SEL sel,NSString *identifier)
+{
+    Class $SBApplicationController(objc_getClass("SBApplicationController"));
+    SBApplicationController *appCont = [$SBApplicationController sharedInstance];
+    SBApplication *app = [appCont applicationWithDisplayIdentifier:identifier];
+
+    if (app) {
+        // Disable backgrounding for the application
+        [self setBackgroundingEnabled:NO forDisplayIdentifier:identifier];
+
+        // NOTE: Must set animation flag for deactivation, otherwise
+        //       application window does not disappear (reason yet unknown)
+        [app setDeactivationSetting:0x2 flag:YES]; // animate
+        [app setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0]]; // animation duration
+
+        // Deactivate the application
+        [[displayStacks objectAtIndex:3] pushDisplay:app];
     }
 }
 
@@ -478,6 +498,7 @@ void initSpringBoardHooks()
         (IMP)&$SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$, "v@:c@");
     class_addMethod($SpringBoard, @selector(invokeBackgrounder), (IMP)&$SpringBoard$invokeBackgrounder, "v@:");
     class_addMethod($SpringBoard, @selector(switchToAppWithDisplayIdentifier:), (IMP)&$SpringBoard$switchToAppWithDisplayIdentifier$, "v@:@");
+    class_addMethod($SpringBoard, @selector(quitAppWithDisplayIdentifier:), (IMP)&$SpringBoard$quitAppWithDisplayIdentifier$, "v@:@");
 
     Class $SBApplication(objc_getClass("SBApplication"));
     MSHookMessage($SBApplication, @selector(shouldLaunchPNGless), (IMP)&$SBApplication$shouldLaunchPNGless, "bg_");
