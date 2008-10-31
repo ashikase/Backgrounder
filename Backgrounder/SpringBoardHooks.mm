@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-27 00:11:10
+ * Last-modified: 2008-10-31 23:33:49
  */
 
 /**
@@ -55,6 +55,7 @@
 #import <SpringBoard/SBApplicationController.h>
 #import <SpringBoard/SBAlertItemsController.h>
 #import <SpringBoard/SBDisplayStack.h>
+#import <SpringBoard/SBStatusBarController.h>
 #import <SpringBoard/SBUIController.h>
 #import <SpringBoard/SpringBoard.h>
 
@@ -79,6 +80,7 @@ static int feedbackType = SIMPLE_POPUP;
 static int invocationMethod = HOME_SHORT_PRESS;
 
 NSMutableDictionary *activeApplications = nil;
+static NSMutableDictionary *statusBarStates = nil;
 
 //______________________________________________________________________________
 //______________________________________________________________________________
@@ -115,8 +117,9 @@ static void $SBUIController$animateLaunchApplication$(SBUIController *self, SEL 
 {
     if ([app pid] != -1) {
         // Application is backgrounded; don't animate
-        [app setActivationSetting:0x40 value:nil];
-        [app setActivationSetting:0x80 value:nil];
+        NSArray *state = [statusBarStates objectForKey:[app displayIdentifier]];
+        [app setActivationSetting:0x40 value:[state objectAtIndex:0]]; // statusbarmode
+        [app setActivationSetting:0x80 value:[state objectAtIndex:1]]; // statusBarOrienation
         [[displayStacks objectAtIndex:2] pushDisplay:app];
     } else {
         // Normal launch
@@ -261,6 +264,10 @@ static void $SpringBoard$applicationDidFinishLaunching$(SpringBoard *self, SEL s
     // SpringBoard is always active
     [activeApplications setObject:[NSNumber numberWithBool:YES] forKey:@"com.apple.springboard"];
 
+    // Create a dictionary to store the statusbar state for active apps
+    // FIXME: Determine a way to do this without requiring extra storage
+    statusBarStates = [[NSMutableDictionary alloc] initWithCapacity:5];
+
     // Load preferences
     Class $SpringBoard(objc_getClass("SpringBoard"));
     CFPropertyListRef prefMethod = CFPreferencesCopyAppValue(CFSTR("invocationMethod"), CFSTR(APP_ID));
@@ -356,7 +363,7 @@ static void $SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$(SpringBoa
     }
 }
 
-static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SEL sel,NSString *identifier)
+static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SEL sel, NSString *identifier)
 {
     Class $SBApplicationController(objc_getClass("SBApplicationController"));
     SBApplicationController *appCont = [$SBApplicationController sharedInstance];
@@ -366,8 +373,9 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
         [otherApp setActivationSetting:0x20000000 flag:YES]; // appToApp
         [otherApp setActivationSetting:0x20 flag:YES]; // suspendOthers
         //[otherApp setActivationSetting:0x200 flag:YES];
-        [otherApp setActivationSetting:0x40 value:nil]; // statusbarmode
-        [otherApp setActivationSetting:0x80 value:nil]; // statusBarOrientation
+        NSArray *state = [statusBarStates objectForKey:identifier];
+        [otherApp setActivationSetting:0x40 value:[state objectAtIndex:0]]; // statusbarmode
+        [otherApp setActivationSetting:0x80 value:[state objectAtIndex:1]]; // statusBarOrienation
 
         // NOTE: Must set animation flag for deactivation, otherwise
         //       application window does not disappear (reason yet unknown)
@@ -450,6 +458,9 @@ static void $SBApplication$exitedCommon(SBApplication *self, SEL sel)
     NSString *identifier = [self displayIdentifier];
     [activeApplications removeObjectForKey:identifier];
 
+    // ... also remove status bar state data from states list
+    [statusBarStates removeObjectForKey:identifier];
+
     [self bg_exitedCommon];
 }
 
@@ -458,6 +469,17 @@ static BOOL $SBApplication$deactivate(SBApplication *self, SEL sel)
     if (![self deactivationSetting:0x10000]) // appToApp
         // Switching to SpringBoard; hide feedback before deactivating
         dismissFeedback();
+
+    // If the app will be backgrounded, store the status bar state
+    NSString *identifier = [self displayIdentifier];
+    if ([activeApplications objectForKey:identifier]) {
+        Class $SBStatusBarController(objc_getClass("SBStatusBarController"));
+        SBStatusBarController *sbCont = [$SBStatusBarController sharedStatusBarController];
+        NSNumber *mode = [NSNumber numberWithInt:[sbCont statusBarMode]];
+        NSNumber *orientation = [NSNumber numberWithInt:[sbCont statusBarOrientation]];
+        [statusBarStates setObject:[NSArray arrayWithObjects:mode, orientation, nil] forKey:identifier];
+    }
+
     return [self bg_deactivate];
 }
 
