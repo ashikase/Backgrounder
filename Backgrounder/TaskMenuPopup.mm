@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-27 09:40:26
+ * Last-modified: 2008-10-27 23:15:07
  */
 
 /**
@@ -301,36 +301,15 @@ static void $BGAlertDisplay$tableView$didSelectRowAtIndexPath$(id self, SEL sel,
     if (indexPath.section == 1) {
         // Selected a row under "Other applications"
 
-        // Enable backgrounding for current application
         Class $SpringBoard(objc_getClass("SpringBoard"));
         SpringBoard *springBoard = [$SpringBoard sharedApplication];
+
+        // Enable backgrounding for current application
         [springBoard setBackgroundingEnabled:YES forDisplayIdentifier:[[self alert] currentApp]];
 
         // Switch to selected application
-        Class $SBUIController(objc_getClass("SBUIController"));
-        SBUIController *uiCont = [$SBUIController sharedInstance];
-        if (indexPath.row == 0) {
-            // SpringBoard was selected
-            [uiCont quitTopApplication];
-        } else {
-            // Show an indicator to fill the delay when switching applications
-            // FIXME: decrease/eliminate delay so that this is not needed
-            UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:1];
-            // NOTE: resize and offset spinner to cover quit button
-            [spinner setFrame:CGRectMake(6, 0, 21, 21)];
-            UIView *container = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 35, 21)];
-            [container addSubview:spinner];
-            [spinner startAnimating];
-            [spinner release];
-            [[tableView cellForRowAtIndexPath:indexPath] setAccessoryView:container];
-            [container release];
-
-            // Switch to other application
-            NSArray *otherApps = [[self alert] otherApps];
-            Class $SpringBoard(objc_getClass("SpringBoard"));
-            SpringBoard *sb = [$SpringBoard sharedApplication];
-            [sb switchToAppWithDisplayIdentifier:[otherApps objectAtIndex:indexPath.row]];
-        }
+        NSArray *otherApps = [[self alert] otherApps];
+        [springBoard switchToAppWithDisplayIdentifier:[otherApps objectAtIndex:indexPath.row]];
     }
 }
 
