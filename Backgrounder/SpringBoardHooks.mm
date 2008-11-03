@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-31 23:33:49
+ * Last-modified: 2008-11-03 23:21:59
  */
 
 /**
@@ -79,8 +79,11 @@ static int feedbackType = SIMPLE_POPUP;
 #define HOME_DOUBLE_TAP 2
 static int invocationMethod = HOME_SHORT_PRESS;
 
-NSMutableDictionary *activeApplications = nil;
+static NSMutableDictionary *activeApplications = nil;
 static NSMutableDictionary *statusBarStates = nil;
+static NSString *switchingToApplication = nil;
+
+static void dismissFeedback();
 
 //______________________________________________________________________________
 //______________________________________________________________________________
@@ -365,28 +368,61 @@ static void $SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$(SpringBoa
 
 static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SEL sel, NSString *identifier)
 {
-    Class $SBApplicationController(objc_getClass("SBApplicationController"));
-    SBApplicationController *appCont = [$SBApplicationController sharedInstance];
-    SBApplication *otherApp = [appCont applicationWithDisplayIdentifier:identifier];
+    // If the current app will be backgrounded, store the status bar state
+    NSString *currIdent = [[[displayStacks objectAtIndex:0] topApplication] displayIdentifier];
+    if ([activeApplications objectForKey:currIdent]) {
+        Class $SBStatusBarController(objc_getClass("SBStatusBarController"));
+        SBStatusBarController *sbCont = [$SBStatusBarController sharedStatusBarController];
+        NSNumber *mode = [NSNumber numberWithInt:[sbCont statusBarMode]];
+        NSNumber *orientation = [NSNumber numberWithInt:[sbCont statusBarOrientation]];
+        [statusBarStates setObject:[NSArray arrayWithObjects:mode, orientation, nil] forKey:currIdent];
+    }
 
-    if (otherApp) {
-        [otherApp setActivationSetting:0x20000000 flag:YES]; // appToApp
-        [otherApp setActivationSetting:0x20 flag:YES]; // suspendOthers
-        //[otherApp setActivationSetting:0x200 flag:YES];
-        NSArray *state = [statusBarStates objectForKey:identifier];
-        [otherApp setActivationSetting:0x40 value:[state objectAtIndex:0]]; // statusbarmode
-        [otherApp setActivationSetting:0x80 value:[state objectAtIndex:1]]; // statusBarOrienation
+    if ([identifier isEqualToString:@"com.apple.springboard"]) {
+        //dismissFeedback();
 
+        Class $SBUIController(objc_getClass("SBUIController"));
+        SBUIController *uiCont = [$SBUIController sharedInstance];
+        [uiCont quitTopApplication];
+    } else {
         // NOTE: Must set animation flag for deactivation, otherwise
         //       application window does not disappear (reason yet unknown)
         SBApplication *currApp = [[displayStacks objectAtIndex:0] topApplication];
         [currApp setDeactivationSetting:0x2 flag:YES]; // animate
-        [currApp setDeactivationSetting:0x10000 flag:YES]; // appToApp
-        [currApp setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0]]; // animation duration
+        //[currApp setDeactivationSetting:0x400 flag:YES]; // returnToLastApp
+        //[currApp setDeactivationSetting:0x10000 flag:YES]; // appToApp
+        //[currApp setDeactivationSetting:0x0100 value:[NSNumber numberWithDouble:0.1]]; // animation scale
+        //[currApp setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0.4]]; // animation duration
+        //[currApp setDeactivationSetting:0x0100 value:[NSNumber numberWithDouble:1.0]]; // animation scale
+        //[currApp setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0]]; // animation duration
 
-        // The appToApp flag will cause activation to wait until the current
-        // application deactivates
-        [[displayStacks objectAtIndex:2] pushDisplay:otherApp];
+        // Save the identifier for later use
+        switchingToApplication = [identifier copy];
+
+        if (![identifier isEqualToString:@"com.apple.springboard"]) {
+            // Switching to an application other than SpringBoard
+            Class $SBApplicationController(objc_getClass("SBApplicationController"));
+            SBApplicationController *appCont = [$SBApplicationController sharedInstance];
+            SBApplication *otherApp = [appCont applicationWithDisplayIdentifier:identifier];
+
+            if (otherApp) {
+                //[otherApp setActivationSetting:0x4 flag:YES]; // animated
+                // NOTE: setting lastApp and appToApp (and the related
+                //       deactivation flags above) gives an interesting
+                //       switching effect; however, it does not seem to work
+                //       with animatedNoPNG, and thus makes it appear that the
+                //       application being switched to has been restarted.
+                //[otherApp setActivationSetting:0x20000 flag:YES]; // animatedNoPNG
+                //[otherApp setActivationSetting:0x10000 flag:YES]; // lastApp
+                //[otherApp setActivationSetting:0x20000000 flag:YES]; // appToApp
+                NSArray *state = [statusBarStates objectForKey:identifier];
+                [otherApp setActivationSetting:0x40 value:[state objectAtIndex:0]]; // statusbarmode
+                [otherApp setActivationSetting:0x80 value:[state objectAtIndex:1]]; // statusBarOrienation
+
+                // Activate the new app
+                [[displayStacks objectAtIndex:2] pushDisplay:otherApp];
+            }
+        }
 
         // Deactivate the current app
         [[displayStacks objectAtIndex:3] pushDisplay:currApp];
@@ -470,15 +506,15 @@ static BOOL $SBApplication$deactivate(SBApplication *self, SEL sel)
         // Switching to SpringBoard; hide feedback before deactivating
         dismissFeedback();
 
-    // If the app will be backgrounded, store the status bar state
-    NSString *identifier = [self displayIdentifier];
-    if ([activeApplications objectForKey:identifier]) {
-        Class $SBStatusBarController(objc_getClass("SBStatusBarController"));
-        SBStatusBarController *sbCont = [$SBStatusBarController sharedStatusBarController];
-        NSNumber *mode = [NSNumber numberWithInt:[sbCont statusBarMode]];
-        NSNumber *orientation = [NSNumber numberWithInt:[sbCont statusBarOrientation]];
-        [statusBarStates setObject:[NSArray arrayWithObjects:mode, orientation, nil] forKey:identifier];
-    }
+        // If the app will be backgrounded, store the status bar state
+        NSString *identifier = [self displayIdentifier];
+        if ([activeApplications objectForKey:identifier]) {
+            Class $SBStatusBarController(objc_getClass("SBStatusBarController"));
+            SBStatusBarController *sbCont = [$SBStatusBarController sharedStatusBarController];
+            NSNumber *mode = [NSNumber numberWithInt:[sbCont statusBarMode]];
+            NSNumber *orientation = [NSNumber numberWithInt:[sbCont statusBarOrientation]];
+            [statusBarStates setObject:[NSArray arrayWithObjects:mode, orientation, nil] forKey:identifier];
+        }
 
     return [self bg_deactivate];
 }
