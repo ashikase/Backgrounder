@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-18 12:46:23
+ * Last-modified: 2008-12-20 10:45:52
  */
 
 /**
@@ -46,6 +46,12 @@
 
 struct GSEvent;
 
+#define HOOK(class, name, type, args...) \
+    static type (*_ ## class ## $ ## name)(class *self, SEL sel, ## args); \
+    static type $ ## class ## $ ## name(class *self, SEL sel, ## args)
+
+#define CALL_ORIG(class, name, args...) \
+    _ ## class ## $ ## name(self, sel, ## args)
 
 static BOOL backgroundingEnabled = NO;
 
@@ -69,46 +75,36 @@ static void $UIApplication$setBackgroundingEnabled$(id self, SEL sel, BOOL enabl
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-@interface UIApplication (Backgrounder_RenamedMethods)
-- (void)bg_applicationWillSuspend;
-- (void)bg_applicationDidResume;
-- (void)bg_applicationWillResignActive:(UIApplication *)application;
-- (void)bg_applicationDidBecomeActive:(UIApplication *)application;;
-- (void)bg_applicationSuspend:(GSEvent *)event;
-//- (void)bg__setSuspended:(BOOL)val;
-- (void)bg__loadMainNibFile;
-@end
-
 // Prevent execution of application's on-suspend/resume methods
-static void $UIApplication$applicationWillSuspend(UIApplication *self, SEL sel)
+HOOK(UIApplication, applicationWillSuspend, void)
 {
     if (!backgroundingEnabled)
-        [self bg_applicationWillSuspend];
+        CALL_ORIG(UIApplication, applicationWillSuspend);
 }
 
-static void $UIApplication$applicationDidResume(UIApplication *self, SEL sel)
+HOOK(UIApplication, applicationDidResume, void)
 {
     if (!backgroundingEnabled)
-        [self bg_applicationDidResume];
+        CALL_ORIG(UIApplication, applicationDidResume);
 }
 
-static void $UIApplication$applicationWillResignActive$(UIApplication *self, SEL sel, id application)
+HOOK(UIApplication, applicationWillResignActive$, void, id application)
 {
     if (!backgroundingEnabled)
-        [self bg_applicationWillResignActive:application];
+        CALL_ORIG(UIApplication, applicationWillResignActive$, application);
 }
 
-static void $UIApplication$applicationDidBecomeActive$(UIApplication *self, SEL sel, id application)
+HOOK(UIApplication, applicationDidBecomeActive$, void, id application)
 {
     if (!backgroundingEnabled)
-        [self bg_applicationDidBecomeActive:application];
+        CALL_ORIG(UIApplication, applicationDidBecomeActive$, application);
 }
 
 // Overriding this method prevents the application from quitting on suspend
-static void $UIApplication$applicationSuspend$(UIApplication *self, SEL sel, GSEvent *event)
+HOOK(UIApplication, applicationSuspend$, void, GSEvent *event)
 {
     if (!backgroundingEnabled)
-        [self bg_applicationSuspend:event];
+        CALL_ORIG(UIApplication, applicationSuspend$, event);
 }
 
 // FIXME: Tests make this appear unneeded... confirm
@@ -119,29 +115,35 @@ static void $UIApplication$_setSuspended$(UIApplication *self, SEL sel, BOOL val
 }
 #endif
 
-static void $UIApplication$_loadMainNibFile(UIApplication *self, SEL sel)
+HOOK(UIApplication, _loadMainNibFile, void)
 {
     // NOTE: This method always gets called, even if no NIB files are used.
     //       Also note that if an application overrides this method (unlikely,
     //       but possible), this extension's hooks will not be installed.
-    [self bg__loadMainNibFile];
+    CALL_ORIG(UIApplication, _loadMainNibFile);
 
     Class $UIApplication([self class]);
-    MSHookMessage($UIApplication, @selector(applicationSuspend:), (IMP)&$UIApplication$applicationSuspend$, "bg_");
-    MSHookMessage($UIApplication, @selector(applicationWillSuspend), (IMP)&$UIApplication$applicationWillSuspend, "bg_");
-    MSHookMessage($UIApplication, @selector(applicationDidResume), (IMP)&$UIApplication$applicationDidResume, "bg_");
+    _UIApplication$applicationSuspend$ =
+        MSHookMessage($UIApplication, @selector(applicationSuspend:), &$UIApplication$applicationSuspend$);
+    _UIApplication$applicationWillSuspend =
+        MSHookMessage($UIApplication, @selector(applicationWillSuspend), &$UIApplication$applicationWillSuspend);
+    _UIApplication$applicationDidResume =
+        MSHookMessage($UIApplication, @selector(applicationDidResume), &$UIApplication$applicationDidResume);
 
     id delegate = [self delegate];
     Class $AppDelegate(delegate ? [delegate class] : [self class]);
-    MSHookMessage($AppDelegate, @selector(applicationWillResignActive:), (IMP)&$UIApplication$applicationWillResignActive$, "bg_");
-    MSHookMessage($AppDelegate, @selector(applicationDidBecomeActive:), (IMP)&$UIApplication$applicationDidBecomeActive$, "bg_");
+    _UIApplication$applicationWillResignActive$ =
+        MSHookMessage($AppDelegate, @selector(applicationWillResignActive:), &$UIApplication$applicationWillResignActive$);
+    _UIApplication$applicationDidBecomeActive$ =
+        MSHookMessage($AppDelegate, @selector(applicationDidBecomeActive:), &$UIApplication$applicationDidBecomeActive$);
 }
 
 void initApplicationHooks()
 {
     // Is an application
     Class $UIApplication(objc_getClass("UIApplication"));
-    MSHookMessage($UIApplication, @selector(_loadMainNibFile), (IMP)&$UIApplication$_loadMainNibFile, "bg_");
+    _UIApplication$_loadMainNibFile =
+        MSHookMessage($UIApplication, @selector(_loadMainNibFile), &$UIApplication$_loadMainNibFile);
     class_addMethod($UIApplication, @selector(isBackgroundingEnabled), (IMP)&$UIApplication$isBackgroundingEnabled, "c@:");
     class_addMethod($UIApplication, @selector(setBackgroundingEnabled:), (IMP)&$UIApplication$setBackgroundingEnabled$, "v@:c");
 
