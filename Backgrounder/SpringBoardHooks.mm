@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-21 22:03:52
+ * Last-modified: 2008-12-21 22:37:49
  */
 
 /**
@@ -67,6 +67,13 @@ struct GSEvent;
 
 #define APP_ID "jp.ashikase.backgrounder"
 
+#define HOOK(class, name, type, args...) \
+    static type (*_ ## class ## $ ## name)(class *self, SEL sel, ## args); \
+    static type $ ## class ## $ ## name(class *self, SEL sel, ## args)
+
+#define CALL_ORIG(class, name, args...) \
+    _ ## class ## $ ## name(self, sel, ## args)
+
 // FIXME: These should be moved inside the SpringBoard class, if possible;
 //        As static globals, they will exist in the UIApplication as well (?).
 
@@ -86,34 +93,25 @@ static NSString *deactivatingApplication = nil;
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-@interface SBDisplayStack (Backgrounder_RenamedMethods)
-+ (id)bg_alloc;
-- (id)bg_dealloc;
-@end
-
 NSMutableArray *displayStacks = nil;
 
-static id $SBDisplayStack$alloc(id self, SEL sel)
+HOOK(SBDisplayStack, alloc, id)
 {
-    id stack = [self bg_alloc];
+    id stack = CALL_ORIG(SBDisplayStack, alloc);
     [displayStacks addObject:stack];
     return stack;
 }
 
-static void $SBDisplayStack$dealloc(SBDisplayStack *self, SEL sel)
+HOOK(SBDisplayStack, dealloc, void)
 {
     [displayStacks removeObject:self];
-    [self bg_dealloc];
+    CALL_ORIG(SBDisplayStack, dealloc);
 }
 
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-@interface SBUIController (Backgrounder_RenamedMethods)
-- (void)bg_animateLaunchApplication:(id)app;
-@end
-
-static void $SBUIController$animateLaunchApplication$(SBUIController *self, SEL sel, id app)
+HOOK(SBUIController, animateLaunchApplication$, void, id app)
 {
     if ([app pid] != -1) {
         // Application is backgrounded; don't animate
@@ -123,7 +121,7 @@ static void $SBUIController$animateLaunchApplication$(SBUIController *self, SEL 
         [[displayStacks objectAtIndex:2] pushDisplay:app];
     } else {
         // Normal launch
-        [self bg_animateLaunchApplication:app];
+        CALL_ORIG(SBUIController, animateLaunchApplication$, app);
     }
 }
 
@@ -157,16 +155,7 @@ static void dismissFeedback()
     alert = nil;
 }
 
-@interface SpringBoard (Backgrounder_RenamedMethods)
-- (void)bg_applicationDidFinishLaunching:(id)application;
-- (void)bg_dealloc;
-- (void)bg_menuButtonDown:(GSEvent *)event;
-- (void)bg_menuButtonUp:(GSEvent *)event;
-- (void)bg__handleMenuButtonEvent;
-- (void)bg_handleMenuDoubleTap;
-@end
-
-static void $SpringBoard$menuButtonDown$(SpringBoard *self, SEL sel, GSEvent *event)
+HOOK(SpringBoard, menuButtonDown$, void, GSEvent *event)
 {
     NSLog(@"Backgrounder: %s", __FUNCTION__);
 
@@ -181,10 +170,10 @@ static void $SpringBoard$menuButtonDown$(SpringBoard *self, SEL sel, GSEvent *ev
         }
     }
 
-    [self bg_menuButtonDown:event];
+    CALL_ORIG(SpringBoard, menuButtonDown$, event);
 }
 
-static void $SpringBoard$menuButtonUp$(SpringBoard *self, SEL sel, GSEvent *event)
+HOOK(SpringBoard, menuButtonUp$, void, GSEvent *event)
 {
     NSLog(@"Backgrounder: %s", __FUNCTION__);
 
@@ -192,10 +181,10 @@ static void $SpringBoard$menuButtonUp$(SpringBoard *self, SEL sel, GSEvent *even
         // Stop activation timer
         cancelInvocationTimer();
 
-    [self bg_menuButtonUp:event];
+    CALL_ORIG(SpringBoard, menuButtonUp$, event);
 }
 
-static void $SpringBoard$_handleMenuButtonEvent(SpringBoard *self, SEL sel)
+HOOK(SpringBoard, _handleMenuButtonEvent, void)
 {
     // Handle single tap
     NSLog(@"Backgrounder: %s", __FUNCTION__);
@@ -222,7 +211,7 @@ static void $SpringBoard$_handleMenuButtonEvent(SpringBoard *self, SEL sel)
             *_menuButtonClickCount = 0x8000;
         } else {
             // Normal operation
-            [self bg__handleMenuButtonEvent];
+            CALL_ORIG(SpringBoard, _handleMenuButtonEvent);
         }
         } else { // SIMPLE_POPUP
             if (invocationMethod == HOME_SINGLE_TAP) {
@@ -232,11 +221,11 @@ static void $SpringBoard$_handleMenuButtonEvent(SpringBoard *self, SEL sel)
         }
     } else {
         // Is SpringBoard
-        [self bg__handleMenuButtonEvent];
+        CALL_ORIG(SpringBoard, _handleMenuButtonEvent);
     }
 }
 
-static void $SpringBoard$handleMenuDoubleTap(SpringBoard *self, SEL sel)
+HOOK(SpringBoard, handleMenuDoubleTap, void)
 {
     NSLog(@"Backgrounder: %s", __FUNCTION__);
 
@@ -246,11 +235,11 @@ static void $SpringBoard$handleMenuDoubleTap(SpringBoard *self, SEL sel)
     else {
         // Is SpringBoard or alert is visible; perform normal behaviour
         dismissFeedback();
-        [self bg_handleMenuDoubleTap];
+        CALL_ORIG(SpringBoard, handleMenuDoubleTap);
     }
 }
 
-static void $SpringBoard$applicationDidFinishLaunching$(SpringBoard *self, SEL sel, id application)
+HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
 {
     // NOTE: SpringBoard creates five stacks at startup:
     //       - first: visible displays
@@ -273,7 +262,8 @@ static void $SpringBoard$applicationDidFinishLaunching$(SpringBoard *self, SEL s
     CFPropertyListRef prefMethod = CFPreferencesCopyAppValue(CFSTR("invocationMethod"), CFSTR(APP_ID));
     if ([(NSString *)prefMethod isEqualToString:@"homeDoubleTap"]) {
         invocationMethod = HOME_DOUBLE_TAP;
-        MSHookMessage($SpringBoard, @selector(handleMenuDoubleTap), (IMP)&$SpringBoard$handleMenuDoubleTap, "bg_");
+        _SpringBoard$handleMenuDoubleTap =
+            MSHookMessage($SpringBoard, @selector(handleMenuDoubleTap), &$SpringBoard$handleMenuDoubleTap);
     } else if ([(NSString *)prefMethod isEqualToString:@"homeSingleTap"]) {
         invocationMethod = HOME_SINGLE_TAP;
     } else {
@@ -293,14 +283,14 @@ static void $SpringBoard$applicationDidFinishLaunching$(SpringBoard *self, SEL s
     }
     CFRelease(prefFeedback);
 
-    [self bg_applicationDidFinishLaunching:application];
+    CALL_ORIG(SpringBoard, applicationDidFinishLaunching$, application);
 }
 
-static void $SpringBoard$dealloc(SpringBoard *self, SEL sel)
+HOOK(SpringBoard, dealloc, void)
 {
     [activeApplications release];
     [displayStacks release];
-    [self bg_dealloc];
+    CALL_ORIG(SpringBoard, dealloc);
 }
 
 static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
@@ -456,21 +446,13 @@ static void $SpringBoard$quitAppWithDisplayIdentifier$(SpringBoard *self, SEL se
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-@interface SBApplication (Backgrounder_RenamedMethods)
-- (BOOL)bg_shouldLaunchPNGless;
-- (void)bg_launchSucceeded;
-- (void)bg_exitedCommon;
-- (BOOL)bg_deactivate;
-- (void)bg__startTerminationWatchdogTimer;
-@end
-
-static BOOL $SBApplication$shouldLaunchPNGless(SBApplication *self, SEL sel)
+HOOK(SBApplication, shouldLaunchPNGless, BOOL)
 {
     // Only show splash-screen on initial launch
-    return ([self pid] != -1) ? YES : [self bg_shouldLaunchPNGless];
+    return ([self pid] != -1) ? YES : CALL_ORIG(SBApplication, shouldLaunchPNGless);
 }
 
-static void $SBApplication$launchSucceeded(SBApplication *self, SEL sel)
+HOOK(SBApplication, launchSucceeded, void)
 {
     NSString *identifier = [self displayIdentifier];
     if ([activeApplications objectForKey:identifier] == nil) {
@@ -488,10 +470,10 @@ static void $SBApplication$launchSucceeded(SBApplication *self, SEL sel)
         CFRelease(array);
     }
 
-    [self bg_launchSucceeded];
+    CALL_ORIG(SBApplication, launchSucceeded);
 }
 
-static void $SBApplication$exitedCommon(SBApplication *self, SEL sel)
+HOOK(SBApplication, exitedCommon, void)
 {
     // Application has exited (either normally or abnormally);
     // remove from active applications list
@@ -501,10 +483,10 @@ static void $SBApplication$exitedCommon(SBApplication *self, SEL sel)
     // ... also remove status bar state data from states list
     [statusBarStates removeObjectForKey:identifier];
 
-    [self bg_exitedCommon];
+    CALL_ORIG(SBApplication, exitedCommon);
 }
 
-static BOOL $SBApplication$deactivate(SBApplication *self, SEL sel)
+HOOK(SBApplication, deactivate, BOOL)
 {
     if ([[self displayIdentifier] isEqualToString:deactivatingApplication]) {
         dismissFeedback();
@@ -522,14 +504,14 @@ static BOOL $SBApplication$deactivate(SBApplication *self, SEL sel)
         [statusBarStates setObject:[NSArray arrayWithObjects:mode, orientation, nil] forKey:identifier];
     }
 
-    return [self bg_deactivate];
+    return CALL_ORIG(SBApplication, deactivate);
 }
 
-static void $SBApplication$_startTerminationWatchdogTimer(SBApplication *self, SEL sel)
+HOOK(SBApplication, _startTerminationWatchdogTimer, void)
 {
     BOOL isBackgroundingEnabled = [[activeApplications objectForKey:[self displayIdentifier]] boolValue];
     if (!isBackgroundingEnabled)
-        [self bg__startTerminationWatchdogTimer];
+        CALL_ORIG(SBApplication, _startTerminationWatchdogTimer);
 }
 
 //______________________________________________________________________________
@@ -538,20 +520,29 @@ static void $SBApplication$_startTerminationWatchdogTimer(SBApplication *self, S
 void initSpringBoardHooks()
 {
     Class $SBDisplayStackMeta(objc_getMetaClass("SBDisplayStack"));
-    MSHookMessage($SBDisplayStackMeta, @selector(alloc), (IMP)&$SBDisplayStack$alloc, "bg_");
+    _SBDisplayStack$alloc =
+        MSHookMessage($SBDisplayStackMeta, @selector(alloc), &$SBDisplayStack$alloc);
 
     Class $SBDisplayStack(objc_getClass("SBDisplayStack"));
-    MSHookMessage($SBDisplayStack, @selector(dealloc), (IMP)&$SBDisplayStack$dealloc, "bg_");
+    _SBDisplayStack$dealloc =
+        MSHookMessage($SBDisplayStack, @selector(dealloc), &$SBDisplayStack$dealloc);
 
     Class $SBUIController(objc_getClass("SBUIController"));
-    MSHookMessage($SBUIController, @selector(animateLaunchApplication:), (IMP)&$SBUIController$animateLaunchApplication$, "bg_");
+    _SBUIController$animateLaunchApplication$ =
+        MSHookMessage($SBUIController, @selector(animateLaunchApplication:), &$SBUIController$animateLaunchApplication$);
 
     Class $SpringBoard(objc_getClass("SpringBoard"));
-    MSHookMessage($SpringBoard, @selector(applicationDidFinishLaunching:), (IMP)&$SpringBoard$applicationDidFinishLaunching$, "bg_");
-    MSHookMessage($SpringBoard, @selector(dealloc), (IMP)&$SpringBoard$dealloc, "bg_");
-    MSHookMessage($SpringBoard, @selector(menuButtonDown:), (IMP)&$SpringBoard$menuButtonDown$, "bg_");
-    MSHookMessage($SpringBoard, @selector(menuButtonUp:), (IMP)&$SpringBoard$menuButtonUp$, "bg_");
-    MSHookMessage($SpringBoard, @selector(_handleMenuButtonEvent), (IMP)&$SpringBoard$_handleMenuButtonEvent, "bg_");
+    _SpringBoard$applicationDidFinishLaunching$ =
+        MSHookMessage($SpringBoard, @selector(applicationDidFinishLaunching:), &$SpringBoard$applicationDidFinishLaunching$);
+    _SpringBoard$dealloc =
+        MSHookMessage($SpringBoard, @selector(dealloc), &$SpringBoard$dealloc);
+    _SpringBoard$menuButtonDown$ =
+        MSHookMessage($SpringBoard, @selector(menuButtonDown:), &$SpringBoard$menuButtonDown$);
+    _SpringBoard$menuButtonUp$ =
+        MSHookMessage($SpringBoard, @selector(menuButtonUp:), &$SpringBoard$menuButtonUp$);
+    _SpringBoard$_handleMenuButtonEvent =
+        MSHookMessage($SpringBoard, @selector(_handleMenuButtonEvent), &$SpringBoard$_handleMenuButtonEvent);
+
     class_addMethod($SpringBoard, @selector(setBackgroundingEnabled:forDisplayIdentifier:),
         (IMP)&$SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$, "v@:c@");
     class_addMethod($SpringBoard, @selector(invokeBackgrounder), (IMP)&$SpringBoard$invokeBackgrounder, "v@:");
@@ -559,11 +550,16 @@ void initSpringBoardHooks()
     class_addMethod($SpringBoard, @selector(quitAppWithDisplayIdentifier:), (IMP)&$SpringBoard$quitAppWithDisplayIdentifier$, "v@:@");
 
     Class $SBApplication(objc_getClass("SBApplication"));
-    MSHookMessage($SBApplication, @selector(shouldLaunchPNGless), (IMP)&$SBApplication$shouldLaunchPNGless, "bg_");
-    MSHookMessage($SBApplication, @selector(launchSucceeded), (IMP)&$SBApplication$launchSucceeded, "bg_");
-    MSHookMessage($SBApplication, @selector(deactivate), (IMP)&$SBApplication$deactivate, "bg_");
-    MSHookMessage($SBApplication, @selector(exitedCommon), (IMP)&$SBApplication$exitedCommon, "bg_");
-    MSHookMessage($SBApplication, @selector(_startTerminationWatchdogTimer), (IMP)&$SBApplication$_startTerminationWatchdogTimer, "bg_");
+    _SBApplication$shouldLaunchPNGless =
+        MSHookMessage($SBApplication, @selector(shouldLaunchPNGless), &$SBApplication$shouldLaunchPNGless);
+    _SBApplication$launchSucceeded =
+        MSHookMessage($SBApplication, @selector(launchSucceeded), &$SBApplication$launchSucceeded);
+    _SBApplication$deactivate =
+        MSHookMessage($SBApplication, @selector(deactivate), &$SBApplication$deactivate);
+    _SBApplication$exitedCommon =
+        MSHookMessage($SBApplication, @selector(exitedCommon), &$SBApplication$exitedCommon);
+    _SBApplication$_startTerminationWatchdogTimer =
+        MSHookMessage($SBApplication, @selector(_startTerminationWatchdogTimer), &$SBApplication$_startTerminationWatchdogTimer);
 }
 
 /* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
