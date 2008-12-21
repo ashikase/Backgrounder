@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-27 23:15:07
+ * Last-modified: 2008-12-21 22:11:06
  */
 
 /**
@@ -298,19 +298,21 @@ static UITableViewCell * $BGAlertDisplay$tableView$cellForRowAtIndexPath$(id sel
 
 static void $BGAlertDisplay$tableView$didSelectRowAtIndexPath$(id self, SEL sel, UITableView *tableView, NSIndexPath *indexPath)
 {
-    if (indexPath.section == 1) {
-        // Selected a row under "Other applications"
+    Class $SpringBoard(objc_getClass("SpringBoard"));
+    SpringBoard *springBoard = [$SpringBoard sharedApplication];
 
-        Class $SpringBoard(objc_getClass("SpringBoard"));
-        SpringBoard *springBoard = [$SpringBoard sharedApplication];
-
+    NSString *currIdent = [[self alert] currentApp];
+    NSString *otherIdent = nil;
+    if (indexPath.section == 0) {
+        otherIdent = currIdent;
+    } else {
+        otherIdent = [[[self alert] otherApps] objectAtIndex:indexPath.row];
         // Enable backgrounding for current application
-        [springBoard setBackgroundingEnabled:YES forDisplayIdentifier:[[self alert] currentApp]];
-
-        // Switch to selected application
-        NSArray *otherApps = [[self alert] otherApps];
-        [springBoard switchToAppWithDisplayIdentifier:[otherApps objectAtIndex:indexPath.row]];
+        [springBoard setBackgroundingEnabled:YES forDisplayIdentifier:currIdent];
     }
+
+    // Switch to selected application
+    [springBoard switchToAppWithDisplayIdentifier:otherIdent];
 }
 
 static void $BGAlertDisplay$tableView$accessoryButtonTappedForRowWithIndexPath$(id self, SEL sel, UITableView *tableView, NSIndexPath *indexPath)
