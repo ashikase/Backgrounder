@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-21 11:24:56
+ * Last-modified: 2008-12-21 12:23:41
  */
 
 /**
@@ -81,9 +81,7 @@ static int invocationMethod = HOME_SHORT_PRESS;
 
 static NSMutableDictionary *activeApplications = nil;
 static NSMutableDictionary *statusBarStates = nil;
-static NSString *switchingToApplication = nil;
-
-static void dismissFeedback();
+static NSString *deactivatingApplication = nil;
 
 //______________________________________________________________________________
 //______________________________________________________________________________
@@ -379,16 +377,17 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
         [statusBarStates setObject:[NSArray arrayWithObjects:mode, orientation, nil] forKey:currIdent];
     }
 
-    if ([identifier isEqualToString:@"com.apple.springboard"]) {
-        //dismissFeedback();
+    SBApplication *currApp = [[displayStacks objectAtIndex:0] topApplication];
+    // Save the identifier for later use
+    deactivatingApplication = [[currApp displayIdentifier] copy];
 
+    if ([identifier isEqualToString:@"com.apple.springboard"]) {
         Class $SBUIController(objc_getClass("SBUIController"));
         SBUIController *uiCont = [$SBUIController sharedInstance];
         [uiCont quitTopApplication];
     } else {
         // NOTE: Must set animation flag for deactivation, otherwise
         //       application window does not disappear (reason yet unknown)
-        SBApplication *currApp = [[displayStacks objectAtIndex:0] topApplication];
         [currApp setDeactivationSetting:0x2 flag:YES]; // animate
         //[currApp setDeactivationSetting:0x400 flag:YES]; // returnToLastApp
         //[currApp setDeactivationSetting:0x10000 flag:YES]; // appToApp
@@ -396,9 +395,6 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
         //[currApp setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0.4]]; // animation duration
         //[currApp setDeactivationSetting:0x0100 value:[NSNumber numberWithDouble:1.0]]; // animation scale
         //[currApp setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0]]; // animation duration
-
-        // Save the identifier for later use
-        switchingToApplication = [identifier copy];
 
         if (![identifier isEqualToString:@"com.apple.springboard"]) {
             // Switching to an application other than SpringBoard
@@ -503,7 +499,11 @@ static void $SBApplication$exitedCommon(SBApplication *self, SEL sel)
 
 static BOOL $SBApplication$deactivate(SBApplication *self, SEL sel)
 {
-    dismissFeedback();
+    if ([[self displayIdentifier] isEqualToString:deactivatingApplication]) {
+        dismissFeedback();
+        [deactivatingApplication release];
+        deactivatingApplication = nil;
+    }
 
     // If the app will be backgrounded, store the status bar state
     NSString *identifier = [self displayIdentifier];
