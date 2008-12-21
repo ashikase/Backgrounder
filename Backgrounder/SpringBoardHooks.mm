@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-21 11:10:09
+ * Last-modified: 2008-12-21 11:13:30
  */
 
 /**
@@ -89,17 +89,16 @@ static void dismissFeedback();
 //______________________________________________________________________________
 
 @interface SBDisplayStack (Backgrounder_RenamedMethods)
-- (id)bg_init;
++ (id)bg_alloc;
 - (id)bg_dealloc;
 @end
 
 NSMutableArray *displayStacks = nil;
 
-static id $SBDisplayStack$init(SBDisplayStack *self, SEL sel)
+static id $SBDisplayStack$alloc(id self, SEL sel)
 {
-    id stack = [self bg_init];
+    id stack = [self bg_alloc];
     [displayStacks addObject:stack];
-    NSLog(@"Backgrounder: initialized display stack: %@", stack);
     return stack;
 }
 
@@ -542,8 +541,10 @@ static void $SBApplication$_startTerminationWatchdogTimer(SBApplication *self, S
 
 void initSpringBoardHooks()
 {
+    Class $SBDisplayStackMeta(objc_getMetaClass("SBDisplayStack"));
+    MSHookMessage($SBDisplayStackMeta, @selector(alloc), (IMP)&$SBDisplayStack$alloc, "bg_");
+
     Class $SBDisplayStack(objc_getClass("SBDisplayStack"));
-    MSHookMessage($SBDisplayStack, @selector(init), (IMP)&$SBDisplayStack$init, "bg_");
     MSHookMessage($SBDisplayStack, @selector(dealloc), (IMP)&$SBDisplayStack$dealloc, "bg_");
 
     Class $SBUIController(objc_getClass("SBUIController"));
