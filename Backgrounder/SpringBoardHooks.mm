@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-21 22:40:49
+ * Last-modified: 2008-12-21 22:45:34
  */
 
 /**
@@ -194,22 +194,22 @@ HOOK(SpringBoard, _handleMenuButtonEvent, void)
 
         // FIXME: This should be rearranged/cleaned-up, if possible
         if (feedbackType == TASK_MENU_POPUP) {
-        if (alert != nil) {
-            // Task menu is visible
+            if (alert != nil) {
+                // Task menu is visible
                 // FIXME: with short press, the task menu may have just been
                 // invoked...
                 if (invocationTimerDidFire == NO)
-                // Hide and destroy the task menu
-                dismissFeedback();
-            *_menuButtonClickCount = 0x8000;
-        } else if (invocationMethod == HOME_SINGLE_TAP) {
-            // Invoke Backgrounder
-            [self invokeBackgrounder];
-            *_menuButtonClickCount = 0x8000;
-        } else {
-            // Normal operation
-            CALL_ORIG(SpringBoard, _handleMenuButtonEvent);
-        }
+                    // Hide and destroy the task menu
+                    dismissFeedback();
+                *_menuButtonClickCount = 0x8000;
+            } else if (invocationMethod == HOME_SINGLE_TAP) {
+                // Invoke Backgrounder
+                [self invokeBackgrounder];
+                *_menuButtonClickCount = 0x8000;
+            } else {
+                // Normal operation
+                CALL_ORIG(SpringBoard, _handleMenuButtonEvent);
+            }
         } else { // SIMPLE_POPUP
             if (invocationMethod == HOME_SINGLE_TAP) {
                 [self  invokeBackgrounder];
