@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-11-03 23:21:59
+ * Last-modified: 2008-12-21 11:10:09
  */
 
 /**
@@ -282,6 +282,7 @@ static void $SpringBoard$applicationDidFinishLaunching$(SpringBoard *self, SEL s
     } else {
         invocationMethod = HOME_SHORT_PRESS;
     }
+    CFRelease(prefMethod);
 
     CFPropertyListRef prefFeedback = CFPreferencesCopyAppValue(CFSTR("feedbackType"), CFSTR(APP_ID));
     if ([(NSString *)prefFeedback isEqualToString:@"taskMenuPopup"]) {
@@ -293,6 +294,7 @@ static void $SpringBoard$applicationDidFinishLaunching$(SpringBoard *self, SEL s
         feedbackType = SIMPLE_POPUP;
         initSimplePopup();
     }
+    CFRelease(prefFeedback);
 
     [self bg_applicationDidFinishLaunching:application];
 }
@@ -482,6 +484,7 @@ static void $SBApplication$launchSucceeded(SBApplication *self, SEL sel)
         } else {
             [activeApplications setObject:[NSNumber numberWithBool:NO] forKey:identifier];
         }
+        CFRelease(array);
     }
 
     [self bg_launchSucceeded];
