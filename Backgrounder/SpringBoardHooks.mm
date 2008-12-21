@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-21 11:13:30
+ * Last-modified: 2008-12-21 11:24:56
  */
 
 /**
@@ -458,7 +458,6 @@ static void $SpringBoard$quitAppWithDisplayIdentifier$(SpringBoard *self, SEL se
 - (void)bg_launchSucceeded;
 - (void)bg_exitedCommon;
 - (BOOL)bg_deactivate;
-- (void)bg_deactivated;
 - (void)bg__startTerminationWatchdogTimer;
 @end
 
@@ -504,29 +503,19 @@ static void $SBApplication$exitedCommon(SBApplication *self, SEL sel)
 
 static BOOL $SBApplication$deactivate(SBApplication *self, SEL sel)
 {
-    if (![self deactivationSetting:0x10000]) // appToApp
-        // Switching to SpringBoard; hide feedback before deactivating
-        dismissFeedback();
+    dismissFeedback();
 
-        // If the app will be backgrounded, store the status bar state
-        NSString *identifier = [self displayIdentifier];
-        if ([activeApplications objectForKey:identifier]) {
-            Class $SBStatusBarController(objc_getClass("SBStatusBarController"));
-            SBStatusBarController *sbCont = [$SBStatusBarController sharedStatusBarController];
-            NSNumber *mode = [NSNumber numberWithInt:[sbCont statusBarMode]];
-            NSNumber *orientation = [NSNumber numberWithInt:[sbCont statusBarOrientation]];
-            [statusBarStates setObject:[NSArray arrayWithObjects:mode, orientation, nil] forKey:identifier];
-        }
+    // If the app will be backgrounded, store the status bar state
+    NSString *identifier = [self displayIdentifier];
+    if ([activeApplications objectForKey:identifier]) {
+        Class $SBStatusBarController(objc_getClass("SBStatusBarController"));
+        SBStatusBarController *sbCont = [$SBStatusBarController sharedStatusBarController];
+        NSNumber *mode = [NSNumber numberWithInt:[sbCont statusBarMode]];
+        NSNumber *orientation = [NSNumber numberWithInt:[sbCont statusBarOrientation]];
+        [statusBarStates setObject:[NSArray arrayWithObjects:mode, orientation, nil] forKey:identifier];
+    }
 
     return [self bg_deactivate];
-}
-
-static void $SBApplication$deactivated(SBApplication *self, SEL sel)
-{
-    if ([self deactivationSetting:0x10000]) // appToApp
-        // Switching to another application; hide feedback now that deactivated
-        dismissFeedback();
-    [self bg_deactivated];
 }
 
 static void $SBApplication$_startTerminationWatchdogTimer(SBApplication *self, SEL sel)
@@ -566,7 +555,6 @@ void initSpringBoardHooks()
     MSHookMessage($SBApplication, @selector(shouldLaunchPNGless), (IMP)&$SBApplication$shouldLaunchPNGless, "bg_");
     MSHookMessage($SBApplication, @selector(launchSucceeded), (IMP)&$SBApplication$launchSucceeded, "bg_");
     MSHookMessage($SBApplication, @selector(deactivate), (IMP)&$SBApplication$deactivate, "bg_");
-    MSHookMessage($SBApplication, @selector(deactivated), (IMP)&$SBApplication$deactivated, "bg_");
     MSHookMessage($SBApplication, @selector(exitedCommon), (IMP)&$SBApplication$exitedCommon, "bg_");
     MSHookMessage($SBApplication, @selector(_startTerminationWatchdogTimer), (IMP)&$SBApplication$_startTerminationWatchdogTimer, "bg_");
 }
