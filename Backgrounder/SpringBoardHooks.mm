@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-21 22:37:49
+ * Last-modified: 2008-12-21 22:40:49
  */
 
 /**
@@ -73,9 +73,6 @@ struct GSEvent;
 
 #define CALL_ORIG(class, name, args...) \
     _ ## class ## $ ## name(self, sel, ## args)
-
-// FIXME: These should be moved inside the SpringBoard class, if possible;
-//        As static globals, they will exist in the UIApplication as well (?).
 
 #define SIMPLE_POPUP 0
 #define TASK_MENU_POPUP 1
@@ -258,12 +255,11 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
     statusBarStates = [[NSMutableDictionary alloc] initWithCapacity:5];
 
     // Load preferences
-    Class $SpringBoard(objc_getClass("SpringBoard"));
     CFPropertyListRef prefMethod = CFPreferencesCopyAppValue(CFSTR("invocationMethod"), CFSTR(APP_ID));
     if ([(NSString *)prefMethod isEqualToString:@"homeDoubleTap"]) {
         invocationMethod = HOME_DOUBLE_TAP;
         _SpringBoard$handleMenuDoubleTap =
-            MSHookMessage($SpringBoard, @selector(handleMenuDoubleTap), &$SpringBoard$handleMenuDoubleTap);
+            MSHookMessage([self class], @selector(handleMenuDoubleTap), &$SpringBoard$handleMenuDoubleTap);
     } else if ([(NSString *)prefMethod isEqualToString:@"homeSingleTap"]) {
         invocationMethod = HOME_SINGLE_TAP;
     } else {
@@ -421,7 +417,6 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
         dismissFeedback();
     }
 }
-
 
 static void $SpringBoard$quitAppWithDisplayIdentifier$(SpringBoard *self, SEL sel,NSString *identifier)
 {
