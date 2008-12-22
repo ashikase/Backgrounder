@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-22 21:23:17
+ * Last-modified: 2008-12-22 21:58:52
  */
 
 /**
@@ -40,6 +40,8 @@
  */
 
 #import "Application.h"
+
+#include <notify.h>
 
 #import <CoreGraphics/CGGeometry.h>
 #import <Foundation/NSRunLoop.h>
@@ -84,8 +86,8 @@
         // Write preferences to disk
         [prefs writeUserDefaults];
 
-        // Kill SpringBoard (will be relaunched automatically)
-        system("/usr/bin/killall SpringBoard");
+        // Respring SpringBoard
+        notify_post("com.apple.language.changed");
     }
 }
 
