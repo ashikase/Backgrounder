@@ -2,7 +2,7 @@ NAME = Backgrounder
 
 # These paths must be changed to match the compilation environment
 SYS_PATH = /opt/iPhone/sys
-SUB_PATH = /files/Platforms/iPhone/build/Users/saurik/mobilesubstrate
+SUB_PATH = /files/Platforms/iPhone/Projects/Others/saurik/mobilesubstrate
 
 CXX = arm-apple-darwin9-g++
 CXXFLAGS = -ggdb -O2 -Wall -Werror -I$(SUB_PATH) 
