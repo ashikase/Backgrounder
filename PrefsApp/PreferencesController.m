@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-22 20:53:48
+ * Last-modified: 2008-12-22 21:24:49
  */
 
 /**
@@ -116,23 +116,10 @@
     [super dealloc];
 }
 
-- (void)setSaveButtonEnabled:(BOOL)enable
-{
-    UIBarButtonItem *item = nil;
-    if (enable)
-        item = [[[UIBarButtonItem alloc] initWithTitle:@"Save" style:2
-            target:self action:@selector(saveButtonClicked)] autorelease];
-    [[self navigationItem] setLeftBarButtonItem:item];
-}
-
 - (void)viewWillAppear:(BOOL)animated
 {
     // Reset the table by deselecting the current selection
     [table deselectRowAtIndexPath:[table indexPathForSelectedRow] animated:YES];
-
-    // If preferences have changed, show the save button
-    if ([[Preferences sharedInstance] isModified])
-        [self setSaveButtonEnabled:YES];
 }
 
 #pragma mark - UITableViewDataSource
@@ -261,39 +248,10 @@
 
 #pragma mark - Navigation bar delegates
 
-- (void)saveButtonClicked
-{
-    // Save the preferences to disk
-    [[Preferences sharedInstance] writeUserDefaults];
-
-    // Ask if user wants to restart now
-    UIActionSheet *sheet = [[[UIActionSheet alloc]
-        initWithTitle:@"SpringBoard must be restarted for changes to take effect."
-             delegate:self cancelButtonTitle:@"Return to SpringBoard" destructiveButtonTitle:@"Restart Now" otherButtonTitles:nil] autorelease];
-    [sheet setActionSheetStyle:1];
-    [sheet showInView:[self view]];
-}
-
-#pragma mark - UIActionSheet delegates
-
-- (void)actionSheet:(UIActionSheet *)sheet didDismissWithButtonIndex:(int)index
-{
-    if (index == 0)
-        // Kill SpringBoard (will be relaunched automatically)
-        system("/usr/bin/killall SpringBoard");
-    else
-        // Exit to SpringBoard
-        [[UIApplication sharedApplication] suspendWithAnimation:NO];
-}
-
-#pragma mark - Switch delegate
-
 #if 0
 - (void)switchToggled:(UISwitch *)control
 {
     [[Preferences sharedInstance] setShouldSuspend:[control isOn]];
-    if ([[Preferences sharedInstance] isModified])
-        [self setSaveButtonEnabled:YES];
 }
 #endif
 
