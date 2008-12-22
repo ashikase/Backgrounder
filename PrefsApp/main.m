@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-19 23:08:53
+ * Last-modified: 2008-12-22 20:31:25
  */
 
 /**
@@ -39,6 +39,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#import <Foundation/NSAutoreleasePool.h>
 #import <UIKit/UIKit.h>
 
 #import "Application.h"
