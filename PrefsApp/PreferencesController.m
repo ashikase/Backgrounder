@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-22 21:24:49
+ * Last-modified: 2008-12-22 21:40:26
  */
 
 /**
@@ -268,13 +268,26 @@
 {
     self = [super init];
     if (self) {
-        Preferences *settings = [Preferences sharedInstance];
-        [settings registerDefaults];
-        [settings readUserDefaults];
+        Preferences *prefs = [Preferences sharedInstance];
+        [prefs registerDefaults];
+        [prefs readUserDefaults];
 
         [[self navigationBar] setBarStyle:1];
         [self pushViewController:
             [[[PreferencesPage alloc] init] autorelease] animated:NO];
+
+        if ([prefs firstRun]) {
+            // Show a once-only warning
+            UIAlertView *alert = [[[UIAlertView alloc]
+                initWithTitle:@"Welcome to Backgrounder"
+                message:@"WARNING: Any changes made to preferences will cause SpringBoard to be restarted upon exit."
+                delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil] autorelease];
+            [alert show];
+
+            // Save settings so that this warning will not be shown again
+            [prefs setFirstRun:NO];
+            [prefs writeUserDefaults];
+        }
     }
     return self;
 }

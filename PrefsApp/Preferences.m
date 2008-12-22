@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-20 19:47:41
+ * Last-modified: 2008-12-22 21:35:53
  */
 
 /**
@@ -53,6 +53,7 @@ static NSArray *allowedFeedbackTypes = nil;
 @implementation Preferences
 
 @synthesize isModified;
+@synthesize firstRun;
 @synthesize invocationMethod;
 @synthesize feedbackType;
 @synthesize shouldSuspend;
@@ -127,7 +128,7 @@ static NSArray *allowedFeedbackTypes = nil;
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity:4];
 
-    // invocationMethod
+    [dict setObject:[NSNumber numberWithBool:YES] forKey:@"firstRun"];
     [dict setObject:@"homeShortPress" forKey:@"invocationMethod"];
     [dict setObject:@"simplePopup" forKey:@"feedbackType"];
     [dict setObject:[NSNumber numberWithBool:YES] forKey:@"shouldSuspend"];
@@ -144,6 +145,8 @@ static NSArray *allowedFeedbackTypes = nil;
 {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     
+    firstRun = [defaults boolForKey:@"firstRun"];
+
     NSString *prefString = [defaults stringForKey:@"invocationMethod"];
     unsigned int index = [allowedInvocationMethods indexOfObject:prefString];
     invocationMethod = (index == NSNotFound) ? 0 : index;
@@ -159,6 +162,8 @@ static NSArray *allowedFeedbackTypes = nil;
 - (void)writeUserDefaults
 {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+
+    [defaults setObject:[NSNumber numberWithBool:firstRun] forKey:@"firstRun"];
 
     NSString *prefString = nil;
     @try {

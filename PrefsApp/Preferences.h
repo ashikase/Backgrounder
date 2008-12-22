@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-18 23:16:45
+ * Last-modified: 2008-12-22 21:36:41
  */
 
 /**
@@ -48,6 +48,7 @@
 {
     BOOL isModified;
 
+    BOOL firstRun;
     unsigned int invocationMethod;
     unsigned int feedbackType;
     BOOL shouldSuspend;
@@ -55,6 +56,8 @@
 }
 
 @property(nonatomic, readonly) BOOL isModified;
+
+@property(nonatomic) BOOL firstRun;
 @property(nonatomic) unsigned int invocationMethod;
 @property(nonatomic) unsigned int feedbackType;
 @property(nonatomic) BOOL shouldSuspend;
