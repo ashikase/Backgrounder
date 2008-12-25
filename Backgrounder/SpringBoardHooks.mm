@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-25 20:04:14
+ * Last-modified: 2008-12-25 20:08:00
  */
 
 /**
@@ -80,8 +80,7 @@ struct GSEvent;
 static int feedbackType = SIMPLE_POPUP;
 
 #define HOME_SHORT_PRESS 0
-#define HOME_SINGLE_TAP 1
-#define HOME_DOUBLE_TAP 2
+#define HOME_DOUBLE_TAP 1
 static int invocationMethod = HOME_SHORT_PRESS;
 
 static NSMutableDictionary *activeApplications = nil;
@@ -192,15 +191,7 @@ HOOK(SpringBoard, _handleMenuButtonEvent, void)
                     [self dismissBackgrounderFeedback];
                 *_menuButtonClickCount = 0x8000;
                 return;
-            } else if (invocationMethod == HOME_SINGLE_TAP) {
-                // Invoke Backgrounder
-                [self invokeBackgrounder];
-                *_menuButtonClickCount = 0x8000;
-                return;
             }
-            // Fall-through
-        } else { // SIMPLE_POPUP
-            // Stop hold timer
         }
         // Fall-through
     }
@@ -248,8 +239,6 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
             invocationMethod = HOME_DOUBLE_TAP;
             _SpringBoard$handleMenuDoubleTap =
                 MSHookMessage([self class], @selector(handleMenuDoubleTap), &$SpringBoard$handleMenuDoubleTap);
-        } else if ([(NSString *)prefMethod isEqualToString:@"homeSingleTap"]) {
-            invocationMethod = HOME_SINGLE_TAP;
         }
         CFRelease(prefMethod);
     }

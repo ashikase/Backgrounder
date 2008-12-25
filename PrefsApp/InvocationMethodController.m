@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-22 20:30:55
+ * Last-modified: 2008-12-25 20:24:09
  */
 
 /**
@@ -112,8 +112,7 @@
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    // If feedback type is set to simple popup, do not show single tap
-    return ([[Preferences sharedInstance] feedbackType] == 0) ? 2 : 3;
+    return 2;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -126,13 +125,10 @@
         // Cell does not exist, create a new one
         cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
 
-    if (indexPath.row == 0) {
+    if (indexPath.row == 0)
         [cell setText:@"Short press"];
-    } else if (indexPath.row == 1) {
+    else
         [cell setText:@"Double tap"];
-    } else {
-        [cell setText:@"Single tap"];
-    }
 
     if ([[Preferences sharedInstance] invocationMethod] == indexPath.row)
         [cell setAccessoryType:3];

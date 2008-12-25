@@ -6,7 +6,6 @@
         Method used to invoke Backgrounder
         Allowed values:
             homeShortPress: press-and-hold home button for a short amount of time (default)
-            homeSingleTap:  press-and-release home button one time (cannot be used with simplePopup)
             homeDoubleTap:  press-and-release home button two times
     -->
     <key>invocationMethod</key>

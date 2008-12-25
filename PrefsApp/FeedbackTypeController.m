@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-22 20:29:28
+ * Last-modified: 2008-12-25 20:11:01
  */
 
 /**
@@ -143,9 +143,6 @@
 {
     Preferences *prefs = [Preferences sharedInstance];
     [prefs setFeedbackType:indexPath.row];
-    if (indexPath.row == 0 && [prefs invocationMethod] == 2)
-        // Do not allow single tap method with simple popup
-        [prefs setInvocationMethod:0];
     [[self navigationController] popToRootViewControllerAnimated:YES];
 }
 
