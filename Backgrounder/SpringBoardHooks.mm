@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-21 22:45:34
+ * Last-modified: 2008-12-25 18:29:13
  */
 
 /**
@@ -48,6 +48,7 @@
 
 #import <Foundation/NSArray.h>
 #import <Foundation/NSDictionary.h>
+#import <Foundation/NSRunLoop.h>
 #import <Foundation/NSString.h>
 #import <Foundation/NSTimer.h>
 
@@ -138,20 +139,6 @@ static void cancelInvocationTimer()
     invocationTimer = nil;
 }
 
-static void dismissFeedback()
-{
-    // FIXME: If feedback types other than simple and task-menu are added,
-    //        this method will need to be updated
-
-    // Hide and release alert window (may be nil)
-    if (feedbackType == TASK_MENU_POPUP)
-        [[alert display] dismiss];
-    else
-        [alert dismiss];
-    [alert release];
-    alert = nil;
-}
-
 HOOK(SpringBoard, menuButtonDown$, void, GSEvent *event)
 {
     NSLog(@"Backgrounder: %s", __FUNCTION__);
@@ -200,26 +187,23 @@ HOOK(SpringBoard, _handleMenuButtonEvent, void)
                 // invoked...
                 if (invocationTimerDidFire == NO)
                     // Hide and destroy the task menu
-                    dismissFeedback();
+                    [self dismissBackgrounderFeedback];
                 *_menuButtonClickCount = 0x8000;
+                return;
             } else if (invocationMethod == HOME_SINGLE_TAP) {
                 // Invoke Backgrounder
                 [self invokeBackgrounder];
                 *_menuButtonClickCount = 0x8000;
-            } else {
-                // Normal operation
-                CALL_ORIG(SpringBoard, _handleMenuButtonEvent);
+                return;
             }
+            // Fall-through
         } else { // SIMPLE_POPUP
-            if (invocationMethod == HOME_SINGLE_TAP) {
-                [self  invokeBackgrounder];
-                *_menuButtonClickCount = 0x8000;
-            }
+            // Stop hold timer
         }
-    } else {
-        // Is SpringBoard
-        CALL_ORIG(SpringBoard, _handleMenuButtonEvent);
+        // Fall-through
     }
+
+    CALL_ORIG(SpringBoard, _handleMenuButtonEvent);
 }
 
 HOOK(SpringBoard, handleMenuDoubleTap, void)
@@ -231,7 +215,7 @@ HOOK(SpringBoard, handleMenuDoubleTap, void)
         [self invokeBackgrounder];
     else {
         // Is SpringBoard or alert is visible; perform normal behaviour
-        dismissFeedback();
+        [self dismissBackgrounderFeedback];
         CALL_ORIG(SpringBoard, handleMenuDoubleTap);
     }
 }
@@ -314,6 +298,8 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
             Class $SBAlertItemsController(objc_getClass("SBAlertItemsController"));
             SBAlertItemsController *controller = [$SBAlertItemsController sharedInstance];
             [controller activateAlertItem:alert];
+            if (invocationMethod == HOME_DOUBLE_TAP)
+                [self performSelector:@selector(dismissBackgrounderFeedback) withObject:nil afterDelay:1.0];
         } else if (feedbackType == TASK_MENU_POPUP) {
             // Display task menu popup
             NSMutableArray *array = [NSMutableArray arrayWithArray:[activeApplications allKeys]];
@@ -328,6 +314,20 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
             [alert activate];
         }
     }
+}
+
+static void $SpringBoard$dismissBackgrounderFeedback(SpringBoard *self, SEL sel)
+{
+    // FIXME: If feedback types other than simple and task-menu are added,
+    //        this method will need to be updated
+
+    // Hide and release alert window (may be nil)
+    if (feedbackType == TASK_MENU_POPUP)
+        [[alert display] dismiss];
+    else
+        [alert dismiss];
+    [alert release];
+    alert = nil;
 }
 
 static void $SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$(SpringBoard *self, SEL sel, BOOL enable, NSString *identifier)
@@ -414,7 +414,7 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
         }
     } else {
         // Application to switch to is same as current
-        dismissFeedback();
+        [self dismissBackgrounderFeedback];
     }
 }
 
@@ -484,7 +484,8 @@ HOOK(SBApplication, exitedCommon, void)
 HOOK(SBApplication, deactivate, BOOL)
 {
     if ([[self displayIdentifier] isEqualToString:deactivatingApplication]) {
-        dismissFeedback();
+        Class $SpringBoard(objc_getClass("SpringBoard"));
+        [[$SpringBoard sharedApplication] dismissBackgrounderFeedback];
         [deactivatingApplication release];
         deactivatingApplication = nil;
     }
@@ -541,6 +542,7 @@ void initSpringBoardHooks()
     class_addMethod($SpringBoard, @selector(setBackgroundingEnabled:forDisplayIdentifier:),
         (IMP)&$SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$, "v@:c@");
     class_addMethod($SpringBoard, @selector(invokeBackgrounder), (IMP)&$SpringBoard$invokeBackgrounder, "v@:");
+    class_addMethod($SpringBoard, @selector(dismissBackgrounderFeedback), (IMP)&$SpringBoard$dismissBackgrounderFeedback, "v@:");
     class_addMethod($SpringBoard, @selector(switchToAppWithDisplayIdentifier:), (IMP)&$SpringBoard$switchToAppWithDisplayIdentifier$, "v@:@");
     class_addMethod($SpringBoard, @selector(quitAppWithDisplayIdentifier:), (IMP)&$SpringBoard$quitAppWithDisplayIdentifier$, "v@:@");
 
