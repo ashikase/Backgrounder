@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-22 21:35:53
+ * Last-modified: 2008-12-25 20:29:22
  */
 
 /**
@@ -56,7 +56,6 @@ static NSArray *allowedFeedbackTypes = nil;
 @synthesize firstRun;
 @synthesize invocationMethod;
 @synthesize feedbackType;
-@synthesize shouldSuspend;
 @synthesize enabledApplications;
 
 #pragma mark - Properties
@@ -73,14 +72,6 @@ static NSArray *allowedFeedbackTypes = nil;
 {
     if (feedbackType != type) {
         feedbackType = type;
-        isModified = YES;
-    }
-}
-
-- (void)setShouldSuspend:(BOOL)should
-{
-    if (shouldSuspend != should) {
-        shouldSuspend = should;
         isModified = YES;
     }
 }
@@ -131,7 +122,6 @@ static NSArray *allowedFeedbackTypes = nil;
     [dict setObject:[NSNumber numberWithBool:YES] forKey:@"firstRun"];
     [dict setObject:@"homeShortPress" forKey:@"invocationMethod"];
     [dict setObject:@"simplePopup" forKey:@"feedbackType"];
-    [dict setObject:[NSNumber numberWithBool:YES] forKey:@"shouldSuspend"];
 
     NSArray *array = [NSArray arrayWithObjects:nil];
     [dict setObject:array forKey:@"enabledApplications"];
@@ -155,7 +145,6 @@ static NSArray *allowedFeedbackTypes = nil;
     index = [allowedFeedbackTypes indexOfObject:prefString];
     feedbackType = (index == NSNotFound) ? 0 : index;
 
-    shouldSuspend = [defaults boolForKey:@"shouldSuspend"];
     enabledApplications = [[defaults arrayForKey:@"enabledApplications"] retain];
 }
 
@@ -184,7 +173,6 @@ static NSArray *allowedFeedbackTypes = nil;
         // Ignore the exception (assumed to be NSRangeException)
     }
 
-    [defaults setObject:[NSNumber numberWithBool:shouldSuspend] forKey:@"shouldSuspend"];
     [defaults setObject:enabledApplications forKey:@"enabledApplications"];
 
     [defaults synchronize];

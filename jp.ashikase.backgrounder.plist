@@ -22,15 +22,6 @@
     <string>taskMenuPopup</string>
 
     <!--
-        This setting controls whether the application should suspend (quit/minimize) upon backgrounding (de)activation
-        Allowed values:
-            true:  application will suspend upon backgrounding (de)activation (default)
-            false: application will not suspend
-    -->
-    <key>shouldSuspend</key>
-    <true/>
-
-    <!--
         Applications listed here will have backgrounding enabled by default
         Allowed values:
             Any application's bundle identifier (found in the Info.plist file in the application's .app directory)

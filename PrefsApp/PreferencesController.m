@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-22 21:40:26
+ * Last-modified: 2008-12-25 20:28:47
  */
 
 /**
@@ -185,18 +185,6 @@
         case 1:
             // Applications
             [cell setText:@"Enabled at launch"];
-#if 0
-            } else {
-                [cell setText:@"Suspend on toggle"];
-                [cell setAccessoryType:0];
-                [cell setSelectionStyle:0];
-                UISwitch *toggle = [[UISwitch alloc] init];
-                [toggle setOn:[[Preferences sharedInstance] shouldSuspend]];
-                [toggle addTarget:self action:@selector(switchToggled:) forControlEvents:64];
-                [cell setAccessoryView:toggle];
-                [toggle release];
-            }
-#endif
             break;
         case 2:
             // Other
@@ -245,15 +233,6 @@
             break;
     }
 }
-
-#pragma mark - Navigation bar delegates
-
-#if 0
-- (void)switchToggled:(UISwitch *)control
-{
-    [[Preferences sharedInstance] setShouldSuspend:[control isOn]];
-}
-#endif
 
 @end
 
