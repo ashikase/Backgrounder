@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-25 18:38:06
+ * Last-modified: 2008-12-25 19:28:58
  */
 
 /**
@@ -241,31 +241,31 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
     // Load preferences
     CFPropertyListRef prefMethod = CFPreferencesCopyAppValue(CFSTR("invocationMethod"), CFSTR(APP_ID));
     if (prefMethod) {
+        // NOTE: Defaults to HOME_SHORT_PRESS
         if ([(NSString *)prefMethod isEqualToString:@"homeDoubleTap"]) {
             invocationMethod = HOME_DOUBLE_TAP;
             _SpringBoard$handleMenuDoubleTap =
                 MSHookMessage([self class], @selector(handleMenuDoubleTap), &$SpringBoard$handleMenuDoubleTap);
         } else if ([(NSString *)prefMethod isEqualToString:@"homeSingleTap"]) {
             invocationMethod = HOME_SINGLE_TAP;
-        } else {
-            invocationMethod = HOME_SHORT_PRESS;
         }
         CFRelease(prefMethod);
     }
 
     CFPropertyListRef prefFeedback = CFPreferencesCopyAppValue(CFSTR("feedbackType"), CFSTR(APP_ID));
     if (prefFeedback) {
-        if ([(NSString *)prefFeedback isEqualToString:@"taskMenuPopup"]) {
-            // Task menu popup
+        // NOTE: Defaults to SIMPLE_POPUP
+        if ([(NSString *)prefFeedback isEqualToString:@"taskMenuPopup"])
             feedbackType = TASK_MENU_POPUP;
-            initTaskMenuPopup();
-        } else {
-            // Simple notification popup
-            feedbackType = SIMPLE_POPUP;
-            initSimplePopup();
-        }
         CFRelease(prefFeedback);
     }
+
+    if (feedbackType == TASK_MENU_POPUP)
+        // Initialize task menu popup
+        initTaskMenuPopup();
+    else
+        // Initialize simple notification popup
+        initSimplePopup();
 
     CALL_ORIG(SpringBoard, applicationDidFinishLaunching$, application);
 }
