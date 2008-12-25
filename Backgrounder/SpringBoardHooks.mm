@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-25 18:29:13
+ * Last-modified: 2008-12-25 18:38:06
  */
 
 /**
@@ -240,28 +240,32 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
 
     // Load preferences
     CFPropertyListRef prefMethod = CFPreferencesCopyAppValue(CFSTR("invocationMethod"), CFSTR(APP_ID));
-    if ([(NSString *)prefMethod isEqualToString:@"homeDoubleTap"]) {
-        invocationMethod = HOME_DOUBLE_TAP;
-        _SpringBoard$handleMenuDoubleTap =
-            MSHookMessage([self class], @selector(handleMenuDoubleTap), &$SpringBoard$handleMenuDoubleTap);
-    } else if ([(NSString *)prefMethod isEqualToString:@"homeSingleTap"]) {
-        invocationMethod = HOME_SINGLE_TAP;
-    } else {
-        invocationMethod = HOME_SHORT_PRESS;
+    if (prefMethod) {
+        if ([(NSString *)prefMethod isEqualToString:@"homeDoubleTap"]) {
+            invocationMethod = HOME_DOUBLE_TAP;
+            _SpringBoard$handleMenuDoubleTap =
+                MSHookMessage([self class], @selector(handleMenuDoubleTap), &$SpringBoard$handleMenuDoubleTap);
+        } else if ([(NSString *)prefMethod isEqualToString:@"homeSingleTap"]) {
+            invocationMethod = HOME_SINGLE_TAP;
+        } else {
+            invocationMethod = HOME_SHORT_PRESS;
+        }
+        CFRelease(prefMethod);
     }
-    CFRelease(prefMethod);
 
     CFPropertyListRef prefFeedback = CFPreferencesCopyAppValue(CFSTR("feedbackType"), CFSTR(APP_ID));
-    if ([(NSString *)prefFeedback isEqualToString:@"taskMenuPopup"]) {
-        // Task menu popup
-        feedbackType = TASK_MENU_POPUP;
-        initTaskMenuPopup();
-    } else {
-        // Simple notification popup
-        feedbackType = SIMPLE_POPUP;
-        initSimplePopup();
+    if (prefFeedback) {
+        if ([(NSString *)prefFeedback isEqualToString:@"taskMenuPopup"]) {
+            // Task menu popup
+            feedbackType = TASK_MENU_POPUP;
+            initTaskMenuPopup();
+        } else {
+            // Simple notification popup
+            feedbackType = SIMPLE_POPUP;
+            initSimplePopup();
+        }
+        CFRelease(prefFeedback);
     }
-    CFRelease(prefFeedback);
 
     CALL_ORIG(SpringBoard, applicationDidFinishLaunching$, application);
 }
@@ -453,16 +457,20 @@ HOOK(SBApplication, launchSucceeded, void)
     if ([activeApplications objectForKey:identifier] == nil) {
         // Initial launch; check if this application defaults to backgrounding
         CFPropertyListRef array = CFPreferencesCopyAppValue(CFSTR("enabledApplications"), CFSTR(APP_ID));
-        if ([(NSArray *)array containsObject:identifier]) {
-            // Tell the application to enable backgrounding
-            kill([self pid], SIGUSR1);
+        if (array) {
+            if ([(NSArray *)array containsObject:identifier]) {
+                // Tell the application to enable backgrounding
+                kill([self pid], SIGUSR1);
 
-            // Store the backgrounding status of the application
-            [activeApplications setObject:[NSNumber numberWithBool:YES] forKey:identifier];
+                // Store the backgrounding status of the application
+                [activeApplications setObject:[NSNumber numberWithBool:YES] forKey:identifier];
+            } else {
+                [activeApplications setObject:[NSNumber numberWithBool:NO] forKey:identifier];
+            }
+            CFRelease(array);
         } else {
             [activeApplications setObject:[NSNumber numberWithBool:NO] forKey:identifier];
         }
-        CFRelease(array);
     }
 
     CALL_ORIG(SBApplication, launchSucceeded);
