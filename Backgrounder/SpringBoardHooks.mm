@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-25 19:28:58
+ * Last-modified: 2008-12-25 20:04:14
  */
 
 /**
@@ -161,9 +161,11 @@ HOOK(SpringBoard, menuButtonUp$, void, GSEvent *event)
 {
     NSLog(@"Backgrounder: %s", __FUNCTION__);
 
-    if (invocationMethod == HOME_SHORT_PRESS && !invocationTimerDidFire)
-        // Stop activation timer
-        cancelInvocationTimer();
+    if (invocationMethod == HOME_SHORT_PRESS)
+        if (!invocationTimerDidFire)
+            cancelInvocationTimer();
+        else if (feedbackType == SIMPLE_POPUP)
+            [self dismissBackgrounderFeedback];
 
     CALL_ORIG(SpringBoard, menuButtonUp$, event);
 }
