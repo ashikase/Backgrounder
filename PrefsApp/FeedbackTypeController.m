@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-25 20:11:01
+ * Last-modified: 2009-01-24 18:08:58
  */
 
 /**
@@ -50,6 +50,10 @@
 
 #import <UIKit/NSIndexPath-UITableView.h>
 #import <UIKit/UIBarButtonItem.h>
+#import <UIKit/UIColor.h>
+#import <UIKit/UIFont.h>
+#import <UIKit/UIImage.h>
+#import <UIKit/UIImage-UIImagePrivate.h>
 #import <UIKit/UINavigationController.h>
 #import <UIKit/UINavigationItem.h>
 #import <UIKit/UIScreen.h>
@@ -59,6 +63,7 @@
 #import <UIKit/UIViewController-UINavigationControllerItem.h>
 
 #import "HtmlAlertView.h"
+#import "MultiLineCell.h"
 #import "Preferences.h"
 
 #define HELP_FILE "/feedbackType.html"
@@ -83,8 +88,7 @@
 {
     table = [[UITableView alloc]
         initWithFrame:[[UIScreen mainScreen] applicationFrame] style:1];
-    [table setDataSource:self];
-    [table setDelegate:self];
+    [table setDataSource:self]; [table setDelegate:self];
     [table reloadData];
     [self setView:table];
 }
@@ -102,7 +106,7 @@
 
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return 1;
+	return 2;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(int)section
@@ -112,7 +116,12 @@
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    return 2;
+    return 1;
+}
+
+- (float)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 44.0f * 4;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -120,18 +129,39 @@
     static NSString *reuseIdentifier = @"PreferencesCell";
 
     // Try to retrieve from the table view a now-unused cell with the given identifier
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
+    MultiLineCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
     if (cell == nil)
         // Cell does not exist, create a new one
-        cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
+        cell = [[[MultiLineCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
 
-    if (indexPath.row == 0) {
-        [cell setText:@"Simple popup notification"];
+    NSString *title = nil;
+    NSString *description = nil;
+    NSString *imageName = nil;
+
+    if (indexPath.section == 0) {
+        title = @"Simple pop-up notification";
+        description = @"A simple pop-up message stating that backgrounding has been (de)activated.";
+        imageName = @"simplepopup.png";
     } else {
-        [cell setText:@"Task menu"];
+        title = @"Task list";
+        description = @"A list of currently running applications. \
+                      Allows for quickly switching and closing applications.";
+                     // jump to another application, as well \
+                     // as to close those that you no longer wish to use (and thus free-up memory).";
+        imageName = @"tasklist.png";
     }
 
-    if ([[Preferences sharedInstance] feedbackType] == indexPath.row)
+
+    [cell setTitle:title];
+    [cell setDescription:description];
+
+    NSString *imagePath = [NSString stringWithFormat:@"%@/%@",
+             [[NSBundle mainBundle] bundlePath], imageName];
+    UIImage *image = [UIImage imageWithContentsOfFile:imagePath];
+    image = [image _imageScaledToSize:CGSizeMake(75, 100) interpolationQuality:0];
+    [cell setImage:image];
+
+    if ([[Preferences sharedInstance] feedbackType] == indexPath.section)
         [cell setAccessoryType:3];
 
     return cell;
@@ -141,8 +171,11 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
+    // Store the selected option
     Preferences *prefs = [Preferences sharedInstance];
-    [prefs setFeedbackType:indexPath.row];
+    [prefs setFeedbackType:indexPath.section];
+
+    // Return to the top view controller
     [[self navigationController] popToRootViewControllerAnimated:YES];
 }
 
