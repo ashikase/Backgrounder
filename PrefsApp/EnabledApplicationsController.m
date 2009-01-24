@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-22 20:28:26
+ * Last-modified: 2009-01-18 22:28:53
  */
 
 /**
@@ -230,7 +230,7 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 
     UISwitch *toggle = [[UISwitch alloc] init];
     [toggle setOn:[enabledApplications containsObject:identifier]];
-    [toggle addTarget:self action:@selector(switchToggled:) forControlEvents:64];
+    [toggle addTarget:self action:@selector(switchToggled:) forControlEvents:4096]; // ValueChanged
     [cell setAccessoryView:toggle];
     [toggle release];
 
