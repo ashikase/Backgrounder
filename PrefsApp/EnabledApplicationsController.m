@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 18:25:26
+ * Last-modified: 2009-01-24 19:28:26
  */
 
 /**
@@ -58,7 +58,7 @@
 #import <UIKit/UIAlertView-Private.h>
 
 #import "Preferences.h"
-#import "PreferencesController.h"
+#import "RootController.h"
 
 // SpringBoardServices
 extern id SBSCopyApplicationDisplayIdentifiers(BOOL onlyActive, BOOL unknown);
@@ -96,6 +96,10 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 
 - (void)loadView
 {
+    // Retain a reference to the root controller for accessing cached info
+    // FIXME: Consider passing the display id array in as an init parameter
+    rootController = [[[self.parentViewController viewControllers] objectAtIndex:0] retain];
+
     table = [[UITableView alloc]
         initWithFrame:[[UIScreen mainScreen] applicationFrame] style:1];
     [table setDataSource:self];
@@ -111,6 +115,7 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
     [table release];
 
     [enabledApplications release];
+    [rootController release];
 
     [super dealloc];
 }
@@ -119,7 +124,7 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 {
     NSArray *array = SBSCopyApplicationDisplayIdentifiers(NO, NO);
     NSArray *sortedArray = [array sortedArrayUsingFunction:compareDisplayNames context:NULL];
-    [[self navigationController] setDisplayIdentifiers:sortedArray];
+    [rootController setDisplayIdentifiers:sortedArray];
     [array release];
     [table reloadData];
 
@@ -130,7 +135,7 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 
 - (void)viewDidAppear:(BOOL)animated
 {
-    if ([[self navigationController] displayIdentifiers] != nil)
+    if ([rootController displayIdentifiers] != nil)
         // Application list already loaded
         return;
 
@@ -184,7 +189,7 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    return [[[self navigationController] displayIdentifiers] count];
+    return [[rootController displayIdentifiers] count];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -198,7 +203,7 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
         cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
     [cell setSelectionStyle:0];
 
-    NSString *identifier = [[[self navigationController] displayIdentifiers] objectAtIndex:indexPath.row];
+    NSString *identifier = [[rootController displayIdentifiers] objectAtIndex:indexPath.row];
 
     NSString *displayName = SBSCopyLocalizedApplicationNameForDisplayIdentifier(identifier);
     [cell setText:displayName];
@@ -223,10 +228,8 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 
 - (void)switchToggled:(UISwitch *)control
 {
-    NSArray *displayIdentifiers = [[self navigationController] displayIdentifiers];
-
     NSIndexPath *indexPath = [table indexPathForCell:[control superview]];
-    NSString *identifier = [displayIdentifiers objectAtIndex:indexPath.row];
+    NSString *identifier = [[rootController displayIdentifiers] objectAtIndex:indexPath.row];
     if ([control isOn])
         [enabledApplications addObject:identifier];
     else

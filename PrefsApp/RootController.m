@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 18:33:39
+ * Last-modified: 2009-01-24 18:46:22
  */
 
 /**
@@ -39,7 +39,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "PreferencesController.h"
+
+#import "RootController.h"
 
 #include <stdlib.h>
 
@@ -58,16 +59,10 @@
 #import "Preferences.h"
 
 
-@interface PreferencesPage : UIViewController
-{
-    UITableView *table;
-}
+@implementation RootController
 
-@end
+@synthesize displayIdentifiers;
 
-//______________________________________________________________________________
-
-@implementation PreferencesPage
 
 - (id)init
 {
@@ -216,48 +211,6 @@
     }
 }
 
-@end
-
-//______________________________________________________________________________
-//______________________________________________________________________________
-
-@implementation PreferencesController
-
-@synthesize displayIdentifiers;
-
-- (id)init
-{
-    self = [super init];
-    if (self) {
-        Preferences *prefs = [Preferences sharedInstance];
-        [prefs registerDefaults];
-        [prefs readUserDefaults];
-
-        [[self navigationBar] setBarStyle:1];
-        [self pushViewController:
-            [[[PreferencesPage alloc] init] autorelease] animated:NO];
-
-        if ([prefs firstRun]) {
-            // Show a once-only warning
-            UIAlertView *alert = [[[UIAlertView alloc]
-                initWithTitle:@"Welcome to Backgrounder"
-                message:@"WARNING: Any changes made to preferences will cause SpringBoard to be restarted upon exit."
-                delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil] autorelease];
-            [alert show];
-
-            // Save settings so that this warning will not be shown again
-            [prefs setFirstRun:NO];
-            [prefs writeUserDefaults];
-        }
-    }
-    return self;
-}
-
-- (void)dealloc
-{
-    [displayIdentifiers release];
-    [super dealloc];
-}
 @end
 
 /* vim: set syntax=objc sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */

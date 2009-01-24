@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 18:22:14
+ * Last-modified: 2009-01-24 18:47:24
  */
 
 /**
@@ -42,49 +42,53 @@
 
 #import "Application.h"
 
-#include <notify.h>
-
-#import <CoreGraphics/CGGeometry.h>
-#import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
-#import "PreferencesController.h"
+#import "Constants.h"
 #import "Preferences.h"
+#import "RootController.h"
 
 
-@implementation SpringJumpsApplication
-
-@synthesize window;
+@implementation Application
 
 - (void)applicationDidFinishLaunching:(UIApplication *)application
 {
-    // Create our controller
-    prefsController = [[PreferencesController alloc] init];
+    // Create and load in-memory preferences object
+    Preferences *prefs = [Preferences sharedInstance];
+    [prefs registerDefaults];
+    [prefs readUserDefaults];
+
+    if ([prefs firstRun]) {
+        // Show a once-only warning
+        NSString *title = [NSString stringWithFormat:@"Welcome to %@", @APP_TITLE];
+        NSString *message = @FIRST_RUN_MSG;
+        UIAlertView *alert = [[[UIAlertView alloc] initWithTitle:title message:message
+                 delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil] autorelease];
+        [alert show];
+
+        // Save settings so that this warning will not be shown again
+        [prefs setFirstRun:NO];
+        [prefs writeUserDefaults];
+    }
+
+    // Create our navigation controller with the initial view controller
+    navController = [[UINavigationController alloc] initWithRootViewController:
+        //[[[RootController alloc] initWithStyle:1] autorelease]];;
+        [[[RootController alloc] init] autorelease]];;
+    [[navController navigationBar] setBarStyle:1];
 
     // Create and show the application window
     window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]]; 
-    [window addSubview:[prefsController view]];
+    [window addSubview:[navController view]];
     [window makeKeyAndVisible];
 }
 
 - (void)dealloc
 {
-    [prefsController release];
+    [navController release];
     [window release];
 
     [super dealloc];
-}
-
-- (void)applicationWillSuspend
-{
-    Preferences *prefs = [Preferences sharedInstance];
-    if ([prefs isModified]) {
-        // Write preferences to disk
-        [prefs writeUserDefaults];
-
-        // Respring SpringBoard
-        notify_post("com.apple.language.changed");
-    }
 }
 
 @end

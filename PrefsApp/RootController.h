@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 18:37:37
+ * Last-modified: 2009-01-24 18:40:56
  */
 
 /**
@@ -40,16 +40,20 @@
  */
 
 
-#import <Foundation/NSAutoreleasePool.h>
 #import <UIKit/UIKit.h>
 
 
-int main(int argc, char **argv)
+@interface RootController : UIViewController
 {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-    int ret = UIApplicationMain(argc, argv, @"Application", @"Application");
-    [pool release];
-    return ret;
+    UITableView *table;
+
+    // List of applications, used by enabled applications page
+    // NOTE: Stored here for caching purposes
+    NSArray *displayIdentifiers;
 }
+
+@property(nonatomic, retain) NSArray *displayIdentifiers;
+
+@end
 
 /* vim: set syntax=objc sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */

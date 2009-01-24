@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 18:32:21
+ * Last-modified: 2009-01-24 19:16:48
  */
 
 /**
@@ -40,20 +40,15 @@
  */
 
 
-#import <UIKit/UIKit.h>
+// General
+#define APP_TITLE "Backgrounder"
+#define FIRST_RUN_MSG "WARNING: Any changes made to preferences will cause SpringBoard to restart upon exit."
 
+// Documentation
+#define DOC_BUNDLE_PATH "doc"
+#define DOC_CACHE_PATH "/var/mobile/Library/Caches/jp.ashikase.backgrounder/doc"
 
-@class NSArray;
+#define DEVSITE_URL "http://iphone-backgrounder.googlecode.com"
+#define DOC_URL DEVSITE_URL"svn/trunk/NonMirrored/doc"
 
-@interface PreferencesController : UINavigationController 
-{
-    // List of applications, used by enabled applications page
-    // NOTE: Stored here for caching purposes
-    NSArray *displayIdentifiers;
-}
-
-@property(nonatomic, retain) NSArray *displayIdentifiers;
-
-@end
-
-/* vim: set syntax=objc sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
+/* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */

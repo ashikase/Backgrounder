@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 18:19:03
+ * Last-modified: 2009-01-24 18:37:33
  */
 
 /**
@@ -42,17 +42,15 @@
 
 #import <UIKit/UIApplication.h>
 
-
-@class PreferencesController;
 @class UIWindow;
+@class UINavigationController;
 
-@interface SpringJumpsApplication : UIApplication
+
+@interface Application : UIApplication
 {
     UIWindow *window;
-    PreferencesController *prefsController;
+    UINavigationController *navController;
 }
-
-@property(nonatomic, retain) UIWindow *window;
 
 @end
 
