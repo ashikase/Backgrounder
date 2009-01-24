@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 18:46:22
+ * Last-modified: 2009-01-24 19:50:27
  */
 
 /**
@@ -64,9 +64,9 @@
 @synthesize displayIdentifiers;
 
 
-- (id)init
+- (id)initWithStyle:(int)style
 {
-    self = [super initWithNibName:nil bundle:nil];
+    self = [super initWithStyle:style];
     if (self) {
         [self setTitle:@"Backgrounder Prefs"];
         [[self navigationItem] setBackButtonTitle:@"Back"];
@@ -74,29 +74,16 @@
     return self;
 }
 
-- (void)loadView
-{
-    table = [[UITableView alloc]
-        initWithFrame:[[UIScreen mainScreen] applicationFrame] style:1];
-    [table setDataSource:self];
-    [table setDelegate:self];
-    [table reloadData];
-    [self setView:table];
-}
-
 - (void)dealloc
 {
-    [table setDataSource:nil];
-    [table setDelegate:nil];
-    [table release];
-
+    [displayIdentifiers release];
     [super dealloc];
 }
 
 - (void)viewWillAppear:(BOOL)animated
 {
     // Reset the table by deselecting the current selection
-    [table deselectRowAtIndexPath:[table indexPathForSelectedRow] animated:YES];
+    [self.tableView deselectRowAtIndexPath:[self.tableView indexPathForSelectedRow] animated:YES];
 }
 
 #pragma mark - UITableViewDataSource
@@ -177,27 +164,24 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
+    UIViewController *vc = nil;
+
     switch (indexPath.section) {
         case 0:
             // General
             if (indexPath.row == 0) {
                 // Invocation method
-                UIViewController *vc = [[[InvocationMethodController alloc] init] autorelease];
-                [[self navigationController] pushViewController:vc animated:YES];
+                vc = [[[InvocationMethodController alloc] initWithStyle:1] autorelease];
                 break;
             } else if (indexPath.row == 1) {
                 // Feedback type
-                UIViewController *vc = [[[FeedbackTypeController alloc] init] autorelease];
-                [[self navigationController] pushViewController:vc animated:YES];
+                vc = [[[FeedbackTypeController alloc] initWithStyle:1] autorelease];
                 break;
             }
             break;
         case 1:
             // Applications
-            {
-                UIViewController *vc = [[[EnabledApplicationsController alloc] init] autorelease];
-                [[self navigationController] pushViewController:vc animated:YES];
-            }
+            vc = [[[EnabledApplicationsController alloc] initWithStyle:1] autorelease];
             break;
         case 2:
             // Other
@@ -209,6 +193,9 @@
                 break;
             break;
     }
+
+    if (vc)
+        [[self navigationController] pushViewController:vc animated:YES];
 }
 
 @end

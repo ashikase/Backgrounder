@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 18:28:49
+ * Last-modified: 2009-01-24 19:43:27
  */
 
 /**
@@ -43,11 +43,9 @@
 #import <UIKit/UIKit.h>
 
 
-@interface InvocationMethodController : UIViewController
+@interface InvocationMethodController : UITableViewController
 {
-    UITableView *table;
 }
-
 @end
 
 /* vim: set syntax=objc sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */

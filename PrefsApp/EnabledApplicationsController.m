@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 19:31:51
+ * Last-modified: 2009-01-24 19:46:18
  */
 
 /**
@@ -83,9 +83,9 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 
 @implementation EnabledApplicationsController
 
-- (id)init
+- (id)initWithStyle:(int)style
 {
-    self = [super initWithNibName:nil bundle:nil];
+    self = [super initWithStyle:style];
     if (self) {
         [self setTitle:@"Enabled Apps"];
         [[self navigationItem] setRightBarButtonItem:
@@ -106,20 +106,11 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
     // FIXME: Consider passing the display id array in as an init parameter
     rootController = [[[self.parentViewController viewControllers] objectAtIndex:0] retain];
 
-    table = [[UITableView alloc]
-        initWithFrame:[[UIScreen mainScreen] applicationFrame] style:1];
-    [table setDataSource:self];
-    [table setDelegate:self];
-    [table reloadData];
-    [self setView:table];
+    [super loadView];
 }
 
 - (void)dealloc
 {
-    [table setDataSource:nil];
-    [table setDelegate:nil];
-    [table release];
-
     [enabledApplications release];
     [rootController release];
 
@@ -132,7 +123,7 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
     NSArray *sortedArray = [array sortedArrayUsingFunction:compareDisplayNames context:NULL];
     [rootController setDisplayIdentifiers:sortedArray];
     [array release];
-    [table reloadData];
+    [self.tableView reloadData];
 
     // Remove the progress indicator
     [busyIndicator dismiss];
@@ -234,7 +225,7 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 
 - (void)switchToggled:(UISwitch *)control
 {
-    NSIndexPath *indexPath = [table indexPathForCell:[control superview]];
+    NSIndexPath *indexPath = [self.tableView indexPathForCell:[control superview]];
     NSString *identifier = [[rootController displayIdentifiers] objectAtIndex:indexPath.row];
     if ([control isOn])
         [enabledApplications addObject:identifier];

@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 18:47:24
+ * Last-modified: 2009-01-24 19:33:28
  */
 
 /**
@@ -73,8 +73,7 @@
 
     // Create our navigation controller with the initial view controller
     navController = [[UINavigationController alloc] initWithRootViewController:
-        //[[[RootController alloc] initWithStyle:1] autorelease]];;
-        [[[RootController alloc] init] autorelease]];;
+        [[[RootController alloc] initWithStyle:1] autorelease]];;
     [[navController navigationBar] setBarStyle:1];
 
     // Create and show the application window
