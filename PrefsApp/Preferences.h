@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-25 20:28:59
+ * Last-modified: 2009-01-24 18:31:24
  */
 
 /**
@@ -39,7 +39,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 #import <Foundation/NSObject.h>
+
 
 @class NSArray;
 @class NSString;

@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-22 20:28:58
+ * Last-modified: 2009-01-24 18:31:06
  */
 
 /**
@@ -39,11 +39,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 #import <UIKit/UIKit.h>
 
+
 @class NSMutableArray;
-@class UIAlertView;
-@class UITableView;
 
 @interface EnabledApplicationsController : UIViewController
 {

@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-18 22:28:53
+ * Last-modified: 2009-01-24 18:25:26
  */
 
 /**
@@ -39,6 +39,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 #import "EnabledApplicationsController.h"
 
 #import <objc/runtime.h>
@@ -48,29 +49,9 @@
 
 #import <CoreFoundation/CFPreferences.h>
 
-#import <Foundation/NSArray.h>
-#import <Foundation/NSBundle.h>
-#import <Foundation/NSRunLoop.h>
-#import <Foundation/NSString.h>
+#import <Foundation/Foundation.h>
 
-#import <UIKit/NSIndexPath-UITableView.h>
-#import <UIKit/UIActivityIndicatorView.h>
-#import <UIKit/UIBarButtonItem.h>
-#import <UIKit/UIColor.h>
-#import <UIKit/UIFont.h>
-#import <UIKit/UIImage.h>
-#import <UIKit/UIImage-UIImageInternal.h>
-#import <UIKit/UILabel.h>
-#import <UIKit/UINavigationController.h>
-#import <UIKit/UINavigationItem.h>
-#import <UIKit/UIScreen.h>
 #import <UIKit/UISwitch.h>
-@protocol UITableViewDataSource;
-#import <UIKit/UITableView.h>
-#import <UIKit/UITableViewCell.h>
-#import <UIKit/UIView-Geometry.h>
-#import <UIKit/UIView-Hierarchy.h>
-#import <UIKit/UIView-Rendering.h>
 #import <UIKit/UIViewController-UINavigationControllerItem.h>
 
 #import "HtmlAlertView.h"
@@ -79,6 +60,7 @@
 #import "Preferences.h"
 #import "PreferencesController.h"
 
+// SpringBoardServices
 extern id SBSCopyApplicationDisplayIdentifiers(BOOL onlyActive, BOOL unknown);
 extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
 extern NSString * SBSCopyIconImagePathForDisplayIdentifier(NSString *identifier);

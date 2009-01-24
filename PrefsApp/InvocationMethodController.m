@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-25 20:24:09
+ * Last-modified: 2009-01-24 18:28:42
  */
 
 /**
@@ -39,23 +39,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 #import "InvocationMethodController.h"
 
 #import <CoreGraphics/CGGeometry.h>
 #import <QuartzCore/CALayer.h>
 
-#import <Foundation/NSBundle.h>
-#import <Foundation/NSRange.h>
-#import <Foundation/NSString.h>
+#import <Foundation/Foundation.h>
 
-#import <UIKit/NSIndexPath-UITableView.h>
-#import <UIKit/UIBarButtonItem.h>
-#import <UIKit/UINavigationController.h>
-#import <UIKit/UINavigationItem.h>
-#import <UIKit/UIScreen.h>
-@protocol UITableViewDataSource;
-#import <UIKit/UITableView.h>
-#import <UIKit/UITableViewCell.h>
 #import <UIKit/UIViewController-UINavigationControllerItem.h>
 
 #import "HtmlAlertView.h"
