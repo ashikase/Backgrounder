@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 19:44:35
+ * Last-modified: 2009-01-24 20:35:54
  */
 
 /**
@@ -49,10 +49,10 @@
 
 #import <UIKit/UIViewController-UINavigationControllerItem.h>
 
-#import "HtmlAlertView.h"
+#import "DocumentationController.h"
 #import "Preferences.h"
 
-#define HELP_FILE "/invocationMethod.html"
+#define HELP_FILE "invocationMethod.html"
 
 
 @implementation InvocationMethodController
@@ -62,6 +62,7 @@
     self = [super initWithStyle:style];
     if (self) {
         [self setTitle:@"Invocation Method"];
+        [[self navigationItem] setBackButtonTitle:@"Back"];
         [[self navigationItem] setRightBarButtonItem:
              [[UIBarButtonItem alloc] initWithTitle:@"Help" style:5
                 target:self
@@ -120,14 +121,9 @@
 
 - (void)helpButtonTapped
 {
-    // Create and show help popup
-    NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
-    NSString *filePath = [bundlePath stringByAppendingString:@HELP_FILE];
-
-    HtmlAlertView *alertView = [[[HtmlAlertView alloc]
-        initWithContentsOfFile:filePath title:@"Explanation"] autorelease];
-
-    [alertView show];
+    // Create and show help page
+    [[self navigationController] pushViewController:[[[DocumentationController alloc]
+        initWithContentsOfFile:@HELP_FILE title:@"Explanation"] autorelease] animated:YES];
 }
 
 @end

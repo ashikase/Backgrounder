@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 19:50:27
+ * Last-modified: 2009-01-25 00:09:13
  */
 
 /**
@@ -49,9 +49,6 @@
 #import <Foundation/Foundation.h>
 
 #import <UIKit/UIViewController-UINavigationControllerItem.h>
-
-// FIXME: move CDAnonymousStruct typedefs to a separate header file
-#import "HtmlAlertView.h"
 
 #import "EnabledApplicationsController.h"
 #import "FeedbackTypeController.h"

@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 19:46:18
+ * Last-modified: 2009-01-24 20:35:48
  */
 
 /**
@@ -51,12 +51,11 @@
 
 #import <Foundation/Foundation.h>
 
+#import <UIKit/UIAlertView-Private.h>
 #import <UIKit/UISwitch.h>
 #import <UIKit/UIViewController-UINavigationControllerItem.h>
 
-#import "HtmlAlertView.h"
-#import <UIKit/UIAlertView-Private.h>
-
+#import "DocumentationController.h"
 #import "Preferences.h"
 #import "RootController.h"
 
@@ -65,7 +64,7 @@ extern id SBSCopyApplicationDisplayIdentifiers(BOOL onlyActive, BOOL unknown);
 extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
 extern NSString * SBSCopyIconImagePathForDisplayIdentifier(NSString *identifier);
 
-#define HELP_FILE "/enabledApplications.html"
+#define HELP_FILE "enabledApplications.html"
 
 
 static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
@@ -88,6 +87,7 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
     self = [super initWithStyle:style];
     if (self) {
         [self setTitle:@"Enabled Apps"];
+        [[self navigationItem] setBackButtonTitle:@"Back"];
         [[self navigationItem] setRightBarButtonItem:
              [[UIBarButtonItem alloc] initWithTitle:@"Help" style:5
                 target:self
@@ -238,14 +238,9 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 
 - (void)helpButtonTapped
 {
-    // Create and show help popup
-    NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
-    NSString *filePath = [bundlePath stringByAppendingString:@HELP_FILE];
-
-    HtmlAlertView *alertView = [[[HtmlAlertView alloc]
-        initWithContentsOfFile:filePath title:@"Explanation"] autorelease];
-
-    [alertView show];
+    // Create and show help page
+    [[self navigationController] pushViewController:[[[DocumentationController alloc]
+        initWithContentsOfFile:@HELP_FILE title:@"Explanation"] autorelease] animated:YES];
 }
 
 @end

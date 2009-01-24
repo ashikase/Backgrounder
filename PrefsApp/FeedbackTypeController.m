@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 19:46:26
+ * Last-modified: 2009-01-24 20:32:19
  */
 
 /**
@@ -48,11 +48,11 @@
 
 #import <UIKit/UIViewController-UINavigationControllerItem.h>
 
-#import "HtmlAlertView.h"
+#import "DocumentationController.h"
 #import "MultiLineCell.h"
 #import "Preferences.h"
 
-#define HELP_FILE "/feedbackType.html"
+#define HELP_FILE "feedbackType.html"
 
 
 @implementation FeedbackTypeController
@@ -62,6 +62,7 @@
     self = [super initWithStyle:style];
     if (self) {
         [self setTitle:@"Feedback Type"];
+        [[self navigationItem] setBackButtonTitle:@"Back"];
         [[self navigationItem] setRightBarButtonItem:
              [[UIBarButtonItem alloc] initWithTitle:@"Help" style:5
                 target:self
@@ -151,14 +152,9 @@
 
 - (void)helpButtonTapped
 {
-    // Create and show help popup
-    NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
-    NSString *filePath = [bundlePath stringByAppendingString:@HELP_FILE];
-
-    HtmlAlertView *alertView = [[[HtmlAlertView alloc]
-        initWithContentsOfFile:filePath title:@"Explanation"] autorelease];
-
-    [alertView show];
+    // Create and show help page
+    [[self navigationController] pushViewController:[[[DocumentationController alloc]
+        initWithContentsOfFile:@HELP_FILE title:@"Explanation"] autorelease] animated:YES];
 }
 
 @end
