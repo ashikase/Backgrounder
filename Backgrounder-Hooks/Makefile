@@ -5,7 +5,7 @@ SYS_PATH = /opt/iPhone/sys
 SUB_PATH = /files/Platforms/iPhone/Projects/Others/saurik/mobilesubstrate
 
 CXX = arm-apple-darwin9-g++
-CXXFLAGS = -ggdb -O2 -Wall -Werror -I$(SUB_PATH) 
+CXXFLAGS = -g0 -O2 -Wall -Werror -I$(SUB_PATH) 
 LDFLAGS = -lobjc \
 		  -framework CoreFoundation \
 		  -framework Foundation \
