@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-25 18:53:56
+ * Last-modified: 2009-01-25 20:00:27
  */
 
 /**
@@ -195,10 +195,16 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 
     // Try to retrieve from the table view a now-unused cell with the given identifier
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
-    if (cell == nil)
+    if (cell == nil) {
         // Cell does not exist, create a new one
         cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
-    [cell setSelectionStyle:0];
+        [cell setSelectionStyle:0];
+
+        UISwitch *toggle = [[UISwitch alloc] init];
+        [toggle addTarget:self action:@selector(switchToggled:) forControlEvents:4096]; // ValueChanged
+        [cell setAccessoryView:toggle];
+        [toggle release];
+    }
 
     NSString *identifier = [[rootController displayIdentifiers] objectAtIndex:indexPath.row];
 
@@ -212,11 +218,8 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
         [cell setImage:icon];
     }
 
-    UISwitch *toggle = [[UISwitch alloc] init];
+    UISwitch *toggle = [cell accessoryView];
     [toggle setOn:[enabledApplications containsObject:identifier]];
-    [toggle addTarget:self action:@selector(switchToggled:) forControlEvents:4096]; // ValueChanged
-    [cell setAccessoryView:toggle];
-    [toggle release];
 
     return cell;
 }

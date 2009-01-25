@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-25 18:54:15
+ * Last-modified: 2009-01-25 20:08:11
  */
 
 /**
@@ -99,9 +99,11 @@
     static NSString *reuseIdentifier = @"PreferencesCell";
 
     MultiLineCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
-    if (cell == nil)
+    if (cell == nil) {
         // Cell does not exist, create a new one
         cell = [[[MultiLineCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
+        [cell setSelectionStyle:2]; // Gray
+    }
 
     NSString *title = nil;
     NSString *description = nil;
@@ -122,9 +124,7 @@
 
     NSString *imagePath = [NSString stringWithFormat:@"%@/%@",
              [[NSBundle mainBundle] bundlePath], imageName];
-    UIImage *image = [UIImage imageWithContentsOfFile:imagePath];
-    image = [image _imageScaledToSize:CGSizeMake(75, 100) interpolationQuality:0];
-    [cell setImage:image];
+    [cell setImage:[UIImage imageWithContentsOfFile:imagePath]];
 
     if ([[Preferences sharedInstance] invocationMethod] == indexPath.section)
         [cell setAccessoryType:3];
@@ -136,7 +136,7 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    [[Preferences sharedInstance] setInvocationMethod:indexPath.row];
+    [[Preferences sharedInstance] setInvocationMethod:indexPath.section];
     [[self navigationController] popToRootViewControllerAnimated:YES];
 }
 
