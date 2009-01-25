@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 20:32:19
+ * Last-modified: 2009-01-25 18:38:24
  */
 
 /**
@@ -39,6 +39,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 #import "FeedbackTypeController.h"
 
 #import <CoreGraphics/CGGeometry.h>
@@ -61,7 +62,7 @@
 {
     self = [super initWithStyle:style];
     if (self) {
-        [self setTitle:@"Feedback Type"];
+        [self setTitle:@"Mode"];
         [[self navigationItem] setBackButtonTitle:@"Back"];
         [[self navigationItem] setRightBarButtonItem:
              [[UIBarButtonItem alloc] initWithTitle:@"Help" style:5
@@ -108,16 +109,16 @@
     NSString *imageName = nil;
 
     if (indexPath.section == 0) {
-        title = @"Simple pop-up notification";
+        title = @"Simple Mode";
         description = @"A simple pop-up message stating that backgrounding has been (de)activated.";
-        imageName = @"simplepopup.png";
+        imageName = @"mode_simple.png";
     } else {
-        title = @"Task list";
+        title = @"Task List Mode";
         description = @"A list of currently running applications. \
                       Allows for quickly switching and closing applications.";
                      // jump to another application, as well \
                      // as to close those that you no longer wish to use (and thus free-up memory).";
-        imageName = @"tasklist.png";
+        imageName = @"mode_tasklist.png";
     }
 
 

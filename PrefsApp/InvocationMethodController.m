@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 20:35:54
+ * Last-modified: 2009-01-25 18:38:36
  */
 
 /**
@@ -50,6 +50,7 @@
 #import <UIKit/UIViewController-UINavigationControllerItem.h>
 
 #import "DocumentationController.h"
+#import "MultiLineCell.h"
 #import "Preferences.h"
 
 #define HELP_FILE "invocationMethod.html"
@@ -75,35 +76,57 @@
 
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return 1;
+	return 2;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(int)section
 {
-    return @"Home button";
+    return nil;
 }
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    return 2;
+    return 1;
+}
+
+- (float)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 44.0f * 4;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     static NSString *reuseIdentifier = @"PreferencesCell";
 
-    // Try to retrieve from the table view a now-unused cell with the given identifier
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
+    MultiLineCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
     if (cell == nil)
         // Cell does not exist, create a new one
-        cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
+        cell = [[[MultiLineCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
 
-    if (indexPath.row == 0)
-        [cell setText:@"Short press"];
-    else
-        [cell setText:@"Double tap"];
+    NSString *title = nil;
+    NSString *description = nil;
+    NSString *imageName = nil;
 
-    if ([[Preferences sharedInstance] invocationMethod] == indexPath.row)
+    if (indexPath.section == 0) {
+        title = @"Hold Home Button";
+        description = @"Press and hold the home button until the Backgrounder pop-up appears.";
+        imageName = @"invoke_hold.png";
+    } else {
+        title = @"Double-tap Home Button";
+        description = @"Quickly press and release the home button twice, like double-clicking a mouse.";
+        imageName = @"invoke_dbltap.png";
+    }
+
+    [cell setTitle:title];
+    [cell setDescription:description];
+
+    NSString *imagePath = [NSString stringWithFormat:@"%@/%@",
+             [[NSBundle mainBundle] bundlePath], imageName];
+    UIImage *image = [UIImage imageWithContentsOfFile:imagePath];
+    image = [image _imageScaledToSize:CGSizeMake(75, 100) interpolationQuality:0];
+    [cell setImage:image];
+
+    if ([[Preferences sharedInstance] invocationMethod] == indexPath.section)
         [cell setAccessoryType:3];
 
     return cell;
