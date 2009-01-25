@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-25 18:40:58
+ * Last-modified: 2009-01-25 20:04:22
  */
 
 /**
@@ -83,6 +83,18 @@
 {
     // Reset the table by deselecting the current selection
     [self.tableView deselectRowAtIndexPath:[self.tableView indexPathForSelectedRow] animated:YES];
+}
+
+- (void)viewWillDisappear:(BOOL)animated
+{
+    Preferences *prefs = [Preferences sharedInstance];
+    if ([prefs isModified]) {
+        // Write preferences to disk
+        [prefs writeUserDefaults];
+
+        // Respring SpringBoard
+        notify_post("com.apple.language.changed");
+    }
 }
 
 #pragma mark - UITableViewDataSource
