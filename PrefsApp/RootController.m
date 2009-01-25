@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-25 00:09:13
+ * Last-modified: 2009-01-25 01:31:10
  */
 
 /**
@@ -50,6 +50,8 @@
 
 #import <UIKit/UIViewController-UINavigationControllerItem.h>
 
+#import "Constants.h"
+#import "DocumentationController.h"
 #import "EnabledApplicationsController.h"
 #import "FeedbackTypeController.h"
 #import "InvocationMethodController.h"
@@ -94,11 +96,11 @@
 {
     switch (section) {
         case 0:
-            return @"General";
+            return @"Documentation";
         case 1:
-            return @"Applications";
+            return @"General";
         case 2:
-            return @"Other";
+            return @"Applications";
         default:
             return nil;
     }
@@ -108,13 +110,13 @@
 {
     switch (section) {
         case 0:
+            // Documentation
+            return 4;
+        case 1:
             // General
             return 2;
-        case 1:
-            // Applications
-            return 1;
         case 2:
-            // Other
+            // Applications
             return 1;
         default:
             return 0;
@@ -123,35 +125,70 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    static NSString *reuseIdentifier = @"PreferencesCell";
+    static NSString *reuseIdSimple = @"SimpleCell";
+    static NSString *reuseIdSafari = @"SafariCell";
 
-    // Try to retrieve from the table view a now-unused cell with the given identifier
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
-    if (cell == nil)
-        // Cell does not exist, create a new one
-        cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
+    UITableViewCell *cell = nil;
+    if (indexPath.section == 0 && indexPath.row == 3) {
+        // Try to retrieve from the table view a now-unused cell with the given identifier
+        cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSafari];
+        if (cell == nil) {
+            // Cell does not exist, create a new one
+            cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdSafari] autorelease];
+            [cell setSelectionStyle:2]; // Gray
 
-    // The majority of cells direct to a secondary page
-    [cell setAccessoryType:1];
+            UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
+            NSString *labelText = @"(via Safari)";
+            [label setText:labelText];
+            [label setTextColor:[UIColor colorWithRed:0.2f green:0.31f blue:0.52f alpha:1.0f]];
+            UIFont *font = [UIFont systemFontOfSize:16.0f];
+            [label setFont:font];
+            CGSize size = [labelText sizeWithFont:font];
+            [label setFrame:CGRectMake(0, 0, size.width, size.height)];
 
-    switch (indexPath.section) {
-        case 0:
-            // General
-            if (indexPath.row == 0) {
-                [cell setText:@"Invocation method"];
-            } else {
-                [cell setText:@"Feedback type"];
-            }
-            break;
-        case 1:
-            // Applications
-            [cell setText:@"Enabled at launch"];
-            break;
-        case 2:
-            // Other
-            [cell setText:@"Visit the project homepage"];
-            [cell setAccessoryType:0];
-            break;
+            [cell setAccessoryView:label];
+            [label release];
+        }
+
+        [cell setText:@"Project Homepage"];
+    } else {
+        // Try to retrieve from the table view a now-unused cell with the given identifier
+        cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSimple];
+        if (cell == nil) {
+            // Cell does not exist, create a new one
+            cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdSimple] autorelease];
+            [cell setSelectionStyle:2]; // Gray
+            [cell setAccessoryType:1]; // Simple arrow
+        }
+
+        switch (indexPath.section) {
+            case 0:
+                // Documentation
+                switch (indexPath.row) {
+                    case 0:
+                        [cell setText:@"How to Use"];
+                        break;
+                    case 1:
+                        [cell setText:@"Release Notes"];
+                        break;
+                    case 2:
+                        [cell setText:@"Known Issues"];
+                        break;
+                }
+                break;
+            case 1:
+                // General
+                if (indexPath.row == 0) {
+                    [cell setText:@"Invocation method"];
+                } else {
+                    [cell setText:@"Feedback type"];
+                }
+                break;
+            case 2:
+                // Applications
+                [cell setText:@"Enabled at launch"];
+                break;
+        }
     }
 
     return cell;
@@ -165,6 +202,39 @@
 
     switch (indexPath.section) {
         case 0:
+            {
+                // Documentation
+                NSString *fileName = nil;
+                NSString *title = nil;
+
+                switch (indexPath.section) {
+                    case 0:
+                        {
+                            switch (indexPath.row) {
+                                case 0:
+                                    fileName = @"usage.html";
+                                    title = @"How to Use";
+                                    break;
+                                case 1:
+                                    fileName = @"release_notes.html";
+                                    title = @"Release Notes";
+                                    break;
+                                case 2:
+                                    fileName = @"known_issues.html";
+                                    title = @"Known Issues";
+                                    break;
+                                case 3:
+                                    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@DEVSITE_URL]];
+                                    break;
+                            }
+                            if (fileName && title)
+                                [[self navigationController] pushViewController:[[[DocumentationController alloc]
+                                    initWithContentsOfFile:fileName title:title] autorelease] animated:YES];
+                        }
+                }
+            }
+            break;
+        case 1:
             // General
             if (indexPath.row == 0) {
                 // Invocation method
@@ -176,18 +246,9 @@
                 break;
             }
             break;
-        case 1:
+        case 2:
             // Applications
             vc = [[[EnabledApplicationsController alloc] initWithStyle:1] autorelease];
-            break;
-        case 2:
-            // Other
-            if (indexPath.row == 0)
-                // Documentation
-                [[UIApplication sharedApplication] openURL:
-                                      [NSURL URLWithString:@"http://code.google.com/p/iphone-backgrounder/wiki/Documentation"]];
-            else 
-                break;
             break;
     }
 
