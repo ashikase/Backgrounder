@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-25 01:31:10
+ * Last-modified: 2009-01-25 18:40:58
  */
 
 /**
@@ -179,9 +179,9 @@
             case 1:
                 // General
                 if (indexPath.row == 0) {
-                    [cell setText:@"Invocation method"];
+                    [cell setText:@"Mode"];
                 } else {
-                    [cell setText:@"Feedback type"];
+                    [cell setText:@"Invocation method"];
                 }
                 break;
             case 2:
@@ -237,12 +237,12 @@
         case 1:
             // General
             if (indexPath.row == 0) {
-                // Invocation method
-                vc = [[[InvocationMethodController alloc] initWithStyle:1] autorelease];
+                // Operating mode
+                vc = [[[FeedbackTypeController alloc] initWithStyle:1] autorelease];
                 break;
             } else if (indexPath.row == 1) {
-                // Feedback type
-                vc = [[[FeedbackTypeController alloc] initWithStyle:1] autorelease];
+                // Invocation method
+                vc = [[[InvocationMethodController alloc] initWithStyle:1] autorelease];
                 break;
             }
             break;
