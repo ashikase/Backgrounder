@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 20:35:48
+ * Last-modified: 2009-01-25 18:53:56
  */
 
 /**
@@ -64,7 +64,7 @@ extern id SBSCopyApplicationDisplayIdentifiers(BOOL onlyActive, BOOL unknown);
 extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
 extern NSString * SBSCopyIconImagePathForDisplayIdentifier(NSString *identifier);
 
-#define HELP_FILE "enabledApplications.html"
+#define HELP_FILE "enabled_apps.html"
 
 
 static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
