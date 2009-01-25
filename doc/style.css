@@ -1,0 +1,576 @@
+/* iPhone.css - iPhone Interface Cascading Style Sheet
+ * Copyright (C) 2007-2008  Jay Freeman (saurik)
+*/
+
+/*
+ *        Redistribution and use in source and binary
+ * forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the
+ *    above copyright notice, this list of conditions
+ *    and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the
+ *    above copyright notice, this list of conditions
+ *    and the following disclaimer in the documentation
+ *    and/or other materials provided with the
+ *    distribution.
+ * 3. The name of the author may not be used to endorse
+ *    or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS''
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
+ * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+ * TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+/* .clearfix {{{ */
+.clearfix:after {
+    content: ".";
+    display: block;
+    clear: both;
+    visibility: hidden;
+    line-height: 0;
+    height: 0;
+}
+
+.clearfix {
+    display: block;
+}
+/* }}} */
+
+* {
+    border: 0;
+    -webkit-border-radius: 0;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -ms-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    font-family: inherit;
+    font-size: 100%;
+    font-style: inherit;
+    font-weight: inherit;
+    margin: 0;
+    outline: 0;
+    padding: 0;
+    text-decoration: none;
+    vertical-align: baseline;
+}
+
+a {
+    color: inherit;
+}
+
+sup {
+    font-size: smaller;
+    margin-top: -6px;
+    position: relative;
+    top: -6px;
+}
+
+select {
+    border: 1px solid #999999;
+}
+
+body {
+    font-family: Helvetica;
+    -webkit-text-size-adjust: none;
+    -webkit-user-select: none;
+}
+
+body.white {
+    background-color: #ffffff;
+}
+
+body.pinstripe {
+    background: transparent url(pinstripes.png);
+}
+
+dialog {
+    display: block;
+    position: absolute;
+    width: 100%;
+}
+
+dialog > panel {
+    display: block;
+}
+
+a {
+    color: blue;
+    text-underline-style: dotted;
+}
+
+strong {
+    font-weight: bold
+}
+
+pre, tt {
+    font-family: monospace;
+}
+
+pre {
+    letter-spacing: -2px;
+}
+
+em {
+    font-style: italic;
+}
+
+.default {
+    color: #aaaabb;
+}
+
+/* #toolbar {{{ */
+dialog > toolbar {
+    background: url(toolbar.png) #6d84a2 repeat-x;
+    border-bottom: 1px solid #2d3642;
+    height: 45px;
+    padding: 10px;
+}
+
+dialog > toolbar > h1 {
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: bold;
+    height: 100%;
+    margin: 1px auto 0 auto;
+    text-shadow: rgba(0, 0, 0, 0.4) 0px -1px 0;
+    text-align: center;
+    white-space: nowrap;
+}
+/* }}} */
+/* (back|forward)-button {{{ */
+dialog > toolbar > a.back-button,
+dialog > toolbar > a.forward-button {
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: bold;
+    height: 30px;
+    line-height: 30px;
+    margin-top: -28px;
+    padding: 0 3px;
+    text-decoration: none;
+    text-shadow: rgba(0, 0, 0, 0.6) 0px -1px 0;
+    white-space: nowrap;
+}
+
+dialog > toolbar > a.back-button {
+    -webkit-border-image: url(backButton.png) 0 8 0 14;
+    border-width: 0 8px 0 14px;
+    float: left;
+}
+
+dialog > toolbar > a.forward-button {
+    -webkit-border-image: url(toolButton.png) 0 5 0 5;
+    border-width: 0 5px;
+    float: right;
+}
+/* }}} */
+
+panel > block {
+    background-color: #c7ced5;
+    border-bottom: 1px solid #999999;
+    border-top: 1px solid #999999;
+    display: block;
+    font-size: 16px;
+    margin: 9px 10px;
+    padding: 0 10px;
+}
+
+panel > fieldset > div > hr,
+panel > block > hr {
+    border-top: 1px dashed #999999;
+}
+
+panel > fieldset {
+    background-color: #ffffff;
+    border: 1px solid #999999;
+    -webkit-border-radius: 9px;
+    font-size: 16px;
+    margin: 9px;
+}
+
+panel > input[type="submit"] {
+    /*-webkit-border-image: url(whiteButton.png) 0 12 0 12;
+    -webkit-border-radius: 0;
+    border-width: 0px 12px;*/
+    border: none;
+    color: #000000;
+    display: block;
+    font-size: 20px;
+    font-weight: bold;
+    margin: 9px;
+    height: 44px;
+    padding: 10px;
+    text-align: center;
+    width: 302px;
+}
+
+list > label {
+    background: #a7b3bc url(cydia://uikit-image/UISectionListHeaderBackground.png);
+    background-repeat: repeat-x no-repeat-y;
+    margin-bottom: 1px;
+    padding: 4px 15px 1px 15px;
+    display: block;
+    color: white;
+    font-size: inherit;
+    font-weight: bold;
+    text-shadow: rgba(0, 0, 0, 0.5) 0px 1px 0;
+}
+
+panel > label {
+    display: block;
+    margin: 13px 0 -4px 24px;
+    line-height: 24px;
+    font-size: inherit;
+    font-weight: bold;
+    color: #4d4d70;
+    text-shadow: rgba(255, 255, 255, 0.75) 1px 1px 0;
+}
+
+panel > fieldset > a:not(:last-child),
+panel > fieldset > div:not(:last-child),
+panel > fieldset > textarea:not(:last-child) {
+    border-bottom: 1px solid #999999;
+}
+
+list > fieldset > a,
+list > fieldset > div,
+list > fieldset > textarea {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+fieldset > a:not([type="ad"]),
+fieldset > div,
+fieldset > textarea {
+    /* XXX: small differences due to font bugs */
+    padding: 13px 14px 11px 14px;
+}
+
+fieldset > a[type="ad"] {
+    /* XXX: small differences due to font bugs */
+    padding: 4px 4px 2px 5px;
+}
+
+panel > fieldset > a[type="ad"]:first-child > div:first-of-type,
+panel > fieldset > a[type="thumb"]:first-child > div:first-of-type {
+    -webkit-border-top-left-radius: 9px;
+}
+
+panel > fieldset > a[type="ad"]:last-child > div:first-of-type,
+panel > fieldset > a[type="thumb"]:last-child > div:first-of-type {
+    -webkit-border-bottom-left-radius: 9px;
+}
+
+fieldset > a[type="ad"] > div:first-of-type {
+    border: 1px solid #999999;
+}
+
+list > fieldset > a[type="thumb"] > div:first-of-type {
+    border: 1px solid #e0e0e0;
+}
+
+panel > fieldset > a[type="thumb"] > div:first-of-type {
+    border: 1px solid #999999;
+}
+
+div[tile] {
+    float: right;
+    height: 30px;
+    width: 30px;
+}
+
+div[tile="app"]   { background-image: url(http://cache.saurik.com/cydia/tile/app.png);   }
+div[tile="call"]  { background-image: url(http://cache.saurik.com/cydia/tile/call.png);  }
+div[tile="map"]   { background-image: url(http://cache.saurik.com/cydia/tile/map.png);   }
+div[tile="media"] { background-image: url(http://cache.saurik.com/cydia/tile/media.png); }
+div[tile="music"] { background-image: url(http://cache.saurik.com/cydia/tile/video.png); }
+div[tile="site"]  { background-image: url(http://cache.saurik.com/cydia/tile/site.png);  }
+
+fieldset > a[type="ad"] > div:first-of-type {
+    background-repeat: no-repeat;
+    background-position: center center;
+    border-right: none;
+    display: inline-block;
+    height: 40px;
+    line-height: 38px;
+    /* XXX: small differences due to font bugs */
+    /* XXX: 1px difference due to border stupidity */
+    margin: -5px 5px -3px -6px;
+    width: 40px;
+}
+
+fieldset > a[type="thumb"] > div:first-of-type {
+    background-repeat: no-repeat;
+    background-position: center center;
+    display: inline-block;
+    height: 64px;
+    /* XXX: small differences due to font bugs */
+    /* XXX: 1px difference due to border stupidity */
+    margin: -14px 7px -12px -15px;
+    width: 64px;
+}
+
+fieldset > a > img.icon,
+fieldset > div > img.icon {
+    height: auto;
+    /* XXX: small differences due to font bugs */
+    margin: -7px 6px -9px -8px;
+    max-height: 30px;
+    min-width: 30px;
+    width: 30px;
+}
+
+panel > block > p,
+fieldset > div > p,
+fieldset > div > ul {
+    margin: 11px 0;
+}
+
+fieldset > div > ul {
+    margin-left: 13px;
+}
+
+panel > block > p,
+fieldset > div > p {
+    text-align: center;
+}
+
+fieldset > div > p:first-child,
+fieldset > div > ul:first-child {
+    margin-top: 0;
+}
+
+fieldset > div > p:last-child,
+fieldset > div > ul:last-child {
+    margin-bottom: 0;
+}
+
+fieldset > a {
+    color: inherit;
+    display: block;
+}
+
+fieldset > textarea,
+fieldset > div > input,
+fieldset > div > select {
+    background: none;
+    -webkit-box-shadow: none;
+    -webkit-appearance: none;
+}
+
+/* Chevrons {{{ */
+
+fieldset > a[href]:not([type="ad"]),
+fieldset > div > select {
+    background-repeat: no-repeat;
+    background-image: url(chevron.png);
+    background-position-y: center;
+}
+
+/* Horizontal */
+
+list > fieldset > a[href] {
+    background-position-x: 295px;
+}
+
+panel > fieldset > a[href] {
+    background-position-x: 275px;
+}
+
+list > fieldset > a:not([href]) > select,
+list > fieldset > div > select {
+    background-position-x: 192px;
+}
+
+panel > fieldset > a:not([href]) > select,
+panel > fieldset > div > select {
+    background-position-x: 163px;
+}
+
+/* }}} */
+
+fieldset > textarea,
+fieldset > div > input,
+fieldset > div > select,
+fieldset > a > div > label:nth-of-type(2),
+fieldset > div > div > label:nth-of-type(2) {
+    color: #193250;
+}
+
+fieldset > textarea,
+fieldset > div > input,
+fieldset > div > select {
+    font-size: 16px;
+}
+
+fieldset > div > input {
+    padding-left: 7px;
+    padding-right: 14px;
+}
+
+fieldset > div > select,
+fieldset > div > input {
+    border: none;
+    float: right;
+    height: 40px;
+    margin: -11px -13px -11px -14px;
+}
+
+panel > fieldset > div > select,
+panel > fieldset > div > input {
+    width: 187px;
+}
+
+list > fieldset > div > select,
+list > fieldset > div > input {
+    width: 207px;
+}
+
+fieldset > textarea {
+    padding: 10px;
+    width: 320px;
+}
+
+fieldset > div > div,
+fieldset > a > div {
+    display: inline-block;
+}
+
+fieldset > div > div {
+    width: 273px;
+}
+
+fieldset > a[type="ad"] > div:nth-of-type(2) {
+    width: 218px;
+}
+
+fieldset > a:not([type]) > div {
+    width: 250px;
+}
+
+fieldset > div > img.icon + div {
+    width: 244px;
+}
+
+fieldset > a > img.icon + div {
+    width: 221px;
+}
+
+fieldset > a[type="thumb"] > div:nth-of-type(2) > label:only-of-type {
+    position: relative;
+    top: 10px;
+}
+
+fieldset > a[type="thumb"] > div:nth-of-type(2) > label:nth-of-type(2) {
+    display: block;
+    margin-top: 2px;
+}
+
+fieldset > a[type="thumb"] > div:nth-of-type(2) {
+    vertical-align: top;
+    width: 193px;
+}
+
+fieldset > a > label:first-of-type,
+fieldset > a > div > label:first-of-type,
+fieldset > div > label:first-of-type,
+fieldset > div > div > label:first-of-type {
+    font-weight: bold;
+}
+
+list > fieldset > a:not([type]) > div > label:nth-of-type(2),
+list > fieldset > div > div > label:nth-of-type(2) {
+    margin-left: 94px;
+}
+
+panel > fieldset > a:not([type]) > div > label:nth-of-type(2),
+panel > fieldset > div > div > label:nth-of-type(2) {
+    float: right;
+    text-align: right;
+}
+
+panel > img {
+    display: block;
+    margin: 9px auto 4px auto;
+    height: auto;
+    width: 300px;
+}
+
+fieldset > a[type="ad"] {
+}
+
+fieldset > a[type="ad"] > div:nth-of-type(2) {
+    position: relative;
+    vertical-align: top;
+}
+
+fieldset > a[type="ad"] > div > label:nth-of-type(1) {
+    color: #2d2d50;
+    font-size: 13px;
+    font-weight: bold;
+    line-height: 15px;
+}
+
+fieldset > a[type="ad"] > div > label:nth-of-type(2) {
+    position: absolute;
+    top: 17px;
+    left: 156px;
+    font-size: 9.5px;
+    font-weight: normal;
+}
+
+fieldset.half > a {
+    background: none;
+    background-position-x: 120px;
+}
+
+fieldset.half > a > img.icon + div {
+    width: 65px;
+}
+
+fieldset.right {
+    float: right;
+    margin-left: 10px;
+}
+
+block + fieldset.right,
+fieldset + fieldset.right {
+    margin-top: 0;
+}
+
+fieldset.half {
+    width: 146px;
+}
+
+fieldset > a[type="thumb"]:first-child > back {
+    -webkit-border-top-right-radius: 9px;
+}
+
+fieldset > a[type="thumb"]:last-child > back {
+    -webkit-border-bottom-right-radius: 9px;
+}
+
+fieldset > a[type="thumb"] > back {
+    background-repeat: no-repeat;
+    border: 1px solid #999999;
+    display: block;
+    height: 64px;
+    left: 62px;
+    position: absolute;
+    opacity: 0.2;
+    top: -1px;
+    width: 237px;
+}
