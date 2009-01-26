@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-25 20:04:22
+ * Last-modified: 2009-01-26 22:58:42
  */
 
 /**
@@ -67,7 +67,7 @@
 {
     self = [super initWithStyle:style];
     if (self) {
-        [self setTitle:@"Backgrounder Prefs"];
+        [self setTitle:@"Backgrounder"];
         [[self navigationItem] setBackButtonTitle:@"Back"];
     }
     return self;
@@ -101,7 +101,7 @@
 
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return 3;
+	return 2;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(int)section
@@ -110,9 +110,7 @@
         case 0:
             return @"Documentation";
         case 1:
-            return @"General";
-        case 2:
-            return @"Applications";
+            return @"Preferences";
         default:
             return nil;
     }
@@ -125,10 +123,7 @@
             // Documentation
             return 4;
         case 1:
-            // General
-            return 2;
-        case 2:
-            // Applications
+            // Preferences
             return 1;
         default:
             return 0;
@@ -189,16 +184,15 @@
                 }
                 break;
             case 1:
-                // General
+                // Preferences
+                [cell setText:@"Auto-enabled Applications"];
+#if 0
                 if (indexPath.row == 0) {
                     [cell setText:@"Mode"];
                 } else {
                     [cell setText:@"Invocation method"];
                 }
-                break;
-            case 2:
-                // Applications
-                [cell setText:@"Enabled at launch"];
+#endif
                 break;
         }
     }
@@ -247,6 +241,9 @@
             }
             break;
         case 1:
+            // Applications
+            vc = [[[EnabledApplicationsController alloc] initWithStyle:1] autorelease];
+#if 0
             // General
             if (indexPath.row == 0) {
                 // Operating mode
@@ -257,10 +254,7 @@
                 vc = [[[InvocationMethodController alloc] initWithStyle:1] autorelease];
                 break;
             }
-            break;
-        case 2:
-            // Applications
-            vc = [[[EnabledApplicationsController alloc] initWithStyle:1] autorelease];
+#endif
             break;
     }
 
