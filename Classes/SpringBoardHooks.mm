@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-25 20:08:00
+ * Last-modified: 2009-01-26 22:45:20
  */
 
 /**
@@ -61,7 +61,7 @@
 #import <SpringBoard/SpringBoard.h>
 
 #import "SimplePopup.h"
-#import "TaskMenuPopup.h"
+//#import "TaskMenuPopup.h"
 
 struct GSEvent;
 
@@ -169,6 +169,7 @@ HOOK(SpringBoard, menuButtonUp$, void, GSEvent *event)
     CALL_ORIG(SpringBoard, menuButtonUp$, event);
 }
 
+#if 0
 HOOK(SpringBoard, _handleMenuButtonEvent, void)
 {
     // Handle single tap
@@ -212,6 +213,7 @@ HOOK(SpringBoard, handleMenuDoubleTap, void)
         CALL_ORIG(SpringBoard, handleMenuDoubleTap);
     }
 }
+#endif
 
 HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
 {
@@ -231,6 +233,7 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
     // FIXME: Determine a way to do this without requiring extra storage
     statusBarStates = [[NSMutableDictionary alloc] initWithCapacity:5];
 
+#if 0
     // Load preferences
     CFPropertyListRef prefMethod = CFPreferencesCopyAppValue(CFSTR("invocationMethod"), CFSTR(APP_ID));
     if (prefMethod) {
@@ -250,11 +253,14 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
             feedbackType = TASK_MENU_POPUP;
         CFRelease(prefFeedback);
     }
+#endif
 
+#if 0
     if (feedbackType == TASK_MENU_POPUP)
         // Initialize task menu popup
         initTaskMenuPopup();
     else
+#endif
         // Initialize simple notification popup
         initSimplePopup();
 
@@ -293,6 +299,7 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
             Class $SBAlertItemsController(objc_getClass("SBAlertItemsController"));
             SBAlertItemsController *controller = [$SBAlertItemsController sharedInstance];
             [controller activateAlertItem:alert];
+#if 0
             if (invocationMethod == HOME_DOUBLE_TAP)
                 [self performSelector:@selector(dismissBackgrounderFeedback) withObject:nil afterDelay:1.0];
         } else if (feedbackType == TASK_MENU_POPUP) {
@@ -307,6 +314,7 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
             Class $SBAlert = objc_getClass("BackgrounderAlert");
             alert = [[$SBAlert alloc] initWithCurrentApp:identifier otherApps:array];
             [alert activate];
+#endif
         }
     }
 }
@@ -317,9 +325,11 @@ static void $SpringBoard$dismissBackgrounderFeedback(SpringBoard *self, SEL sel)
     //        this method will need to be updated
 
     // Hide and release alert window (may be nil)
+#if 0
     if (feedbackType == TASK_MENU_POPUP)
         [[alert display] dismiss];
     else
+#endif
         [alert dismiss];
     [alert release];
     alert = nil;
@@ -535,8 +545,10 @@ void initSpringBoardHooks()
         MSHookMessage($SpringBoard, @selector(menuButtonDown:), &$SpringBoard$menuButtonDown$);
     _SpringBoard$menuButtonUp$ =
         MSHookMessage($SpringBoard, @selector(menuButtonUp:), &$SpringBoard$menuButtonUp$);
+#if 0
     _SpringBoard$_handleMenuButtonEvent =
         MSHookMessage($SpringBoard, @selector(_handleMenuButtonEvent), &$SpringBoard$_handleMenuButtonEvent);
+#endif
 
     class_addMethod($SpringBoard, @selector(setBackgroundingEnabled:forDisplayIdentifier:),
         (IMP)&$SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$, "v@:c@");
