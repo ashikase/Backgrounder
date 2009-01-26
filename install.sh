@@ -3,7 +3,7 @@
 set -e
 
 BASEDIR="${PWD}"
-SUBDIRS="Backgrounder Backgrounder-Hooks"
+SUBDIRS="Backgrounder"
 
 for LIB in ${SUBDIRS}; do
     cd "${BASEDIR}/${LIB}"

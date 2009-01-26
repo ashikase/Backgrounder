@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-18 13:21:13
+ * Last-modified: 2009-01-26 21:45:17
  */
 
 /**
@@ -43,6 +43,7 @@
 #import <Foundation/NSBundle.h>
 #import <Foundation/NSString.h>
 
+extern void initApplicationHooks();
 extern void initSpringBoardHooks();
 
 
@@ -54,6 +55,8 @@ extern "C" void BackgrounderInitialize()
     NSString *identifier = [[NSBundle mainBundle] bundleIdentifier];
     if ([identifier isEqualToString:@"com.apple.springboard"])
         initSpringBoardHooks();
+    else
+        initApplicationHooks();
 
     [pool release];
 }

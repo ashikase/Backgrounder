@@ -17,6 +17,7 @@ LDFLAGS = -lobjc \
 
 SRCS = \
 	   main.mm \
+	   ApplicationHooks.mm \
 	   SimplePopup.mm \
 	   SpringBoardHooks.mm \
 	   TaskMenuPopup.mm
