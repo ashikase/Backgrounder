@@ -5,7 +5,7 @@ SYS_PATH = /opt/iPhone/sys
 SUB_PATH = /files/Platforms/iPhone/Projects/Others/saurik/mobilesubstrate
 
 CXX = arm-apple-darwin9-g++
-CXXFLAGS = -g0 -O2 -Wall -Werror -I$(SUB_PATH) 
+CXXFLAGS = -g0 -O2 -Wall -Werror -I$(SUB_PATH) -IClasses
 LDFLAGS = -lobjc \
 		  -framework CoreFoundation \
 		  -framework Foundation \
@@ -17,10 +17,10 @@ LDFLAGS = -lobjc \
 
 SRCS = \
 	   main.mm \
-	   ApplicationHooks.mm \
-	   SimplePopup.mm \
-	   SpringBoardHooks.mm \
-	   TaskMenuPopup.mm
+	   Classes/ApplicationHooks.mm \
+	   Classes/SimplePopup.mm \
+	   Classes/SpringBoardHooks.mm \
+	   Classes/TaskMenuPopup.mm
 
 all: $(NAME).dylib $(control)
 
