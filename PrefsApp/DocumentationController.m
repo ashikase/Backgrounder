@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 20:27:40
+ * Last-modified: 2009-01-26 20:20:20
  */
 
 /**
@@ -68,12 +68,13 @@
 
 - (void)loadView
 {
-    CGRect frame = [[UIScreen mainScreen] bounds];
+    CGRect frame = [[UIScreen mainScreen] applicationFrame];
 
     UIView *view = [[UIView alloc] initWithFrame:frame];
     [view setBackgroundColor:[UIColor groupTableViewBackgroundColor]];
 
-    webView = [[UIWebView alloc] initWithFrame:frame];
+    webView = [[UIWebView alloc] initWithFrame:[view bounds]];
+    [webView setAutoresizingMask:(1 << 4)]; // UIViewAutoresizingFlexibleHeight;
     [webView setBackgroundColor:[UIColor groupTableViewBackgroundColor]];
     [webView setDelegate:self];
     [webView setHidden:YES];
