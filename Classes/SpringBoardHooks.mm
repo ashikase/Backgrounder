@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-26 22:45:20
+ * Last-modified: 2009-01-28 13:43:01
  */
 
 /**
@@ -38,6 +38,7 @@
  * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
 
 #import "SpringBoardHooks.h"
 
@@ -356,6 +357,7 @@ static void $SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$(SpringBoa
     }
 }
 
+#if 0
 static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SEL sel, NSString *identifier)
 {
     SBApplication *currApp = [[displayStacks objectAtIndex:0] topApplication];
@@ -442,6 +444,7 @@ static void $SpringBoard$quitAppWithDisplayIdentifier$(SpringBoard *self, SEL se
         [[displayStacks objectAtIndex:3] pushDisplay:app];
     }
 }
+#endif
 
 //______________________________________________________________________________
 //______________________________________________________________________________
@@ -554,8 +557,10 @@ void initSpringBoardHooks()
         (IMP)&$SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$, "v@:c@");
     class_addMethod($SpringBoard, @selector(invokeBackgrounder), (IMP)&$SpringBoard$invokeBackgrounder, "v@:");
     class_addMethod($SpringBoard, @selector(dismissBackgrounderFeedback), (IMP)&$SpringBoard$dismissBackgrounderFeedback, "v@:");
+#if 0
     class_addMethod($SpringBoard, @selector(switchToAppWithDisplayIdentifier:), (IMP)&$SpringBoard$switchToAppWithDisplayIdentifier$, "v@:@");
     class_addMethod($SpringBoard, @selector(quitAppWithDisplayIdentifier:), (IMP)&$SpringBoard$quitAppWithDisplayIdentifier$, "v@:@");
+#endif
 
     Class $SBApplication(objc_getClass("SBApplication"));
     _SBApplication$shouldLaunchPNGless =
