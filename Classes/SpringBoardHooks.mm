@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-28 13:43:01
+ * Last-modified: 2009-01-29 09:15:14
  */
 
 /**
@@ -93,9 +93,9 @@ static NSString *deactivatingApplication = nil;
 
 NSMutableArray *displayStacks = nil;
 
-HOOK(SBDisplayStack, alloc, id)
+HOOK(SBDisplayStack, init, id)
 {
-    id stack = CALL_ORIG(SBDisplayStack, alloc);
+    id stack = CALL_ORIG(SBDisplayStack, init);
     [displayStacks addObject:stack];
     return stack;
 }
@@ -527,11 +527,9 @@ HOOK(SBApplication, _startTerminationWatchdogTimer, void)
 
 void initSpringBoardHooks()
 {
-    Class $SBDisplayStackMeta(objc_getMetaClass("SBDisplayStack"));
-    _SBDisplayStack$alloc =
-        MSHookMessage($SBDisplayStackMeta, @selector(alloc), &$SBDisplayStack$alloc);
-
     Class $SBDisplayStack(objc_getClass("SBDisplayStack"));
+    _SBDisplayStack$init =
+        MSHookMessage($SBDisplayStack, @selector(init), &$SBDisplayStack$init);
     _SBDisplayStack$dealloc =
         MSHookMessage($SBDisplayStack, @selector(dealloc), &$SBDisplayStack$dealloc);
 
