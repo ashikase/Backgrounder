@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-27 00:03:41
+ * Last-modified: 2009-01-31 20:10:31
  */
 
 /**
@@ -53,11 +53,7 @@
 
 - (void)applicationDidFinishLaunching:(UIApplication *)application
 {
-    // Create and load in-memory preferences object
     Preferences *prefs = [Preferences sharedInstance];
-    [prefs registerDefaults];
-    [prefs readUserDefaults];
-
     if ([prefs firstRun]) {
         // Show a once-only warning
         NSString *title = [NSString stringWithFormat:@"Welcome to %@", @APP_TITLE];
@@ -73,7 +69,7 @@
 
     // Create our navigation controller with the initial view controller
     navController = [[UINavigationController alloc] initWithRootViewController:
-        [[[RootController alloc] initWithStyle:1] autorelease]];;
+        [[[RootController alloc] initWithStyle:1] autorelease]];
     [[navController navigationBar] setBarStyle:1];
 
     // Create and show the application window

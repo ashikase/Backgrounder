@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 18:35:05
+ * Last-modified: 2009-01-31 20:10:14
  */
 
 /**
@@ -102,6 +102,9 @@ static NSArray *allowedFeedbackTypes = nil;
             @"homeShortPress", @"homeDoubleTap", @"homeSingleTap", nil];
         allowedFeedbackTypes = [[NSArray alloc] initWithObjects:
             @"simplePopup", @"taskMenuPopup", nil];
+
+        [self registerDefaults];
+        [self readUserDefaults];
     }
     return self;
 }
@@ -116,6 +119,9 @@ static NSArray *allowedFeedbackTypes = nil;
 
 - (void)registerDefaults
 {
+    // NOTE: This method sets default values for options that are not already
+    //       already set in the application's on-disk preferences list.
+
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity:4];
 
@@ -129,7 +135,7 @@ static NSArray *allowedFeedbackTypes = nil;
     [defaults registerDefaults:dict];
 }
 
-#pragma mark Read/Write methods
+#pragma mark - Read/Write methods
 
 - (void)readUserDefaults
 {
