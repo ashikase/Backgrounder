@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-25 20:00:27
+ * Last-modified: 2009-02-01 20:35:52
  */
 
 /**
@@ -82,6 +82,39 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 
 @implementation EnabledApplicationsController
 
+static NSArray *applicationDisplayIdentifiers()
+{
+    // First, get a list of all possible application paths
+    NSMutableArray *paths = [NSMutableArray array];
+
+    // ... scan /Applications (System/Jailbreak applications)
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    for (NSString *path in [fileManager directoryContentsAtPath:@"/Applications"]) {
+        if ([path hasSuffix:@".app"] && ![path hasPrefix:@"."])
+           [paths addObject:[NSString stringWithFormat:@"/Applications/%@", path]];
+    }
+
+    // ... scan /var/mobile/Applications (AppStore applications)
+    for (NSString *path in [fileManager directoryContentsAtPath:@"/var/mobile/Applications"]) {
+        for (NSString *subpath in [fileManager directoryContentsAtPath:
+                [NSString stringWithFormat:@"/var/mobile/Applications/%@", path]]) {
+            if ([subpath hasSuffix:@".app"])
+                [paths addObject:[NSString stringWithFormat:@"/var/mobile/Applications/%@/%@", path, subpath]];
+        }
+    }
+
+    // Then, go through paths and record application identifiers
+    NSMutableArray *identifiers = [NSMutableArray array];
+
+    for (NSString *path in paths) {
+        NSBundle *bundle = [NSBundle bundleWithPath:path];
+        if (bundle)
+            [identifiers addObject:[bundle bundleIdentifier]];
+    }
+
+    return identifiers;
+}
+
 - (id)initWithStyle:(int)style
 {
     self = [super initWithStyle:style];
@@ -119,10 +152,9 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 
 - (void)enumerateApplications
 {
-    NSArray *array = SBSCopyApplicationDisplayIdentifiers(NO, NO);
+    NSArray *array = applicationDisplayIdentifiers();
     NSArray *sortedArray = [array sortedArrayUsingFunction:compareDisplayNames context:NULL];
     [rootController setDisplayIdentifiers:sortedArray];
-    [array release];
     [self.tableView reloadData];
 
     // Remove the progress indicator
@@ -176,7 +208,7 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return 1;
+    return 1;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(int)section
