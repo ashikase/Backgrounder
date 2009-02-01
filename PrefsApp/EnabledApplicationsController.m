@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-02-01 20:35:52
+ * Last-modified: 2009-02-01 20:42:47
  */
 
 /**
@@ -60,7 +60,6 @@
 #import "RootController.h"
 
 // SpringBoardServices
-extern id SBSCopyApplicationDisplayIdentifiers(BOOL onlyActive, BOOL unknown);
 extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
 extern NSString * SBSCopyIconImagePathForDisplayIdentifier(NSString *identifier);
 
@@ -242,13 +241,16 @@ static NSArray *applicationDisplayIdentifiers()
 
     NSString *displayName = SBSCopyLocalizedApplicationNameForDisplayIdentifier(identifier);
     [cell setText:displayName];
+    [displayName release];
 
+    UIImage *icon = nil;
     NSString *iconPath = SBSCopyIconImagePathForDisplayIdentifier(identifier);
     if (iconPath != nil) {
-        UIImage *icon = [UIImage imageWithContentsOfFile:iconPath];
+        icon = [UIImage imageWithContentsOfFile:iconPath];
         icon = [icon _imageScaledToSize:CGSizeMake(35, 36) interpolationQuality:0];
-        [cell setImage:icon];
+        [iconPath release];
     }
+    [cell setImage:icon];
 
     UISwitch *toggle = [cell accessoryView];
     [toggle setOn:[enabledApplications containsObject:identifier]];
