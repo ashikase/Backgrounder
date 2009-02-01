@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-31 20:10:14
+* Last-modified: 2009-02-01 19:20:01
  */
 
 /**
@@ -51,38 +51,10 @@ static NSArray *allowedFeedbackTypes = nil;
 
 @implementation Preferences
 
-@synthesize isModified;
 @synthesize firstRun;
 @synthesize invocationMethod;
 @synthesize feedbackType;
 @synthesize enabledApplications;
-
-#pragma mark - Properties
-
-- (void)setInvocationMethod:(unsigned int)method
-{
-    if (invocationMethod != method) {
-        invocationMethod = method;
-        isModified = YES;
-    }
-}
-
-- (void)setFeedbackType:(unsigned int)type
-{
-    if (feedbackType != type) {
-        feedbackType = type;
-        isModified = YES;
-    }
-}
-
-- (void)setEnabledApplications:(NSArray *)apps
-{
-    if (enabledApplications != apps) {
-        [enabledApplications release];
-        enabledApplications = [apps retain];
-        isModified = YES;
-    }
-}
 
 #pragma mark - Methods
 
@@ -103,24 +75,79 @@ static NSArray *allowedFeedbackTypes = nil;
         allowedFeedbackTypes = [[NSArray alloc] initWithObjects:
             @"simplePopup", @"taskMenuPopup", nil];
 
+        // Setup default values
         [self registerDefaults];
-        [self readUserDefaults];
+
+        // Load preference values into memory
+        [self readFromDisk];
+
+        // Retain a copy of the initial values of the preferences
+        initialValues = [[self dictionaryRepresentation] retain];
+
+        // The on-disk values at startup are the same as initialValues
+        onDiskValues = [initialValues retain];
     }
     return self;
 }
 
 - (void)dealloc
 {
-    [enabledApplications release];
+    [onDiskValues release];
+    [initialValues release];
     [allowedInvocationMethods release];
     [allowedFeedbackTypes release];
+
     [super dealloc];
 }
+
+#pragma mark - Other
+
+- (NSDictionary *)dictionaryRepresentation
+{
+    NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity:4];
+
+    [dict setObject:[NSNumber numberWithBool:firstRun] forKey:@"firstRun"];
+
+    NSString *string = nil;
+    @try {
+        string = [allowedInvocationMethods objectAtIndex:invocationMethod];
+        [dict setObject:string forKey:@"invocationMethod"];
+    }
+    @catch (NSException *exception) {
+        // Ignore the exception (assumed to be NSRangeException)
+    }
+
+    @try {
+        string = [allowedFeedbackTypes objectAtIndex:feedbackType];
+        [dict setObject:string forKey:@"feedbackType"];
+    }
+    @catch (NSException *exception) {
+        // Ignore the exception (assumed to be NSRangeException)
+    }
+
+    [dict setObject:enabledApplications forKey:@"enabledApplications"];
+
+    return dict;
+}
+
+#pragma mark - Status
+
+- (BOOL)isModified
+{
+    return ![[self dictionaryRepresentation] isEqual:onDiskValues];
+}
+
+- (BOOL)needsRespring
+{
+    return ![[self dictionaryRepresentation] isEqual:initialValues];
+}
+
+#pragma mark - Read/Write methods
 
 - (void)registerDefaults
 {
     // NOTE: This method sets default values for options that are not already
-    //       already set in the application's on-disk preferences list.
+    //       set in the application's on-disk preferences list.
 
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity:4];
@@ -135,53 +162,34 @@ static NSArray *allowedFeedbackTypes = nil;
     [defaults registerDefaults:dict];
 }
 
-#pragma mark - Read/Write methods
-
-- (void)readUserDefaults
+- (void)readFromDisk
 {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     
     firstRun = [defaults boolForKey:@"firstRun"];
 
-    NSString *prefString = [defaults stringForKey:@"invocationMethod"];
-    unsigned int index = [allowedInvocationMethods indexOfObject:prefString];
+    NSString *string = [defaults stringForKey:@"invocationMethod"];
+    unsigned int index = [allowedInvocationMethods indexOfObject:string];
     invocationMethod = (index == NSNotFound) ? 0 : index;
 
-    prefString = [defaults stringForKey:@"feedbackType"];
-    index = [allowedFeedbackTypes indexOfObject:prefString];
+    string = [defaults stringForKey:@"feedbackType"];
+    index = [allowedFeedbackTypes indexOfObject:string];
     feedbackType = (index == NSNotFound) ? 0 : index;
 
     enabledApplications = [[defaults arrayForKey:@"enabledApplications"] retain];
 }
 
-- (void)writeUserDefaults
+- (void)writeToDisk
 {
+    NSDictionary *dict = [self dictionaryRepresentation];
+
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-
-    [defaults setObject:[NSNumber numberWithBool:firstRun] forKey:@"firstRun"];
-
-    NSString *prefString = nil;
-    @try {
-        prefString = [allowedInvocationMethods objectAtIndex:invocationMethod];
-        if (prefString)
-            [defaults setObject:prefString forKey:@"invocationMethod"];
-    }
-    @catch (NSException *exception) {
-        // Ignore the exception (assumed to be NSRangeException)
-    }
-
-    @try {
-        prefString = [allowedFeedbackTypes objectAtIndex:feedbackType];
-        if (prefString)
-            [defaults setObject:prefString forKey:@"feedbackType"];
-    }
-    @catch (NSException *exception) {
-        // Ignore the exception (assumed to be NSRangeException)
-    }
-
-    [defaults setObject:enabledApplications forKey:@"enabledApplications"];
-
+    [defaults setPersistentDomain:dict forName:[[NSBundle mainBundle] bundleIdentifier]];
     [defaults synchronize];
+
+    // Update the list of on-disk values
+    [onDiskValues release];
+    onDiskValues = [dict retain];
 }
 
 @end

@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 18:31:24
+ * Last-modified: 2009-02-01 19:21:01
  */
 
 /**
@@ -44,19 +44,19 @@
 
 
 @class NSArray;
+@class NSDictionary;
 @class NSString;
 
 @interface Preferences : NSObject
 {
-    BOOL isModified;
+    NSDictionary *initialValues;
+    NSDictionary *onDiskValues;
 
     BOOL firstRun;
     unsigned int invocationMethod;
     unsigned int feedbackType;
     NSArray *enabledApplications;
 }
-
-@property(nonatomic, readonly) BOOL isModified;
 
 @property(nonatomic) BOOL firstRun;
 @property(nonatomic) unsigned int invocationMethod;
@@ -65,9 +65,14 @@
 
 + (Preferences *)sharedInstance;
 
+- (NSDictionary *)dictionaryRepresentation;
+
+- (BOOL)isModified;
+- (BOOL)needsRespring;
+
 - (void)registerDefaults;
-- (void)readUserDefaults;
-- (void)writeUserDefaults;
+- (void)readFromDisk;
+- (void)writeToDisk;
 
 @end
 
