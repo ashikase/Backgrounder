@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-* Last-modified: 2009-02-01 19:20:01
+* Last-modified: 2009-02-09 22:51:32
  */
 
 /**
@@ -111,7 +111,7 @@ static NSArray *allowedFeedbackTypes = nil;
     NSString *string = nil;
     @try {
         string = [allowedInvocationMethods objectAtIndex:invocationMethod];
-        [dict setObject:string forKey:@"invocationMethod"];
+        [dict setObject:[string copy] forKey:@"invocationMethod"];
     }
     @catch (NSException *exception) {
         // Ignore the exception (assumed to be NSRangeException)
@@ -119,13 +119,13 @@ static NSArray *allowedFeedbackTypes = nil;
 
     @try {
         string = [allowedFeedbackTypes objectAtIndex:feedbackType];
-        [dict setObject:string forKey:@"feedbackType"];
+        [dict setObject:[string copy] forKey:@"feedbackType"];
     }
     @catch (NSException *exception) {
         // Ignore the exception (assumed to be NSRangeException)
     }
 
-    [dict setObject:enabledApplications forKey:@"enabledApplications"];
+    [dict setObject:[enabledApplications copy] forKey:@"enabledApplications"];
 
     return dict;
 }
