@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-26 23:57:59
+ * Last-modified: 2009-02-10 20:07:53
  */
 
 /**
@@ -48,6 +48,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import <UIKit/UISwitch.h>
 #import <UIKit/UIViewController-UINavigationControllerItem.h>
 
 #import "Constants.h"
@@ -112,7 +113,7 @@
             return 4;
         case 1:
             // Preferences
-            return 1;
+            return 2;
         default:
             return 0;
     }
@@ -122,6 +123,7 @@
 {
     static NSString *reuseIdSimple = @"SimpleCell";
     static NSString *reuseIdSafari = @"SafariCell";
+    static NSString *reuseIdToggle = @"ToggleCell";
 
     UITableViewCell *cell = nil;
     if (indexPath.section == 0 && indexPath.row == 3) {
@@ -146,6 +148,25 @@
         }
 
         [cell setText:@"Project Homepage"];
+    } else if (indexPath.section == 1 && indexPath.row == 0) {
+        // Try to retrieve from the table view a now-unused cell with the given identifier
+        cell = [tableView dequeueReusableCellWithIdentifier:reuseIdToggle];
+        if (cell == nil) {
+            // Cell does not exist, create a new one
+            cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdToggle] autorelease];
+            [cell setSelectionStyle:0];
+
+            UISwitch *toggle = [[UISwitch alloc] init];
+            [toggle addTarget:self action:@selector(switchToggled:) forControlEvents:4096]; // ValueChanged
+            [cell setAccessoryView:toggle];
+            [toggle release];
+        }
+
+        [cell setText:@"Persistence"];
+        [cell setImage:nil];
+
+        UISwitch *toggle = [cell accessoryView];
+        [toggle setOn:[[Preferences sharedInstance] isPersistent]];
     } else {
         // Try to retrieve from the table view a now-unused cell with the given identifier
         cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSimple];
@@ -173,14 +194,19 @@
                 break;
             case 1:
                 // Preferences
-                [cell setText:@"Auto-enabled Applications"];
+                switch (indexPath.row) {
 #if 0
-                if (indexPath.row == 0) {
-                    [cell setText:@"Mode"];
-                } else {
-                    [cell setText:@"Invocation method"];
-                }
+                    case 1:
+                        [cell setText:@"Mode"];
+                        break;
+                    case 2:
+                        [cell setText:@"Invocation method"];
+                        break;
 #endif
+                    case 1:
+                        [cell setText:@"Auto-enabled Applications"];
+                        break;
+                }
                 break;
         }
     }
@@ -201,53 +227,61 @@
                 NSString *fileName = nil;
                 NSString *title = nil;
 
-                switch (indexPath.section) {
+                switch (indexPath.row) {
                     case 0:
-                        {
-                            switch (indexPath.row) {
-                                case 0:
-                                    fileName = @"usage.html";
-                                    title = @"How to Use";
-                                    break;
-                                case 1:
-                                    fileName = @"release_notes.html";
-                                    title = @"Release Notes";
-                                    break;
-                                case 2:
-                                    fileName = @"known_issues.html";
-                                    title = @"Known Issues";
-                                    break;
-                                case 3:
-                                    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@DEVSITE_URL]];
-                                    break;
-                            }
-                            if (fileName && title)
-                                [[self navigationController] pushViewController:[[[DocumentationController alloc]
-                                    initWithContentsOfFile:fileName title:title] autorelease] animated:YES];
-                        }
+                        fileName = @"usage.html";
+                        title = @"How to Use";
+                        break;
+                    case 1:
+                        fileName = @"release_notes.html";
+                        title = @"Release Notes";
+                        break;
+                    case 2:
+                        fileName = @"known_issues.html";
+                        title = @"Known Issues";
+                        break;
+                    case 3:
+                        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@DEVSITE_URL]];
+                        break;
                 }
+                if (fileName && title)
+                    [[self navigationController] pushViewController:[[[DocumentationController alloc]
+                        initWithContentsOfFile:fileName title:title] autorelease] animated:YES];
             }
             break;
         case 1:
-            // Applications
-            vc = [[[EnabledApplicationsController alloc] initWithStyle:1] autorelease];
+            switch (indexPath.row) {
+                case 1:
+                    // Applications
+                    vc = [[[EnabledApplicationsController alloc] initWithStyle:1] autorelease];
+                    break;
 #if 0
-            // General
-            if (indexPath.row == 0) {
-                // Operating mode
-                vc = [[[FeedbackTypeController alloc] initWithStyle:1] autorelease];
-                break;
-            } else if (indexPath.row == 1) {
-                // Invocation method
-                vc = [[[InvocationMethodController alloc] initWithStyle:1] autorelease];
+                // General
+                if (indexPath.row == 0) {
+                    // Operating mode
+                    vc = [[[FeedbackTypeController alloc] initWithStyle:1] autorelease];
+                    break;
+                } else if (indexPath.row == 1) {
+                    // Invocation method
+                    vc = [[[InvocationMethodController alloc] initWithStyle:1] autorelease];
+                    break;
+                }
+#endif
                 break;
             }
-#endif
-            break;
     }
 
     if (vc)
         [[self navigationController] pushViewController:vc animated:YES];
+}
+
+#pragma mark - Switch delegate
+
+- (void)switchToggled:(UISwitch *)control
+{
+    NSIndexPath *indexPath = [self.tableView indexPathForCell:[control superview]];
+    if (indexPath.section == 1 && indexPath.row == 0)
+        [[Preferences sharedInstance] setPersistent:[control isOn]];
 }
 
 @end

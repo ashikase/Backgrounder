@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-* Last-modified: 2009-02-09 22:51:32
+* Last-modified: 2009-02-10 19:58:45
  */
 
 /**
@@ -52,6 +52,7 @@ static NSArray *allowedFeedbackTypes = nil;
 @implementation Preferences
 
 @synthesize firstRun;
+@synthesize persistent;
 @synthesize invocationMethod;
 @synthesize feedbackType;
 @synthesize enabledApplications;
@@ -107,6 +108,7 @@ static NSArray *allowedFeedbackTypes = nil;
     NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity:4];
 
     [dict setObject:[NSNumber numberWithBool:firstRun] forKey:@"firstRun"];
+    [dict setObject:[NSNumber numberWithBool:persistent] forKey:@"persistent"];
 
     NSString *string = nil;
     @try {
@@ -153,6 +155,7 @@ static NSArray *allowedFeedbackTypes = nil;
     NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity:4];
 
     [dict setObject:[NSNumber numberWithBool:YES] forKey:@"firstRun"];
+    [dict setObject:[NSNumber numberWithBool:YES] forKey:@"persistent"];
     [dict setObject:@"homeShortPress" forKey:@"invocationMethod"];
     [dict setObject:@"simplePopup" forKey:@"feedbackType"];
 
@@ -167,6 +170,7 @@ static NSArray *allowedFeedbackTypes = nil;
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     
     firstRun = [defaults boolForKey:@"firstRun"];
+    persistent = [defaults boolForKey:@"persistent"];
 
     NSString *string = [defaults stringForKey:@"invocationMethod"];
     unsigned int index = [allowedInvocationMethods indexOfObject:string];
