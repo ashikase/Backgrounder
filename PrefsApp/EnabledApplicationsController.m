@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-02-01 20:42:47
+ * Last-modified: 2009-02-01 22:14:29
  */
 
 /**
@@ -102,13 +102,26 @@ static NSArray *applicationDisplayIdentifiers()
         }
     }
 
-    // Then, go through paths and record application identifiers
+    // Then, go through paths and record valid application identifiers
     NSMutableArray *identifiers = [NSMutableArray array];
 
     for (NSString *path in paths) {
         NSBundle *bundle = [NSBundle bundleWithPath:path];
-        if (bundle)
-            [identifiers addObject:[bundle bundleIdentifier]];
+        if (bundle) {
+            NSString *identifier = [bundle bundleIdentifier];
+
+            // Filter out non-applications and apps that should remain hidden
+            // FIXME: The proper fix is to only show non-hidden apps and apps
+            //        that are in Categories; unfortunately, the design of
+            //        Categories does not make it easy to determine what apps
+            //        a given folder contains.
+            if (![identifier hasPrefix:@"com.bigboss.categories."] &&
+                ![identifier hasPrefix:@"jp.ashikase.springjumps."] &&
+                ![identifier isEqualToString:@"com.apple.webapp"] &&
+                ![identifier isEqualToString:@"com.bigboss.sbsettings"] &&
+                ![identifier isEqualToString:@"com.apple.webapp"])
+            [identifiers addObject:identifier];
+        }
     }
 
     return identifiers;
