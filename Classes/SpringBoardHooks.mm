@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-29 09:15:14
+ * Last-modified: 2009-02-10 21:20:30
  */
 
 /**
@@ -45,6 +45,7 @@
 #include <signal.h>
 #include <substrate.h>
 
+#import <CoreFoundation/CFNumber.h>
 #import <CoreFoundation/CFPreferences.h>
 
 #import <Foundation/NSArray.h>
@@ -75,6 +76,8 @@ struct GSEvent;
 
 #define CALL_ORIG(class, name, args...) \
     _ ## class ## $ ## name(self, sel, ## args)
+
+static BOOL isPersistent = YES;
 
 #define SIMPLE_POPUP 0
 #define TASK_MENU_POPUP 1
@@ -234,8 +237,16 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
     // FIXME: Determine a way to do this without requiring extra storage
     statusBarStates = [[NSMutableDictionary alloc] initWithCapacity:5];
 
-#if 0
     // Load preferences
+    CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("persistent"), CFSTR(APP_ID));
+    if (propList) {
+        // NOTE: Defaults to YES
+        if (CFGetTypeID(propList) == CFBooleanGetTypeID())
+            isPersistent = CFBooleanGetValue(reinterpret_cast<CFBooleanRef>(propList));
+        CFRelease(propList);
+    }
+
+#if 0
     CFPropertyListRef prefMethod = CFPreferencesCopyAppValue(CFSTR("invocationMethod"), CFSTR(APP_ID));
     if (prefMethod) {
         // NOTE: Defaults to HOME_SHORT_PRESS
@@ -458,21 +469,30 @@ HOOK(SBApplication, shouldLaunchPNGless, BOOL)
 HOOK(SBApplication, launchSucceeded, void)
 {
     NSString *identifier = [self displayIdentifier];
-    if ([activeApplications objectForKey:identifier] == nil) {
-        // Initial launch; check if this application defaults to backgrounding
-        CFPropertyListRef array = CFPreferencesCopyAppValue(CFSTR("enabledApplications"), CFSTR(APP_ID));
-        if (array) {
-            if ([(NSArray *)array containsObject:identifier]) {
-                // Tell the application to enable backgrounding
-                kill([self pid], SIGUSR1);
 
-                // Store the backgrounding status of the application
-                [activeApplications setObject:[NSNumber numberWithBool:YES] forKey:identifier];
-            } else {
-                [activeApplications setObject:[NSNumber numberWithBool:NO] forKey:identifier];
-            }
-            CFRelease(array);
-        } else {
+    BOOL isAlwaysEnabled = NO;
+    CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("enabledApplications"), CFSTR(APP_ID));
+    if (propList) {
+        if (CFGetTypeID(propList) == CFArrayGetTypeID())
+            isAlwaysEnabled = [(NSArray *)propList containsObject:identifier];
+        CFRelease(propList);
+    }
+
+    if ([activeApplications objectForKey:identifier] == nil) {
+        // Initial launch; check if this application is set to always background
+        if (isAlwaysEnabled)
+            // Tell the application to enable backgrounding
+            kill([self pid], SIGUSR1);
+
+        // Store the backgrounding status of the application
+        [activeApplications setObject:[NSNumber numberWithBool:isAlwaysEnabled] forKey:identifier];
+    } else {
+        // Was restored from backgrounded state
+        if (!isPersistent && !isAlwaysEnabled) {
+            // Tell the application to disable backgrounding
+            kill([self pid], SIGUSR1);
+
+            // Store the backgrounding status of the application
             [activeApplications setObject:[NSNumber numberWithBool:NO] forKey:identifier];
         }
     }
