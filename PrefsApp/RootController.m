@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-02-11 11:43:57
+ * Last-modified: 2009-02-11 12:00:26
  */
 
 /**
@@ -50,9 +50,9 @@
 
 #import <UIKit/UIViewController-UINavigationControllerItem.h>
 
+#import "AppSpecificPrefsController.h"
 #import "Constants.h"
 #import "DocumentationController.h"
-#import "EnabledApplicationsController.h"
 #import "GlobalPrefsController.h"
 #import "Preferences.h"
 
@@ -148,7 +148,7 @@
     } else {
         static NSString *cellTitles[][3] = {
             { @"How to Use", @"Release Notes", @"Known Issues" },
-            { @"Global", @"Auto-enabled Applications", nil }
+            { @"Global", @"Application-specific", nil }
         };
 
         // Try to retrieve from the table view a now-unused cell with the given identifier
@@ -207,21 +207,9 @@
                     vc = [[[GlobalPrefsController alloc] initWithStyle:1] autorelease];
                     break;
                 case 1:
-                    // Applications
-                    vc = [[[EnabledApplicationsController alloc] initWithStyle:1] autorelease];
+                    // Application-specific Preferences
+                    vc = [[[AppSpecificPrefsController alloc] initWithStyle:1] autorelease];
                     break;
-#if 0
-                // General
-                if (indexPath.row == 0) {
-                    // Operating mode
-                    vc = [[[FeedbackTypeController alloc] initWithStyle:1] autorelease];
-                    break;
-                } else if (indexPath.row == 1) {
-                    // Invocation method
-                    vc = [[[InvocationMethodController alloc] initWithStyle:1] autorelease];
-                    break;
-                }
-#endif
                 break;
             }
     }
