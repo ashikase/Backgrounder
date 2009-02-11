@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-26 20:20:20
+ * Last-modified: 2009-02-11 21:54:02
  */
 
 /**
@@ -105,6 +105,19 @@
 - (void)webView:(UIWebView *)webView_ didFailLoadWithError:(NSError *)error
 {
     // FIXME: Should handle this somehow, perhaps display an error popup?
+}
+
+- (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request
+    navigationType:(int)navigationType
+{
+    BOOL ret = YES;
+
+    NSURL *url = [request URL];
+    if (navigationType == 0 && [[url scheme] hasPrefix: @"http"])
+        // http(s) link was clicked, open with external browser
+        ret = ![[UIApplication sharedApplication] openURL:url];
+
+    return ret;
 }
 
 #pragma mark - File loading methods
