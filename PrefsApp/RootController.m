@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-02-10 20:07:53
+ * Last-modified: 2009-02-11 11:43:57
  */
 
 /**
@@ -48,14 +48,12 @@
 
 #import <Foundation/Foundation.h>
 
-#import <UIKit/UISwitch.h>
 #import <UIKit/UIViewController-UINavigationControllerItem.h>
 
 #import "Constants.h"
 #import "DocumentationController.h"
 #import "EnabledApplicationsController.h"
-//#import "FeedbackTypeController.h"
-//#import "InvocationMethodController.h"
+#import "GlobalPrefsController.h"
 #import "Preferences.h"
 
 
@@ -123,7 +121,6 @@
 {
     static NSString *reuseIdSimple = @"SimpleCell";
     static NSString *reuseIdSafari = @"SafariCell";
-    static NSString *reuseIdToggle = @"ToggleCell";
 
     UITableViewCell *cell = nil;
     if (indexPath.section == 0 && indexPath.row == 3) {
@@ -148,26 +145,12 @@
         }
 
         [cell setText:@"Project Homepage"];
-    } else if (indexPath.section == 1 && indexPath.row == 0) {
-        // Try to retrieve from the table view a now-unused cell with the given identifier
-        cell = [tableView dequeueReusableCellWithIdentifier:reuseIdToggle];
-        if (cell == nil) {
-            // Cell does not exist, create a new one
-            cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdToggle] autorelease];
-            [cell setSelectionStyle:0];
-
-            UISwitch *toggle = [[UISwitch alloc] init];
-            [toggle addTarget:self action:@selector(switchToggled:) forControlEvents:4096]; // ValueChanged
-            [cell setAccessoryView:toggle];
-            [toggle release];
-        }
-
-        [cell setText:@"Persistence"];
-        [cell setImage:nil];
-
-        UISwitch *toggle = [cell accessoryView];
-        [toggle setOn:[[Preferences sharedInstance] isPersistent]];
     } else {
+        static NSString *cellTitles[][3] = {
+            { @"How to Use", @"Release Notes", @"Known Issues" },
+            { @"Global", @"Auto-enabled Applications", nil }
+        };
+
         // Try to retrieve from the table view a now-unused cell with the given identifier
         cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSimple];
         if (cell == nil) {
@@ -176,39 +159,7 @@
             [cell setSelectionStyle:2]; // Gray
             [cell setAccessoryType:1]; // Simple arrow
         }
-
-        switch (indexPath.section) {
-            case 0:
-                // Documentation
-                switch (indexPath.row) {
-                    case 0:
-                        [cell setText:@"How to Use"];
-                        break;
-                    case 1:
-                        [cell setText:@"Release Notes"];
-                        break;
-                    case 2:
-                        [cell setText:@"Known Issues"];
-                        break;
-                }
-                break;
-            case 1:
-                // Preferences
-                switch (indexPath.row) {
-#if 0
-                    case 1:
-                        [cell setText:@"Mode"];
-                        break;
-                    case 2:
-                        [cell setText:@"Invocation method"];
-                        break;
-#endif
-                    case 1:
-                        [cell setText:@"Auto-enabled Applications"];
-                        break;
-                }
-                break;
-        }
+        [cell setText:cellTitles[indexPath.section][indexPath.row]];
     }
 
     return cell;
@@ -251,6 +202,10 @@
             break;
         case 1:
             switch (indexPath.row) {
+                case 0:
+                    // Global Preferences
+                    vc = [[[GlobalPrefsController alloc] initWithStyle:1] autorelease];
+                    break;
                 case 1:
                     // Applications
                     vc = [[[EnabledApplicationsController alloc] initWithStyle:1] autorelease];
@@ -273,15 +228,6 @@
 
     if (vc)
         [[self navigationController] pushViewController:vc animated:YES];
-}
-
-#pragma mark - Switch delegate
-
-- (void)switchToggled:(UISwitch *)control
-{
-    NSIndexPath *indexPath = [self.tableView indexPathForCell:[control superview]];
-    if (indexPath.section == 1 && indexPath.row == 0)
-        [[Preferences sharedInstance] setPersistent:[control isOn]];
 }
 
 @end
