@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-02-11 12:00:26
+ * Last-modified: 2009-02-11 12:18:33
  */
 
 /**
@@ -93,28 +93,12 @@
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(int)section
 {
-    switch (section) {
-        case 0:
-            return @"Documentation";
-        case 1:
-            return @"Preferences";
-        default:
-            return nil;
-    }
+    return (section == 0) ? @"Documentation" : @"Preferences";
 }
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    switch (section) {
-        case 0:
-            // Documentation
-            return 4;
-        case 1:
-            // Preferences
-            return 2;
-        default:
-            return 0;
-    }
+    return (section == 0) ? 4 : 2;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -171,47 +155,24 @@
 {
     UIViewController *vc = nil;
 
-    switch (indexPath.section) {
-        case 0:
-            {
-                // Documentation
-                NSString *fileName = nil;
-                NSString *title = nil;
+    if (indexPath.section == 0) {
+        // Documentation
+        static NSString *fileNames[] = { @"usage.html", @"release_notes.html", @"known_issues.html" };
+        static NSString *titles[] = { @"How to Use", @"Release Notes", @"Known Issues" };
 
-                switch (indexPath.row) {
-                    case 0:
-                        fileName = @"usage.html";
-                        title = @"How to Use";
-                        break;
-                    case 1:
-                        fileName = @"release_notes.html";
-                        title = @"Release Notes";
-                        break;
-                    case 2:
-                        fileName = @"known_issues.html";
-                        title = @"Known Issues";
-                        break;
-                    case 3:
-                        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@DEVSITE_URL]];
-                        break;
-                }
-                if (fileName && title)
-                    [[self navigationController] pushViewController:[[[DocumentationController alloc]
-                        initWithContentsOfFile:fileName title:title] autorelease] animated:YES];
-            }
-            break;
-        case 1:
-            switch (indexPath.row) {
-                case 0:
-                    // Global Preferences
-                    vc = [[[GlobalPrefsController alloc] initWithStyle:1] autorelease];
-                    break;
-                case 1:
-                    // Application-specific Preferences
-                    vc = [[[AppSpecificPrefsController alloc] initWithStyle:1] autorelease];
-                    break;
-                break;
-            }
+        if (indexPath.row == 3)
+            // Project Homepage
+            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@DEVSITE_URL]];
+        else
+            vc = [[[DocumentationController alloc]
+                initWithContentsOfFile:fileNames[indexPath.row] title:titles[indexPath.row]]
+                autorelease];
+    } else {
+        // Preferences
+        if (indexPath.row == 0)
+            vc = [[[GlobalPrefsController alloc] initWithStyle:1] autorelease];
+        else
+            vc = [[[AppSpecificPrefsController alloc] initWithStyle:1] autorelease];
     }
 
     if (vc)
