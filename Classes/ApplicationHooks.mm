@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-12-20 10:45:52
+ * Last-modified: 2009-02-16 15:24:59
  */
 
 /**
@@ -42,6 +42,7 @@
 #include <signal.h>
 #include <substrate.h>
 
+#import <Foundation/NSString.h>
 #import <UIKit/UIApplication.h>
 
 struct GSEvent;
@@ -78,12 +79,21 @@ static void $UIApplication$setBackgroundingEnabled$(id self, SEL sel, BOOL enabl
 // Prevent execution of application's on-suspend/resume methods
 HOOK(UIApplication, applicationWillSuspend, void)
 {
+    [self removeStatusBarImageNamed:
+        [NSString stringWithFormat:@"Backgrounder"]];
+
     if (!backgroundingEnabled)
         CALL_ORIG(UIApplication, applicationWillSuspend);
 }
 
 HOOK(UIApplication, applicationDidResume, void)
 {
+    NSString *name = [NSString stringWithFormat:@"Backgrounder"];
+    if ([self respondsToSelector:@selector(addStatusBarImageNamed:removeOnExit:)])
+        [self addStatusBarImageNamed:name removeOnExit:YES];
+    else
+        [self addStatusBarImageNamed:name removeOnAbnormalExit:YES];
+
     if (!backgroundingEnabled)
         CALL_ORIG(UIApplication, applicationDidResume);
 }
