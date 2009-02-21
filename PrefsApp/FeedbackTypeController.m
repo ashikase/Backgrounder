@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-25 19:58:48
+ * Last-modified: 2009-02-21 12:32:53
  */
 
 /**
@@ -127,7 +127,7 @@
     [cell setTitle:title];
     [cell setDescription:description];
 
-    NSString *imagePath = [NSString stringWithFormat:@"%@/%@",
+    NSString *imagePath = [NSString stringWithFormat:@"%@/images/%@",
              [[NSBundle mainBundle] bundlePath], imageName];
     [cell setImage:[UIImage imageWithContentsOfFile:imagePath]];
 
