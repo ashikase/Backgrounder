@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-02-11 12:03:00
+ * Last-modified: 2009-02-20 23:44:04
  */
 
 /**
@@ -53,6 +53,7 @@
 
 #import "Constants.h"
 #import "DocumentationController.h"
+#import "BlacklistedApplicationsController.h"
 #import "EnabledApplicationsController.h"
 #import "Preferences.h"
 
@@ -101,7 +102,7 @@
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    return 1;
+    return 2;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -116,7 +117,7 @@
         [cell setSelectionStyle:2]; // Gray
         [cell setAccessoryType:1]; // Simple arrow
     }
-    [cell setText:@"Always-enabled"];
+    [cell setText:(indexPath.row == 0) ? @"Always-enabled" : @"Blacklisted"];
 
     return cell;
 }
@@ -125,8 +126,13 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    UIViewController *vc = [[[EnabledApplicationsController alloc] initWithStyle:1] autorelease];
-    [[self navigationController] pushViewController:vc animated:YES];
+    UIViewController *vc = nil;
+    if (indexPath.row == 0)
+        vc = [[[EnabledApplicationsController alloc] initWithStyle:1] autorelease];
+    else
+        vc = [[[BlacklistedApplicationsController alloc] initWithStyle:1] autorelease];
+    if (vc)
+        [[self navigationController] pushViewController:vc animated:YES];
 }
 
 #pragma mark - Navigation bar delegates

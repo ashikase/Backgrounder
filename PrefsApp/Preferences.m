@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-* Last-modified: 2009-02-10 19:58:45
+* Last-modified: 2009-02-20 23:53:40
  */
 
 /**
@@ -56,6 +56,7 @@ static NSArray *allowedFeedbackTypes = nil;
 @synthesize invocationMethod;
 @synthesize feedbackType;
 @synthesize enabledApplications;
+@synthesize blacklistedApplications;
 
 #pragma mark - Methods
 
@@ -128,6 +129,7 @@ static NSArray *allowedFeedbackTypes = nil;
     }
 
     [dict setObject:[enabledApplications copy] forKey:@"enabledApplications"];
+    [dict setObject:[blacklistedApplications copy] forKey:@"blacklistedApplications"];
 
     return dict;
 }
@@ -159,8 +161,13 @@ static NSArray *allowedFeedbackTypes = nil;
     [dict setObject:@"homeShortPress" forKey:@"invocationMethod"];
     [dict setObject:@"simplePopup" forKey:@"feedbackType"];
 
-    NSArray *array = [NSArray arrayWithObjects:nil];
-    [dict setObject:array forKey:@"enabledApplications"];
+    [dict setObject:[NSArray array] forKey:@"enabledApplications"];
+
+    NSArray *array = [NSArray arrayWithObjects:
+        @"com.apple.mobilephone", @"com.apple.mobilemail", @"com.apple.mobilesafari",
+        nil];
+    [dict setObject:array forKey:@"blacklistedApplications"];
+
 
     [defaults registerDefaults:dict];
 }
@@ -181,6 +188,7 @@ static NSArray *allowedFeedbackTypes = nil;
     feedbackType = (index == NSNotFound) ? 0 : index;
 
     enabledApplications = [[defaults arrayForKey:@"enabledApplications"] retain];
+    blacklistedApplications = [[defaults arrayForKey:@"blacklistedApplications"] retain];
 }
 
 - (void)writeToDisk

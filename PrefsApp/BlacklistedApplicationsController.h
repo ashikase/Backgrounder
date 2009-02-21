@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-02-20 22:08:49
+ * Last-modified: 2009-02-20 22:23:23
  */
 
 /**
@@ -40,43 +40,23 @@
  */
 
 
-#import <Foundation/NSObject.h>
+#import <UIKit/UIKit.h>
 
 
-@class NSArray;
-@class NSDictionary;
-@class NSString;
+@class NSMutableArray;
+@class RootController;
 
-@interface Preferences : NSObject
+@interface BlacklistedApplicationsController : UITableViewController
 {
-    NSDictionary *initialValues;
-    NSDictionary *onDiskValues;
+    UIAlertView *busyIndicator;
 
-    BOOL firstRun;
-    BOOL persistent;
-    unsigned int invocationMethod;
-    unsigned int feedbackType;
-    NSArray *enabledApplications;
-    NSArray *blacklistedApplications;
+    // Reference to root view controller for accessing cached info
+    RootController *rootController;
+
+    // Variables to track changes made on this page
+    NSMutableArray *blacklistedApplications;
+    BOOL isModified;
 }
-
-@property(nonatomic) BOOL firstRun;
-@property(nonatomic, getter=isPersistent) BOOL persistent;
-@property(nonatomic) unsigned int invocationMethod;
-@property(nonatomic) unsigned int feedbackType;
-@property(nonatomic, retain) NSArray *enabledApplications;
-@property(nonatomic, retain) NSArray *blacklistedApplications;
-
-+ (Preferences *)sharedInstance;
-
-- (NSDictionary *)dictionaryRepresentation;
-
-- (BOOL)isModified;
-- (BOOL)needsRespring;
-
-- (void)registerDefaults;
-- (void)readFromDisk;
-- (void)writeToDisk;
 
 @end
 
