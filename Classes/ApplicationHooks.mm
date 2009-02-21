@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-02-16 15:24:59
+ * Last-modified: 2009-02-21 10:55:09
  */
 
 /**
@@ -42,10 +42,14 @@
 #include <signal.h>
 #include <substrate.h>
 
-#import <Foundation/NSString.h>
+#import <CoreFoundation/CFPreferences.h>
+#import <Foundation/Foundation.h>
 #import <UIKit/UIApplication.h>
 
 struct GSEvent;
+
+// FIXME: Move these to Common.h
+#define APP_ID "jp.ashikase.backgrounder"
 
 #define HOOK(class, name, type, args...) \
     static type (*_ ## class ## $ ## name)(class *self, SEL sel, ## args); \
@@ -53,6 +57,7 @@ struct GSEvent;
 
 #define CALL_ORIG(class, name, args...) \
     _ ## class ## $ ## name(self, sel, ## args)
+
 
 static BOOL backgroundingEnabled = NO;
 
@@ -150,16 +155,28 @@ HOOK(UIApplication, _loadMainNibFile, void)
 
 void initApplicationHooks()
 {
-    // Is an application
-    Class $UIApplication(objc_getClass("UIApplication"));
-    _UIApplication$_loadMainNibFile =
-        MSHookMessage($UIApplication, @selector(_loadMainNibFile), &$UIApplication$_loadMainNibFile);
-    class_addMethod($UIApplication, @selector(isBackgroundingEnabled), (IMP)&$UIApplication$isBackgroundingEnabled, "c@:");
-    class_addMethod($UIApplication, @selector(setBackgroundingEnabled:), (IMP)&$UIApplication$setBackgroundingEnabled$, "v@:c");
+    BOOL isBlacklisted = NO;
+    CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("blacklistedApplications"), CFSTR(APP_ID));
+    if (propList) {
+        if (CFGetTypeID(propList) == CFArrayGetTypeID())
+            isBlacklisted = [(NSArray *)propList containsObject:[[NSBundle mainBundle] bundleIdentifier]];
+        CFRelease(propList);
+    }
+
+    if (!isBlacklisted) {
+        Class $UIApplication(objc_getClass("UIApplication"));
+        _UIApplication$_loadMainNibFile =
+            MSHookMessage($UIApplication, @selector(_loadMainNibFile), &$UIApplication$_loadMainNibFile);
+        class_addMethod($UIApplication, @selector(isBackgroundingEnabled), (IMP)&$UIApplication$isBackgroundingEnabled, "c@:");
+        class_addMethod($UIApplication, @selector(setBackgroundingEnabled:), (IMP)&$UIApplication$setBackgroundingEnabled$, "v@:c");
+    }
 
     // Setup action to take upon receiving toggle signal from SpringBoard
     // NOTE: Done this way as the application hooks *must* be installed in
     //       the UIApplication process, not the SpringBoard process
+    // FIXME: Find alternative method of telling application to background
+    //        so that blacklisted apps do not need to be hooked.
+    //        (Signal must be caught, or application will be killed).
     sigset_t block_mask;
     sigfillset(&block_mask);
     struct sigaction action;

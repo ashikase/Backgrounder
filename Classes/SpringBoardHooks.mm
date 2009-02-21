@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-02-10 21:20:30
+ * Last-modified: 2009-02-21 11:11:48
  */
 
 /**
@@ -86,6 +86,8 @@ static int feedbackType = SIMPLE_POPUP;
 #define HOME_SHORT_PRESS 0
 #define HOME_DOUBLE_TAP 1
 static int invocationMethod = HOME_SHORT_PRESS;
+
+static NSArray *blacklistedApps = nil;
 
 static NSMutableDictionary *activeApplications = nil;
 static NSMutableDictionary *statusBarStates = nil;
@@ -246,6 +248,13 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
         CFRelease(propList);
     }
 
+    propList = CFPreferencesCopyAppValue(CFSTR("blacklistedApplications"), CFSTR(APP_ID));
+    if (propList) {
+        if (CFGetTypeID(propList) == CFArrayGetTypeID())
+            blacklistedApps = [[NSArray alloc] initWithArray:(NSArray *)propList];
+        CFRelease(propList);
+    }
+
 #if 0
     CFPropertyListRef prefMethod = CFPreferencesCopyAppValue(CFSTR("invocationMethod"), CFSTR(APP_ID));
     if (prefMethod) {
@@ -294,7 +303,7 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
         invocationTimerDidFire = YES;
 
     id app = [[displayStacks objectAtIndex:0] topApplication];
-    if (app) {
+    if (app && ![blacklistedApps containsObject:[app displayIdentifier]]) {
         NSString *identifier = [app displayIdentifier];
         if (feedbackType == SIMPLE_POPUP) {
             BOOL isEnabled = [[activeApplications objectForKey:identifier] boolValue];
