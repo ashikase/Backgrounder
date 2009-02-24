@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-02-21 11:11:48
+ * Last-modified: 2009-02-24 22:25:29
  */
 
 /**
@@ -42,9 +42,6 @@
 
 #import "SpringBoardHooks.h"
 
-#include <signal.h>
-#include <substrate.h>
-
 #import <CoreFoundation/CFNumber.h>
 #import <CoreFoundation/CFPreferences.h>
 
@@ -62,20 +59,12 @@
 #import <SpringBoard/SBUIController.h>
 #import <SpringBoard/SpringBoard.h>
 
+#import "Common.h"
 #import "SimplePopup.h"
 //#import "TaskMenuPopup.h"
 
 struct GSEvent;
 
-
-#define APP_ID "jp.ashikase.backgrounder"
-
-#define HOOK(class, name, type, args...) \
-    static type (*_ ## class ## $ ## name)(class *self, SEL sel, ## args); \
-    static type $ ## class ## $ ## name(class *self, SEL sel, ## args)
-
-#define CALL_ORIG(class, name, args...) \
-    _ ## class ## $ ## name(self, sel, ## args)
 
 static BOOL isPersistent = YES;
 

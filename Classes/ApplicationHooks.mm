@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-02-21 10:55:09
+ * Last-modified: 2009-02-24 22:25:11
  */
 
 /**
@@ -39,24 +39,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <signal.h>
-#include <substrate.h>
 
 #import <CoreFoundation/CFPreferences.h>
 #import <Foundation/Foundation.h>
 #import <UIKit/UIApplication.h>
 
+#import "Common.h"
+
 struct GSEvent;
-
-// FIXME: Move these to Common.h
-#define APP_ID "jp.ashikase.backgrounder"
-
-#define HOOK(class, name, type, args...) \
-    static type (*_ ## class ## $ ## name)(class *self, SEL sel, ## args); \
-    static type $ ## class ## $ ## name(class *self, SEL sel, ## args)
-
-#define CALL_ORIG(class, name, args...) \
-    _ ## class ## $ ## name(self, sel, ## args)
 
 
 static BOOL backgroundingEnabled = NO;
