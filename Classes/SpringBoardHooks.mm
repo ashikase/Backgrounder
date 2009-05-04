@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-02-24 22:25:29
+ * Last-modified: 2009-05-03 20:01:49
  */
 
 /**
@@ -61,7 +61,7 @@
 
 #import "Common.h"
 #import "SimplePopup.h"
-//#import "TaskMenuPopup.h"
+#import "TaskMenuPopup.h"
 
 struct GSEvent;
 
@@ -164,7 +164,6 @@ HOOK(SpringBoard, menuButtonUp$, void, GSEvent *event)
     CALL_ORIG(SpringBoard, menuButtonUp$, event);
 }
 
-#if 0
 HOOK(SpringBoard, _handleMenuButtonEvent, void)
 {
     // Handle single tap
@@ -208,7 +207,6 @@ HOOK(SpringBoard, handleMenuDoubleTap, void)
         CALL_ORIG(SpringBoard, handleMenuDoubleTap);
     }
 }
-#endif
 
 HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
 {
@@ -244,7 +242,6 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
         CFRelease(propList);
     }
 
-#if 0
     CFPropertyListRef prefMethod = CFPreferencesCopyAppValue(CFSTR("invocationMethod"), CFSTR(APP_ID));
     if (prefMethod) {
         // NOTE: Defaults to HOME_SHORT_PRESS
@@ -263,14 +260,11 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
             feedbackType = TASK_MENU_POPUP;
         CFRelease(prefFeedback);
     }
-#endif
 
-#if 0
     if (feedbackType == TASK_MENU_POPUP)
         // Initialize task menu popup
         initTaskMenuPopup();
     else
-#endif
         // Initialize simple notification popup
         initSimplePopup();
 
@@ -309,7 +303,6 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
             Class $SBAlertItemsController(objc_getClass("SBAlertItemsController"));
             SBAlertItemsController *controller = [$SBAlertItemsController sharedInstance];
             [controller activateAlertItem:alert];
-#if 0
             if (invocationMethod == HOME_DOUBLE_TAP)
                 [self performSelector:@selector(dismissBackgrounderFeedback) withObject:nil afterDelay:1.0];
         } else if (feedbackType == TASK_MENU_POPUP) {
@@ -324,7 +317,6 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
             Class $SBAlert = objc_getClass("BackgrounderAlert");
             alert = [[$SBAlert alloc] initWithCurrentApp:identifier otherApps:array];
             [alert activate];
-#endif
         }
     }
 }
@@ -335,11 +327,9 @@ static void $SpringBoard$dismissBackgrounderFeedback(SpringBoard *self, SEL sel)
     //        this method will need to be updated
 
     // Hide and release alert window (may be nil)
-#if 0
     if (feedbackType == TASK_MENU_POPUP)
         [[alert display] dismiss];
     else
-#endif
         [alert dismiss];
     [alert release];
     alert = nil;
@@ -366,7 +356,6 @@ static void $SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$(SpringBoa
     }
 }
 
-#if 0
 static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SEL sel, NSString *identifier)
 {
     SBApplication *currApp = [[displayStacks objectAtIndex:0] topApplication];
@@ -453,7 +442,6 @@ static void $SpringBoard$quitAppWithDisplayIdentifier$(SpringBoard *self, SEL se
         [[displayStacks objectAtIndex:3] pushDisplay:app];
     }
 }
-#endif
 
 //______________________________________________________________________________
 //______________________________________________________________________________
@@ -564,19 +552,15 @@ void initSpringBoardHooks()
         MSHookMessage($SpringBoard, @selector(menuButtonDown:), &$SpringBoard$menuButtonDown$);
     _SpringBoard$menuButtonUp$ =
         MSHookMessage($SpringBoard, @selector(menuButtonUp:), &$SpringBoard$menuButtonUp$);
-#if 0
     _SpringBoard$_handleMenuButtonEvent =
         MSHookMessage($SpringBoard, @selector(_handleMenuButtonEvent), &$SpringBoard$_handleMenuButtonEvent);
-#endif
 
     class_addMethod($SpringBoard, @selector(setBackgroundingEnabled:forDisplayIdentifier:),
         (IMP)&$SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$, "v@:c@");
     class_addMethod($SpringBoard, @selector(invokeBackgrounder), (IMP)&$SpringBoard$invokeBackgrounder, "v@:");
     class_addMethod($SpringBoard, @selector(dismissBackgrounderFeedback), (IMP)&$SpringBoard$dismissBackgrounderFeedback, "v@:");
-#if 0
     class_addMethod($SpringBoard, @selector(switchToAppWithDisplayIdentifier:), (IMP)&$SpringBoard$switchToAppWithDisplayIdentifier$, "v@:@");
     class_addMethod($SpringBoard, @selector(quitAppWithDisplayIdentifier:), (IMP)&$SpringBoard$quitAppWithDisplayIdentifier$, "v@:@");
-#endif
 
     Class $SBApplication(objc_getClass("SBApplication"));
     _SBApplication$shouldLaunchPNGless =

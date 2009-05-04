@@ -21,7 +21,8 @@ SRCS = \
 	   main.mm \
 	   Classes/ApplicationHooks.mm \
 	   Classes/SimplePopup.mm \
-	   Classes/SpringBoardHooks.mm
+	   Classes/SpringBoardHooks.mm \
+	   Classes/TaskMenuPopup.mm
 
 all: $(NAME).dylib $(control)
 
