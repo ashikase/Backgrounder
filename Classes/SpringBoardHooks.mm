@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-03 20:01:49
+ * Last-modified: 2009-05-05 14:37:38
  */
 
 /**
@@ -286,25 +286,27 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
         invocationTimerDidFire = YES;
 
     id app = [[displayStacks objectAtIndex:0] topApplication];
-    if (app && ![blacklistedApps containsObject:[app displayIdentifier]]) {
+    if (app) {
         NSString *identifier = [app displayIdentifier];
         if (feedbackType == SIMPLE_POPUP) {
-            BOOL isEnabled = [[activeApplications objectForKey:identifier] boolValue];
-            [self setBackgroundingEnabled:(!isEnabled) forDisplayIdentifier:identifier];
+            if (![blacklistedApps containsObject:[app displayIdentifier]]) {
+                BOOL isEnabled = [[activeApplications objectForKey:identifier] boolValue];
+                [self setBackgroundingEnabled:(!isEnabled) forDisplayIdentifier:identifier];
 
-            // Display simple popup
-            NSString *status = [NSString stringWithFormat:@"Backgrounding %s",
-                     (isEnabled ? "Disabled" : "Enabled")];
+                // Display simple popup
+                NSString *status = [NSString stringWithFormat:@"Backgrounding %s",
+                         (isEnabled ? "Disabled" : "Enabled")];
 
-            Class $BGAlertItem = objc_getClass("BackgrounderAlertItem");
-            NSString *message = (invocationMethod == HOME_SHORT_PRESS) ? @"(Continue holding to force-quit)" : nil;
-            alert = [[$BGAlertItem alloc] initWithTitle:status message:message];
+                Class $BGAlertItem = objc_getClass("BackgrounderAlertItem");
+                NSString *message = (invocationMethod == HOME_SHORT_PRESS) ? @"(Continue holding to force-quit)" : nil;
+                alert = [[$BGAlertItem alloc] initWithTitle:status message:message];
 
-            Class $SBAlertItemsController(objc_getClass("SBAlertItemsController"));
-            SBAlertItemsController *controller = [$SBAlertItemsController sharedInstance];
-            [controller activateAlertItem:alert];
-            if (invocationMethod == HOME_DOUBLE_TAP)
-                [self performSelector:@selector(dismissBackgrounderFeedback) withObject:nil afterDelay:1.0];
+                Class $SBAlertItemsController(objc_getClass("SBAlertItemsController"));
+                SBAlertItemsController *controller = [$SBAlertItemsController sharedInstance];
+                [controller activateAlertItem:alert];
+                if (invocationMethod == HOME_DOUBLE_TAP)
+                    [self performSelector:@selector(dismissBackgrounderFeedback) withObject:nil afterDelay:1.0];
+            }
         } else if (feedbackType == TASK_MENU_POPUP) {
             // Display task menu popup
             NSMutableArray *array = [NSMutableArray arrayWithArray:[activeApplications allKeys]];
