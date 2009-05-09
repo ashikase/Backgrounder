@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-02-21 12:32:53
+ * Last-modified: 2009-05-09 14:25:00
  */
 
 /**
@@ -115,7 +115,7 @@
         description = @"A simple pop-up message stating that backgrounding has been (de)activated.";
         imageName = @"mode_simple.png";
     } else {
-        title = @"Task List Mode";
+        title = @"(BETA!) Task List Mode (BETA!)";
         description = @"A list of currently running applications. \
                       Allows for quickly switching and closing applications.";
                      // jump to another application, as well \
