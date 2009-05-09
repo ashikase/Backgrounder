@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-02-11 11:03:22
+ * Last-modified: 2009-02-21 15:02:35
  */
 
 /**
@@ -53,8 +53,8 @@
 
 #import "Constants.h"
 #import "DocumentationController.h"
-//#import "FeedbackTypeController.h"
-//#import "InvocationMethodController.h"
+#import "FeedbackTypeController.h"
+#import "InvocationMethodController.h"
 #import "Preferences.h"
 
 #define HELP_FILE "global_prefs.html"
@@ -96,33 +96,49 @@
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    return 1;
+    return 3;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     static NSString *reuseIdToggle = @"ToggleCell";
+    static NSString *reuseIdSimple = @"SimpleCell";
 
     UITableViewCell *cell = nil;
-    // Try to retrieve from the table view a now-unused cell with the given identifier
-    cell = [tableView dequeueReusableCellWithIdentifier:reuseIdToggle];
-    if (cell == nil) {
-        // Cell does not exist, create a new one
-        cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdToggle] autorelease];
-        [cell setSelectionStyle:0];
+    if (indexPath.row == 0) {
+        // Try to retrieve from the table view a now-unused cell with the given identifier
+        cell = [tableView dequeueReusableCellWithIdentifier:reuseIdToggle];
+        if (cell == nil) {
+            // Cell does not exist, create a new one
+            cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdToggle] autorelease];
+            [cell setSelectionStyle:0];
 
-        UISwitch *toggle = [[UISwitch alloc] init];
-        [toggle addTarget:self action:@selector(switchToggled:) forControlEvents:4096]; // ValueChanged
-        [cell setAccessoryView:toggle];
-        [toggle release];
+            UISwitch *toggle = [[UISwitch alloc] init];
+            [toggle addTarget:self action:@selector(switchToggled:) forControlEvents:4096]; // ValueChanged
+            [cell setAccessoryView:toggle];
+            [toggle release];
+        }
+        [cell setText:@"Persistence"];
+
+        UISwitch *toggle = [cell accessoryView];
+        [toggle setOn:[[Preferences sharedInstance] isPersistent]];
+    } else {
+        // Try to retrieve from the table view a now-unused cell with the given identifier
+        cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSimple];
+        if (cell == nil) {
+            // Cell does not exist, create a new one
+            cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdSimple] autorelease];
+            [cell setSelectionStyle:2]; // Gray
+            [cell setAccessoryType:1]; // Simple arrow
+        }
+
+        if (indexPath.row == 1)
+            [cell setText:@"Mode"];
+        else
+            [cell setText:@"Button"];
     }
 
-    [cell setText:@"Persistence"];
     [cell setImage:nil];
-
-    UISwitch *toggle = [cell accessoryView];
-    [toggle setOn:[[Preferences sharedInstance] isPersistent]];
-
     return cell;
 }
 
@@ -131,6 +147,23 @@
 - (void)switchToggled:(UISwitch *)control
 {
     [[Preferences sharedInstance] setPersistent:[control isOn]];
+}
+
+#pragma mark - UITableViewCellDelegate
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    UIViewController *vc = nil;
+
+    if (indexPath.row == 1)
+        // Operating mode
+        vc = [[[FeedbackTypeController alloc] initWithStyle:1] autorelease];
+    else if (indexPath.row == 2)
+        // Invocation method
+        vc = [[[InvocationMethodController alloc] initWithStyle:1] autorelease];
+
+    if (vc)
+        [[self navigationController] pushViewController:vc animated:YES];
 }
 
 #pragma mark - Navigation bar delegates
