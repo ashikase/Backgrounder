@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-05 14:37:38
+ * Last-modified: 2009-05-09 13:22:38
  */
 
 /**
@@ -139,13 +139,11 @@ HOOK(SpringBoard, menuButtonDown$, void, GSEvent *event)
 
     // FIXME: If already invoked, should not set timer... right? (needs thought)
     if (invocationMethod == HOME_SHORT_PRESS) {
-        if ([[displayStacks objectAtIndex:0] topApplication] != nil) {
-            // Setup toggle-delay timer
-            invocationTimer = [[NSTimer scheduledTimerWithTimeInterval:0.7f
-                target:self selector:@selector(invokeBackgrounder)
-                userInfo:nil repeats:NO] retain];
-            invocationTimerDidFire = NO;
-        }
+        // Setup toggle-delay timer
+        invocationTimer = [[NSTimer scheduledTimerWithTimeInterval:0.7f
+            target:self selector:@selector(invokeBackgrounder)
+            userInfo:nil repeats:NO] retain];
+        invocationTimerDidFire = NO;
     }
 
     CALL_ORIG(SpringBoard, menuButtonDown$, event);
@@ -169,42 +167,33 @@ HOOK(SpringBoard, _handleMenuButtonEvent, void)
     // Handle single tap
     NSLog(@"Backgrounder: %s", __FUNCTION__);
 
-    if ([[displayStacks objectAtIndex:0] topApplication] != nil) {
-        // Is an application (not SpringBoard)
-        Ivar ivar = class_getInstanceVariable([self class], "_menuButtonClickCount");
-        unsigned int *_menuButtonClickCount = (unsigned int *)((char *)self + ivar_getOffset(ivar));
-        NSLog(@"Backgrounder: current value of buttonclick is %08x", *_menuButtonClickCount);
+    Ivar ivar = class_getInstanceVariable([self class], "_menuButtonClickCount");
+    unsigned int *_menuButtonClickCount = (unsigned int *)((char *)self + ivar_getOffset(ivar));
+    NSLog(@"Backgrounder: current value of buttonclick is %08x", *_menuButtonClickCount);
 
-        // FIXME: This should be rearranged/cleaned-up, if possible
-        if (feedbackType == TASK_MENU_POPUP) {
-            if (alert != nil) {
-                // Task menu is visible
-                // FIXME: with short press, the task menu may have just been
-                // invoked...
-                if (invocationTimerDidFire == NO)
-                    // Hide and destroy the task menu
-                    [self dismissBackgrounderFeedback];
-                *_menuButtonClickCount = 0x8000;
-                return;
-            }
-        }
-        // Fall-through
+    if (feedbackType == TASK_MENU_POPUP && alert) {
+        // Task menu is visible
+        // FIXME: with short press, the task menu may have just been invoked...
+        if (invocationTimerDidFire == NO)
+            // Hide and destroy the task menu
+            [self dismissBackgrounderFeedback];
+        *_menuButtonClickCount = 0x8000;
+    } else {
+        CALL_ORIG(SpringBoard, _handleMenuButtonEvent);
     }
-
-    CALL_ORIG(SpringBoard, _handleMenuButtonEvent);
 }
 
 HOOK(SpringBoard, handleMenuDoubleTap, void)
 {
     NSLog(@"Backgrounder: %s", __FUNCTION__);
 
-    if ([[displayStacks objectAtIndex:0] topApplication] != nil && alert == nil)
-        // Is an application and popup is not visible; toggle backgrounding
-        [self invokeBackgrounder];
-    else {
-        // Is SpringBoard or alert is visible; perform normal behaviour
+    if (alert) {
+        // Popup is active; dismiss and perform normal behaviour
         [self dismissBackgrounderFeedback];
         CALL_ORIG(SpringBoard, handleMenuDoubleTap);
+    } else {
+        // Popup not active; toggle backgrounding
+        [self invokeBackgrounder];
     }
 }
 
@@ -286,40 +275,42 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
         invocationTimerDidFire = YES;
 
     id app = [[displayStacks objectAtIndex:0] topApplication];
-    if (app) {
-        NSString *identifier = [app displayIdentifier];
-        if (feedbackType == SIMPLE_POPUP) {
-            if (![blacklistedApps containsObject:[app displayIdentifier]]) {
-                BOOL isEnabled = [[activeApplications objectForKey:identifier] boolValue];
-                [self setBackgroundingEnabled:(!isEnabled) forDisplayIdentifier:identifier];
+    NSString *identifier = [app displayIdentifier];
+    if (feedbackType == SIMPLE_POPUP) {
+        if (app && ![blacklistedApps containsObject:identifier]) {
+            BOOL isEnabled = [[activeApplications objectForKey:identifier] boolValue];
+            [self setBackgroundingEnabled:(!isEnabled) forDisplayIdentifier:identifier];
 
-                // Display simple popup
-                NSString *status = [NSString stringWithFormat:@"Backgrounding %s",
-                         (isEnabled ? "Disabled" : "Enabled")];
+            // Display simple popup
+            NSString *status = [NSString stringWithFormat:@"Backgrounding %s",
+                     (isEnabled ? "Disabled" : "Enabled")];
 
-                Class $BGAlertItem = objc_getClass("BackgrounderAlertItem");
-                NSString *message = (invocationMethod == HOME_SHORT_PRESS) ? @"(Continue holding to force-quit)" : nil;
-                alert = [[$BGAlertItem alloc] initWithTitle:status message:message];
+            Class $BGAlertItem = objc_getClass("BackgrounderAlertItem");
+            NSString *message = (invocationMethod == HOME_SHORT_PRESS) ? @"(Continue holding to force-quit)" : nil;
+            alert = [[$BGAlertItem alloc] initWithTitle:status message:message];
 
-                Class $SBAlertItemsController(objc_getClass("SBAlertItemsController"));
-                SBAlertItemsController *controller = [$SBAlertItemsController sharedInstance];
-                [controller activateAlertItem:alert];
-                if (invocationMethod == HOME_DOUBLE_TAP)
-                    [self performSelector:@selector(dismissBackgrounderFeedback) withObject:nil afterDelay:1.0];
-            }
-        } else if (feedbackType == TASK_MENU_POPUP) {
-            // Display task menu popup
-            NSMutableArray *array = [NSMutableArray arrayWithArray:[activeApplications allKeys]];
-            // This array will be used for "other apps", so remove the active app
-            [array removeObject:identifier];
-            // SpringBoard should always be first in the list
-            int index = [array indexOfObject:@"com.apple.springboard"];
+            Class $SBAlertItemsController(objc_getClass("SBAlertItemsController"));
+            SBAlertItemsController *controller = [$SBAlertItemsController sharedInstance];
+            [controller activateAlertItem:alert];
+            if (invocationMethod == HOME_DOUBLE_TAP)
+                [self performSelector:@selector(dismissBackgrounderFeedback) withObject:nil afterDelay:1.0];
+        }
+    } else if (feedbackType == TASK_MENU_POPUP) {
+        // Display task menu popup
+        NSMutableArray *array = [NSMutableArray arrayWithArray:[activeApplications allKeys]];
+        if (!identifier)
+            // Is SpringBoard
+            identifier = @"com.apple.springboard";
+        // This array will be used for "other apps", so remove the active app
+        [array removeObject:identifier];
+        // SpringBoard should always be first in the list for applications
+        int index = [array indexOfObject:@"com.apple.springboard"];
+        if (index != NSNotFound)
             [array exchangeObjectAtIndex:index withObjectAtIndex:0];
 
-            Class $SBAlert = objc_getClass("BackgrounderAlert");
-            alert = [[$SBAlert alloc] initWithCurrentApp:identifier otherApps:array];
-            [alert activate];
-        }
+        Class $SBAlert = objc_getClass("BackgrounderAlert");
+        alert = [[$SBAlert alloc] initWithCurrentApp:identifier otherApps:array];
+        [alert activate];
     }
 }
 
@@ -361,8 +352,7 @@ static void $SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$(SpringBoa
 static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SEL sel, NSString *identifier)
 {
     SBApplication *currApp = [[displayStacks objectAtIndex:0] topApplication];
-    NSString *currIdent = [currApp displayIdentifier];
-    NSLog(@"Backgrounder: current id: %@, new id: %@", currIdent, identifier);
+    NSString *currIdent = currApp ? [currApp displayIdentifier] : @"com.apple.springboard";
     if (![currIdent isEqualToString:identifier]) {
         // Save the identifier for later use
         deactivatingApplication = [currIdent copy];
@@ -377,6 +367,7 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
         }
 
         if ([identifier isEqualToString:@"com.apple.springboard"]) {
+            // Switching to SpringBoard
             Class $SBUIController(objc_getClass("SBUIController"));
             SBUIController *uiCont = [$SBUIController sharedInstance];
             [uiCont quitTopApplication];
@@ -416,8 +407,12 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
                 }
             }
 
-            // Deactivate the current app
-            [[displayStacks objectAtIndex:3] pushDisplay:currApp];
+            if (currApp)
+                // Deactivate the current app
+                [[displayStacks objectAtIndex:3] pushDisplay:currApp];
+            else
+                // Is SpringBoard
+                [self dismissBackgrounderFeedback];
         }
     } else {
         // Application to switch to is same as current
