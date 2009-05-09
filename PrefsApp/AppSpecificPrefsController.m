@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-02-20 23:44:04
+ * Last-modified: 2009-05-09 18:47:08
  */
 
 /**
@@ -67,7 +67,7 @@
 {
     self = [super initWithStyle:style];
     if (self) {
-        [self setTitle:@"App-specific Prefs"];
+        [self setTitle:@"App-specific"];
         [[self navigationItem] setBackButtonTitle:@"Back"];
         [[self navigationItem] setRightBarButtonItem:
              [[UIBarButtonItem alloc] initWithTitle:@"Help" style:5
