@@ -31,12 +31,12 @@ clean:
 
 # Replace 'iphone' with the IP or hostname of your device
 install:
-	$(LDID) -S $(NAME).dylib
 	ssh root@iphone rm -f /Library/MobileSubstrate/DynamicLibraries/$(NAME).dylib
 	scp $(NAME).dylib root@iphone:/Library/MobileSubstrate/DynamicLibraries/
 	ssh root@iphone restart
 
 $(NAME).dylib: $(SRCS)
 	$(CXX) -dynamiclib $(CXXFLAGS) -o $@ $(filter %.mm,$^) -init _$(NAME)Initialize $(LDFLAGS)
+	$(LDID) -S $@
 
 .PHONY: all clean
