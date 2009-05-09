@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-09 13:08:44
+ * Last-modified: 2009-05-09 13:36:36
  */
 
 /**
@@ -347,7 +347,6 @@ static id $BGAlert$initWithCurrentApp$otherApps$(SBAlert *self, SEL sel, SBAppli
 
 static void $BGAlert$dealloc(SBAlert *self, SEL sel)
 {
-    NSLog(@"Backgrounder: DEALLOC CALLED FOR ALERT");
     id currentApp = nil, otherApps = nil;
     object_getInstanceVariable(self, "currentApp", reinterpret_cast<void **>(&currentApp));
     object_getInstanceVariable(self, "otherApps", reinterpret_cast<void **>(&otherApps));

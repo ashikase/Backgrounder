@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-09 13:22:38
+ * Last-modified: 2009-05-09 13:35:26
  */
 
 /**
@@ -135,8 +135,6 @@ static void cancelInvocationTimer()
 
 HOOK(SpringBoard, menuButtonDown$, void, GSEvent *event)
 {
-    NSLog(@"Backgrounder: %s", __FUNCTION__);
-
     // FIXME: If already invoked, should not set timer... right? (needs thought)
     if (invocationMethod == HOME_SHORT_PRESS) {
         // Setup toggle-delay timer
@@ -151,8 +149,6 @@ HOOK(SpringBoard, menuButtonDown$, void, GSEvent *event)
 
 HOOK(SpringBoard, menuButtonUp$, void, GSEvent *event)
 {
-    NSLog(@"Backgrounder: %s", __FUNCTION__);
-
     if (invocationMethod == HOME_SHORT_PRESS)
         if (!invocationTimerDidFire)
             cancelInvocationTimer();
@@ -165,11 +161,8 @@ HOOK(SpringBoard, menuButtonUp$, void, GSEvent *event)
 HOOK(SpringBoard, _handleMenuButtonEvent, void)
 {
     // Handle single tap
-    NSLog(@"Backgrounder: %s", __FUNCTION__);
-
     Ivar ivar = class_getInstanceVariable([self class], "_menuButtonClickCount");
     unsigned int *_menuButtonClickCount = (unsigned int *)((char *)self + ivar_getOffset(ivar));
-    NSLog(@"Backgrounder: current value of buttonclick is %08x", *_menuButtonClickCount);
 
     if (feedbackType == TASK_MENU_POPUP && alert) {
         // Task menu is visible
@@ -185,8 +178,6 @@ HOOK(SpringBoard, _handleMenuButtonEvent, void)
 
 HOOK(SpringBoard, handleMenuDoubleTap, void)
 {
-    NSLog(@"Backgrounder: %s", __FUNCTION__);
-
     if (alert) {
         // Popup is active; dismiss and perform normal behaviour
         [self dismissBackgrounderFeedback];
@@ -269,8 +260,6 @@ HOOK(SpringBoard, dealloc, void)
 
 static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
 {
-    NSLog(@"Backgrounder: %s", __FUNCTION__);
-
     if (invocationMethod == HOME_SHORT_PRESS)
         invocationTimerDidFire = YES;
 

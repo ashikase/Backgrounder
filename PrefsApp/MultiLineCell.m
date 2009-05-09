@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 18:09:11
+ * Last-modified: 2009-05-09 13:36:23
  */
 
 /**
@@ -89,11 +89,6 @@
     [super dealloc];
 }
 
-#define PRINT_FRAME(view) \
-    NSLog(@"DEBUG: " #view ": x:%f, y:%f, w:%f, h:%f", \
-            [view frame].origin.x, [view frame].origin.y, \
-            [view frame].size.width, [view frame].size.height)
-
 - (void)layoutSubviews
 {
     [super layoutSubviews];
@@ -104,9 +99,6 @@
     UIView *accessoryView = nil;
     object_getInstanceVariable(self, "_textLabel", (void **)&textLabel);
     object_getInstanceVariable(self, "_accessoryView", (void **)&accessoryView);
-
-    NSLog(@"BACKGROUNGER: Printing frame for self");
-    PRINT_FRAME(self);
 
     if (textLabel) {
         // Adjust the position of the text label (align top)
