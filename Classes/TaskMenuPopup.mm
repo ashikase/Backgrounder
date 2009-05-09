@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-09 13:36:36
+ * Last-modified: 2009-05-09 22:22:41
  */
 
 /**
@@ -111,7 +111,7 @@ static id $BGAlertDisplay$initWithSize$(SBAlertDisplay *self, SEL sel, CGSize si
         UINavigationBar *navBar = [[UINavigationBar alloc] initWithFrame:CGRectMake(0, statusBarHeight, size.width, 44)];
         [navBar setTintColor:[UIColor colorWithWhite:0.23 alpha:1]];
         [navBar pushNavigationItem:navItem];
-        [navBar showButtonsWithLeftTitle:nil rightTitle:@"Edit"];
+        //[navBar showButtonsWithLeftTitle:nil rightTitle:@"Edit"];
         [navItem release];
         [self addSubview:navBar];
         [navBar release];
@@ -214,6 +214,7 @@ static int $BGAlertDisplay$tableView$numberOfRowsInSection$(id self, SEL sel, UI
 
 extern "C" UIImage * _UIImageWithName(NSString *name);
 
+#if 0
 static UIImage *imageForQuitButton()
 {
     // Load the red circle image
@@ -245,6 +246,7 @@ static UIImage *imageForQuitButton()
 
     return image;
 }
+#endif
 
 static UITableViewCell * $BGAlertDisplay$tableView$cellForRowAtIndexPath$(id self, SEL sel, UITableView *tableView, NSIndexPath *indexPath)
 {
@@ -281,6 +283,7 @@ static UITableViewCell * $BGAlertDisplay$tableView$cellForRowAtIndexPath$(id sel
     }
     [cell setImage:image];
 
+#if 0
     // Add a quit button to the cell
     // NOTE: The button frame is set to be as tall as the row, and slightly
     //       wider than the button image; this is doen to provide an easy-to-hit
@@ -290,6 +293,7 @@ static UITableViewCell * $BGAlertDisplay$tableView$cellForRowAtIndexPath$(id sel
     [button addTarget:tableView action:@selector(_accessoryButtonAction:) forControlEvents:64];
     [cell setAccessoryView:button];
     [button release];
+#endif
 
     return cell;
 }
