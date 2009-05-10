@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-09 13:35:26
+ * Last-modified: 2009-05-10 22:53:34
  */
 
 /**
@@ -54,6 +54,7 @@
 #import <SpringBoard/SBApplication.h>
 #import <SpringBoard/SBApplicationController.h>
 #import <SpringBoard/SBAlertItemsController.h>
+#import <SpringBoard/SBAwayController.h>
 #import <SpringBoard/SBDisplayStack.h>
 #import <SpringBoard/SBStatusBarController.h>
 #import <SpringBoard/SBUIController.h>
@@ -137,11 +138,14 @@ HOOK(SpringBoard, menuButtonDown$, void, GSEvent *event)
 {
     // FIXME: If already invoked, should not set timer... right? (needs thought)
     if (invocationMethod == HOME_SHORT_PRESS) {
-        // Setup toggle-delay timer
-        invocationTimer = [[NSTimer scheduledTimerWithTimeInterval:0.7f
-            target:self selector:@selector(invokeBackgrounder)
-            userInfo:nil repeats:NO] retain];
-        invocationTimerDidFire = NO;
+        Class $SBAwayController = objc_getClass("SBAwayController");
+        if (![[$SBAwayController sharedAwayController] isLocked]) {
+            // Not locked; setup toggle-delay timer
+            invocationTimer = [[NSTimer scheduledTimerWithTimeInterval:0.7f
+                target:self selector:@selector(invokeBackgrounder)
+                userInfo:nil repeats:NO] retain];
+            invocationTimerDidFire = NO;
+        }
     }
 
     CALL_ORIG(SpringBoard, menuButtonDown$, event);
@@ -183,8 +187,11 @@ HOOK(SpringBoard, handleMenuDoubleTap, void)
         [self dismissBackgrounderFeedback];
         CALL_ORIG(SpringBoard, handleMenuDoubleTap);
     } else {
-        // Popup not active; toggle backgrounding
-        [self invokeBackgrounder];
+        // Popup not active
+        Class $SBAwayController = objc_getClass("SBAwayController");
+        if (![[$SBAwayController sharedAwayController] isLocked])
+            // Not locked; toggle backgrounding
+            [self invokeBackgrounder];
     }
 }
 
