@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-11 22:13:53
+ * Last-modified: 2009-05-11 22:51:10
  */
 
 /**
@@ -72,11 +72,11 @@ HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
 @interface TaskList : UIView <UITableViewDelegate, UITableViewDataSource>
 {
     NSString *currentApp;
-    NSArray *otherApps;
+    NSMutableArray *otherApps;
 }
 
 @property(nonatomic, copy) NSString *currentApp;
-@property(nonatomic, retain) NSArray *otherApps;
+@property(nonatomic, retain) NSMutableArray *otherApps;
 
 @end
 
@@ -225,11 +225,7 @@ static UIImage *imageForQuitButton()
     }
 
     // Get the display identifier of the application for this cell
-    NSString *identifier = nil;
-    if (indexPath.section == 0)
-        identifier = currentApp;
-    else
-        identifier = [otherApps objectAtIndex:indexPath.row];
+    NSString *identifier = (indexPath.section == 0) ? currentApp : [otherApps objectAtIndex:indexPath.row];
 
     // Get the SBApplication object
     Class $SBApplicationController(objc_getClass("SBApplicationController"));
@@ -266,7 +262,21 @@ static UIImage *imageForQuitButton()
 - (void)tableView:(UITableView *)tableView
   commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    // TODO
+    if (editingStyle == UITableViewCellEditingStyleDelete) {
+        // Get the display identifier of the application for this cell
+        NSString *identifier = (indexPath.section == 0) ? currentApp : [otherApps objectAtIndex:indexPath.row];
+
+        Class $SpringBoard(objc_getClass("SpringBoard"));
+        SpringBoard *springBoard = [$SpringBoard sharedApplication];
+        [springBoard quitAppWithDisplayIdentifier:identifier];
+
+        if (indexPath.section == 0) {
+            [springBoard dismissBackgrounderFeedback];
+        } else {
+            [otherApps removeObjectAtIndex:indexPath.row];
+            [tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:YES];
+        }
+    }
 }
 
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
@@ -341,7 +351,7 @@ static void $BGAlertDisplay$alertDisplayWillBecomeVisible(SBAlertDisplay *self, 
 {
     TaskList *tl = [[self subviews] objectAtIndex:0];
     [tl setCurrentApp:[[self alert] currentApp]];
-    [tl setOtherApps:[[self alert] otherApps]];
+    [tl setOtherApps:[NSMutableArray arrayWithArray:[[self alert] otherApps]]];
 }
 
 static void $BGAlertDisplay$alertDisplayBecameVisible(SBAlertDisplay *self, SEL sel)
