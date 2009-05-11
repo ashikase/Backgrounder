@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-11 21:27:41
+ * Last-modified: 2009-05-11 21:35:55
  */
 
 /**
@@ -171,10 +171,12 @@ HOOK(SpringBoard, menuButtonDown$, void, GSEvent *event)
     // FIXME: If already invoked, should not set timer... right? (needs thought)
     Class $SBAwayController = objc_getClass("SBAwayController");
     if (![[$SBAwayController sharedAwayController] isLocked]) {
-        // Not locked; setup toggle-delay timer
-        invocationTimer = [[NSTimer scheduledTimerWithTimeInterval:0.7f
-            target:self selector:@selector(invokeBackgrounder)
-            userInfo:nil repeats:NO] retain];
+        // Not locked
+        if (!alert)
+            // Task menu is not visible; setup toggle-delay timer
+            invocationTimer = [[NSTimer scheduledTimerWithTimeInterval:0.7f
+                target:self selector:@selector(invokeBackgrounder)
+                userInfo:nil repeats:NO] retain];
         invocationTimerDidFire = NO;
     }
 
