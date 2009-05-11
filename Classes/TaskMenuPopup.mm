@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-09 22:22:41
+ * Last-modified: 2009-05-11 21:10:50
  */
 
 /**
@@ -79,7 +79,8 @@ typedef struct {
 #import <UIKit/UINavigationBarBackground.h>
 #import <UIKit/UINavigationItem.h>
 #import <UIKit/UIScreen.h>
-@protocol UITableViewDataSource;
+#import <UIKit/UITableViewDataSource-Protocol.h>
+#import <UIKit/UITableViewDelegate-Protocol.h>
 #import <UIKit/UITableView.h>
 #import <UIKit/UITableViewCell.h>
 //#import <UIKit/UITableViewCell-UITableViewCellStatic.h>
@@ -91,15 +92,27 @@ typedef struct {
 #import "SpringBoardHooks.h"
 
 
-static id $BGAlertDisplay$initWithSize$(SBAlertDisplay *self, SEL sel, CGSize size)
+@interface TaskList : UIView <UITableViewDelegate, UITableViewDataSource>
 {
-    CGRect rect = CGRectMake(0, 0, size.width, size.height);
+    NSString *currentApp;
+    NSArray *otherApps;
+}
 
-    Class $SBAlertDisplay = objc_getClass("SBAlertDisplay");
-    objc_super $super = {self, $SBAlertDisplay};
-    self = objc_msgSendSuper(&$super, @selector(initWithFrame:), rect);
+@property(nonatomic, copy) NSString *currentApp;
+@property(nonatomic, retain) NSArray *otherApps;
+
+@end
+
+@implementation TaskList
+
+@synthesize currentApp;
+@synthesize otherApps;
+
+- (id)initWithFrame:(CGRect)frame
+{
+    self = [super initWithFrame:frame];
     if (self) {
-        [self setBackgroundColor:[UIColor colorWithWhite:0.30 alpha:1]];
+        CGSize size = frame.size;
 
         // Get the status bar height (normally 0 (hidden) or 20 (shown))
         Class $SBStatusBarController(objc_getClass("SBStatusBarController"));
@@ -152,64 +165,38 @@ static id $BGAlertDisplay$initWithSize$(SBAlertDisplay *self, SEL sel, CGSize si
         [footerText setBackgroundColor:[UIColor clearColor]];
         [self addSubview:footerText];
         [footerText release];
-
-        // Set the initial position of the view as off-screen
-        [self setOrigin:CGPointMake(0, size.height)];
     }
     return self;
 }
 
-static void $BGAlertDisplay$alertDisplayBecameVisible(SBAlertDisplay *self, SEL sel)
+- (void)dealloc
 {
-    // FIXME: The proper method for animating an SBAlertDisplay is currently
-    //        unknown; for now, the following method seems to work well enough
+    [currentApp release];
+    [otherApps release];
 
-    [UIView beginAnimations:nil context:NULL];
-    [self setFrame:[[UIScreen mainScreen] bounds]];
-    [UIView commitAnimations];
-
-    // NOTE: There is no need to call the superclass's method, as its
-    //       implementation does nothing
-}
-
-static void $BGAlertDisplay$dismiss(SBAlertDisplay *self, SEL sel)
-{
-    // FIXME: The proper method for animating an SBAlertDisplay is currently
-    //        unknown; for now, the following method seems to work well enough
-
-    [UIView beginAnimations:nil context:NULL];
-    [UIView setAnimationDelegate:self];
-    [UIView setAnimationDidStopSelector:
-        @selector(alertDidAnimateOut:finished:context:)];
-    [self setOrigin:CGPointMake(0, [self bounds].size.height)];
-    [UIView commitAnimations];
-}
-
-static void $BGAlertDisplay$alertDidAnimateOut$finished$context$(SBAlertDisplay *self, SEL sel,
-    NSString *animationID, NSNumber *finished, void *context)
-{
-    // Continue dismissal by calling super's dismiss method
-    Class $SBAlertDisplay = objc_getClass("SBAlertDisplay");
-    objc_super $super = {self, $SBAlertDisplay};
-    objc_msgSendSuper(&$super, @selector(dismiss));
+    [super dealloc];
 }
 
 #pragma mark - UITableViewDataSource
 
-static int $BGAlertDisplay$numberOfSectionsInTableView$(id self, SEL sel, UITableView *tableView)
+- (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-    // Two sections: "current" and "other" applications
 	return 2;
 }
 
-static NSString * $BGAlertDisplay$tableView$titleForHeaderInSection$(id self, SEL sel, UITableView *tableView, int section)
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(int)section
 {
     return (section == 0) ? @"Current Application" : @"Other Applications";
 }
 
-static int $BGAlertDisplay$tableView$numberOfRowsInSection$(id self, SEL sel, UITableView *tableView, int section)
+- (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    return (section == 0) ? 1 : [[[self alert] otherApps] count];
+    return (section == 0) ? 1 : [otherApps count];
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 68;
 }
 
 extern "C" UIImage * _UIImageWithName(NSString *name);
@@ -248,23 +235,24 @@ static UIImage *imageForQuitButton()
 }
 #endif
 
-static UITableViewCell * $BGAlertDisplay$tableView$cellForRowAtIndexPath$(id self, SEL sel, UITableView *tableView, NSIndexPath *indexPath)
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     static NSString *reuseIdentifier = @"TaskMenuCell";
 
     // Try to retrieve from the table view a now-unused cell with the given identifier
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
-    if (cell == nil)
+    if (cell == nil) {
         // Cell does not exist, create a new one
         cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
-    [cell setSelectionStyle:2];
+        [cell setSelectionStyle:2];
+    }
 
     // Get the display identifier of the application for this cell
     NSString *identifier = nil;
     if (indexPath.section == 0)
-        identifier = [[self alert] currentApp];
+        identifier = currentApp;
     else
-        identifier = [[[self alert] otherApps] objectAtIndex:indexPath.row];
+        identifier = [otherApps objectAtIndex:indexPath.row];
 
     // Get the SBApplication object
     Class $SBApplicationController(objc_getClass("SBApplicationController"));
@@ -300,17 +288,17 @@ static UITableViewCell * $BGAlertDisplay$tableView$cellForRowAtIndexPath$(id sel
 
 #pragma mark - UITableViewCellDelegate
 
-static void $BGAlertDisplay$tableView$didSelectRowAtIndexPath$(id self, SEL sel, UITableView *tableView, NSIndexPath *indexPath)
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     Class $SpringBoard(objc_getClass("SpringBoard"));
     SpringBoard *springBoard = [$SpringBoard sharedApplication];
 
-    NSString *currIdent = [[self alert] currentApp];
+    NSString *currIdent = currentApp;
     NSString *otherIdent = nil;
     if (indexPath.section == 0) {
         otherIdent = currIdent;
     } else {
-        otherIdent = [[[self alert] otherApps] objectAtIndex:indexPath.row];
+        otherIdent = [otherApps objectAtIndex:indexPath.row];
         if (![currIdent isEqualToString:@"com.apple.springboard"])
             // Enable backgrounding for current application
             [springBoard setBackgroundingEnabled:YES forDisplayIdentifier:currIdent];
@@ -320,18 +308,83 @@ static void $BGAlertDisplay$tableView$didSelectRowAtIndexPath$(id self, SEL sel,
     [springBoard switchToAppWithDisplayIdentifier:otherIdent];
 }
 
-static void $BGAlertDisplay$tableView$accessoryButtonTappedForRowWithIndexPath$(id self, SEL sel, UITableView *tableView, NSIndexPath *indexPath)
+- (void)tableView:(UITableView *)tableView accessoryButtonTappedForRowWithIndexPath:(NSIndexPath *)indexPath
 {
     // Get the display identifier of the application for this cell
     NSString *identifier = nil;
     if (indexPath.section == 0)
-        identifier = [[self alert] currentApp];
+        identifier = currentApp;
     else
-        identifier = [[[self alert] otherApps] objectAtIndex:indexPath.row];
+        identifier = [otherApps objectAtIndex:indexPath.row];
 
     Class $SpringBoard(objc_getClass("SpringBoard"));
     SpringBoard *sb = [$SpringBoard sharedApplication];
     [sb quitAppWithDisplayIdentifier:identifier];
+}
+
+@end
+
+//______________________________________________________________________________
+//______________________________________________________________________________
+
+static id $BGAlertDisplay$initWithSize$(SBAlertDisplay *self, SEL sel, CGSize size)
+{
+    CGRect rect = CGRectMake(0, 0, size.width, size.height);
+
+    Class $SBAlertDisplay = objc_getClass("SBAlertDisplay");
+    objc_super $super = {self, $SBAlertDisplay};
+    self = objc_msgSendSuper(&$super, @selector(initWithFrame:), rect);
+    if (self) {
+        [self setBackgroundColor:[UIColor colorWithWhite:0.30 alpha:1]];
+
+        TaskList *tl = [[TaskList alloc] initWithFrame:rect];
+        [self addSubview:tl];
+        [tl release];
+
+        // Set the initial position of the view as off-screen
+        [self setOrigin:CGPointMake(0, size.height)];
+    }
+    return self;
+}
+
+static void $BGAlertDisplay$alertDisplayWillBecomeVisible(SBAlertDisplay *self, SEL sel)
+{
+    TaskList *tl = [[self subviews] objectAtIndex:0];
+    [tl setCurrentApp:[[self alert] currentApp]];
+    [tl setOtherApps:[[self alert] otherApps]];
+}
+
+static void $BGAlertDisplay$alertDisplayBecameVisible(SBAlertDisplay *self, SEL sel)
+{
+    // FIXME: The proper method for animating an SBAlertDisplay is currently
+    //        unknown; for now, the following method seems to work well enough
+    [UIView beginAnimations:nil context:NULL];
+    [self setFrame:[[UIScreen mainScreen] bounds]];
+    [UIView commitAnimations];
+
+    // NOTE: There is no need to call the superclass's method, as its
+    //       implementation does nothing
+}
+
+static void $BGAlertDisplay$dismiss(SBAlertDisplay *self, SEL sel)
+{
+    // FIXME: The proper method for animating an SBAlertDisplay is currently
+    //        unknown; for now, the following method seems to work well enough
+    [UIView beginAnimations:nil context:NULL];
+    [UIView setAnimationDelegate:self];
+    [UIView setAnimationDidStopSelector:
+        @selector(alertDidAnimateOut:finished:context:)];
+    [self setOrigin:CGPointMake(0, [self bounds].size.height)];
+    [UIView commitAnimations];
+}
+
+static void $BGAlertDisplay$alertDidAnimateOut$finished$context$(SBAlertDisplay *self, SEL sel,
+    NSString *animationID, NSNumber *finished, void *context)
+{
+    // Continue dismissal by calling super's dismiss method
+    Class $SBAlertDisplay = objc_getClass("SBAlertDisplay");
+    objc_super $super = {self, $SBAlertDisplay};
+    objc_msgSendSuper(&$super, @selector(dismiss));
 }
 
 //______________________________________________________________________________
@@ -390,27 +443,17 @@ void initTaskMenuPopup()
     // Create custom alert-display class
     Class $SBAlertDisplay(objc_getClass("SBAlertDisplay"));
     Class $BGAlertDisplay = objc_allocateClassPair($SBAlertDisplay, "BackgrounderAlertDisplay", 0);
+    class_addIvar($BGAlertDisplay, "navController", sizeof(id), 0, "@");
     class_addMethod($BGAlertDisplay, @selector(initWithSize:),
             (IMP)&$BGAlertDisplay$initWithSize$, "@@:{CGSize=ff}");
+    class_addMethod($BGAlertDisplay, @selector(alertDisplayWillBecomeVisible),
+            (IMP)&$BGAlertDisplay$alertDisplayWillBecomeVisible, "v@:");
     class_addMethod($BGAlertDisplay, @selector(alertDisplayBecameVisible),
             (IMP)&$BGAlertDisplay$alertDisplayBecameVisible, "v@:");
     class_addMethod($BGAlertDisplay, @selector(dismiss),
             (IMP)&$BGAlertDisplay$dismiss, "v@:");
     class_addMethod($BGAlertDisplay, @selector(alertDidAnimateOut:finished:context:),
             (IMP)&$BGAlertDisplay$alertDidAnimateOut$finished$context$, "v@:@@^v");
-    // UITable-releated methods
-    class_addMethod($BGAlertDisplay, @selector(numberOfSectionsInTableView:),
-            (IMP)&$BGAlertDisplay$numberOfSectionsInTableView$, "i@:@");
-    class_addMethod($BGAlertDisplay, @selector(tableView:titleForHeaderInSection:),
-            (IMP)&$BGAlertDisplay$tableView$titleForHeaderInSection$, "@@:@i");
-    class_addMethod($BGAlertDisplay, @selector(tableView:numberOfRowsInSection:),
-            (IMP)&$BGAlertDisplay$tableView$numberOfRowsInSection$, "i@:@i");
-    class_addMethod($BGAlertDisplay, @selector(tableView:cellForRowAtIndexPath:),
-            (IMP)&$BGAlertDisplay$tableView$cellForRowAtIndexPath$, "@@:@@");
-    class_addMethod($BGAlertDisplay, @selector(tableView:didSelectRowAtIndexPath:),
-            (IMP)&$BGAlertDisplay$tableView$didSelectRowAtIndexPath$, "v@:@@");
-    class_addMethod($BGAlertDisplay, @selector(tableView:accessoryButtonTappedForRowWithIndexPath:),
-            (IMP)&$BGAlertDisplay$tableView$accessoryButtonTappedForRowWithIndexPath$, "v@:@@");
     objc_registerClassPair($BGAlertDisplay);
 
     // Create custom alert class
