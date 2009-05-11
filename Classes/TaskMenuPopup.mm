@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-11 22:51:10
+ * Last-modified: 2009-05-11 22:57:14
  */
 
 /**
@@ -293,19 +293,16 @@ static UIImage *imageForQuitButton()
     Class $SpringBoard(objc_getClass("SpringBoard"));
     SpringBoard *springBoard = [$SpringBoard sharedApplication];
 
-    NSString *currIdent = currentApp;
-    NSString *otherIdent = nil;
     if (indexPath.section == 0) {
-        otherIdent = currIdent;
+        [springBoard dismissBackgrounderFeedback];
     } else {
-        otherIdent = [otherApps objectAtIndex:indexPath.row];
-        if (![currIdent isEqualToString:@"com.apple.springboard"])
+        if (![currentApp isEqualToString:@"com.apple.springboard"])
             // Enable backgrounding for current application
-            [springBoard setBackgroundingEnabled:YES forDisplayIdentifier:currIdent];
-    }
+            [springBoard setBackgroundingEnabled:YES forDisplayIdentifier:currentApp];
 
-    // Switch to selected application
-    [springBoard switchToAppWithDisplayIdentifier:otherIdent];
+        // Switch to selected application
+        [springBoard switchToAppWithDisplayIdentifier:[otherApps objectAtIndex:indexPath.row]];
+    }
 }
 
 - (void)tableView:(UITableView *)tableView accessoryButtonTappedForRowWithIndexPath:(NSIndexPath *)indexPath
