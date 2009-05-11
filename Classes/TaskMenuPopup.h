@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-13 16:15:58
+ * Last-modified: 2009-05-11 21:21:42
  */
 
 /**
@@ -39,9 +39,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 #import <SpringBoard/SBAlert.h>
 #import <SpringBoard/SBAlertDisplay.h>
-
 
 @class NSArray;
 @class NSString;

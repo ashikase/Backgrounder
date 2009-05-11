@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2008-10-09 17:05:03
+ * Last-modified: 2009-05-11 21:24:20
  */
 
 /**
@@ -39,8 +39,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 #import <SpringBoard/SBAlertItem.h>
-#import <UIKit/UIModalView.h>
 
 
 @interface BackgrounderAlertItem : SBAlertItem

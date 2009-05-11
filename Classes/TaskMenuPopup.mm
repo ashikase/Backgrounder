@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-11 21:10:50
+ * Last-modified: 2009-05-11 21:22:15
  */
 
 /**
@@ -39,55 +39,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 #import "TaskMenuPopup.h"
 
 #import <objc/message.h>
 #include <signal.h>
 #include <substrate.h>
 
-#import <CoreGraphics/CGAffineTransform.h>
-#import <CoreGraphics/CGBitmapContext.h>
-#import <CoreGraphics/CGContext.h>
-#import <CoreGraphics/CGImage.h>
-
-#import <Foundation/NSArray.h>
-#import <Foundation/NSString.h>
+#import <CoreGraphics/CoreGraphics.h>
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+#import <UIKit/UINavigationBarBackground.h>
 
 #import <SpringBoard/SBApplication.h>
 #import <SpringBoard/SBApplicationController.h>
 #import <SpringBoard/SBStatusBarController.h>
 #import <SpringBoard/SBUIController.h>
-
-#import <UIKit/NSIndexPath-UITableView.h>
-#import <UIKit/UIActivityIndicatorView.h>
-#import <UIKit/UIColor.h>
-#import <UIKit/UIFont.h>
-typedef struct {
-    float top;
-    float left;
-    float bottom;
-    float right;
-} CDAnonymousStruct2;
-#import <UIKit/UIButton.h>
-#import <UIKit/UIColor.h>
-#import <UIKit/UIFont.h>
-#import <UIKit/UIImage.h>
-#import <UIKit/UIImage-UIImageInternal.h>
-//#import <UIKit/UIImage-UIImagePrivate.h>
-#import <UIKit/UILabel.h>
-#import <UIKit/UINavigationBar.h>
-#import <UIKit/UINavigationBarBackground.h>
-#import <UIKit/UINavigationItem.h>
-#import <UIKit/UIScreen.h>
-#import <UIKit/UITableViewDataSource-Protocol.h>
-#import <UIKit/UITableViewDelegate-Protocol.h>
-#import <UIKit/UITableView.h>
-#import <UIKit/UITableViewCell.h>
-//#import <UIKit/UITableViewCell-UITableViewCellStatic.h>
-#import <UIKit/UIView-Animation.h>
-#import <UIKit/UIView-Geometry.h>
-#import <UIKit/UIView-Hierarchy.h>
-#import <UIKit/UIView-Rendering.h>
 
 #import "SpringBoardHooks.h"
 
@@ -390,7 +357,7 @@ static void $BGAlertDisplay$alertDidAnimateOut$finished$context$(SBAlertDisplay 
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-static id $BGAlert$initWithCurrentApp$otherApps$(SBAlert *self, SEL sel, SBApplication *currentApp, NSArray *otherApps)
+static id $BGAlert$initWithCurrentApp$otherApps$(SBAlert *self, SEL sel, NSString *currentApp, NSArray *otherApps)
 {
     Class $SBAlert = objc_getClass("SBAlert");
     objc_super $super = {self, $SBAlert};
