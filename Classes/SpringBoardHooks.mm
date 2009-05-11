@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-11 09:57:58
+ * Last-modified: 2009-05-11 10:16:58
  */
 
 /**
@@ -171,32 +171,47 @@ static void cancelInvocationTimer()
     invocationTimer = nil;
 }
 
+// NOTE: Only hooked when invocationMethod == HOME_SHORT_PRESS
 HOOK(SpringBoard, menuButtonDown$, void, GSEvent *event)
 {
     // FIXME: If already invoked, should not set timer... right? (needs thought)
-    if (invocationMethod == HOME_SHORT_PRESS) {
-        Class $SBAwayController = objc_getClass("SBAwayController");
-        if (![[$SBAwayController sharedAwayController] isLocked]) {
-            // Not locked; setup toggle-delay timer
-            invocationTimer = [[NSTimer scheduledTimerWithTimeInterval:0.7f
-                target:self selector:@selector(invokeBackgrounder)
-                userInfo:nil repeats:NO] retain];
-            invocationTimerDidFire = NO;
-        }
+    Class $SBAwayController = objc_getClass("SBAwayController");
+    if (![[$SBAwayController sharedAwayController] isLocked]) {
+        // Not locked; setup toggle-delay timer
+        invocationTimer = [[NSTimer scheduledTimerWithTimeInterval:0.7f
+            target:self selector:@selector(invokeBackgrounder)
+            userInfo:nil repeats:NO] retain];
+        invocationTimerDidFire = NO;
     }
 
     CALL_ORIG(SpringBoard, menuButtonDown$, event);
 }
 
+// NOTE: Only hooked when invocationMethod == HOME_SHORT_PRESS
 HOOK(SpringBoard, menuButtonUp$, void, GSEvent *event)
 {
-    if (invocationMethod == HOME_SHORT_PRESS)
-        if (!invocationTimerDidFire)
-            cancelInvocationTimer();
-        else if (feedbackType == SIMPLE_POPUP)
-            [self dismissBackgrounderFeedback];
+    if (!invocationTimerDidFire)
+        cancelInvocationTimer();
+    else if (feedbackType == SIMPLE_POPUP)
+        [self dismissBackgrounderFeedback];
 
     CALL_ORIG(SpringBoard, menuButtonUp$, event);
+}
+
+// NOTE: Only hooked when invocationMethod == HOME_DOUBLE_TAP
+HOOK(SpringBoard, handleMenuDoubleTap, void)
+{
+    if (alert) {
+        // Popup is active; dismiss and perform normal behaviour
+        [self dismissBackgrounderFeedback];
+        CALL_ORIG(SpringBoard, handleMenuDoubleTap);
+    } else {
+        // Popup not active
+        Class $SBAwayController = objc_getClass("SBAwayController");
+        if (![[$SBAwayController sharedAwayController] isLocked])
+            // Not locked; toggle backgrounding
+            [self invokeBackgrounder];
+    }
 }
 
 HOOK(SpringBoard, _handleMenuButtonEvent, void)
@@ -214,21 +229,6 @@ HOOK(SpringBoard, _handleMenuButtonEvent, void)
         *_menuButtonClickCount = 0x8000;
     } else {
         CALL_ORIG(SpringBoard, _handleMenuButtonEvent);
-    }
-}
-
-HOOK(SpringBoard, handleMenuDoubleTap, void)
-{
-    if (alert) {
-        // Popup is active; dismiss and perform normal behaviour
-        [self dismissBackgrounderFeedback];
-        CALL_ORIG(SpringBoard, handleMenuDoubleTap);
-    } else {
-        // Popup not active
-        Class $SBAwayController = objc_getClass("SBAwayController");
-        if (![[$SBAwayController sharedAwayController] isLocked])
-            // Not locked; toggle backgrounding
-            [self invokeBackgrounder];
     }
 }
 
@@ -545,15 +545,18 @@ void initSpringBoardHooks()
         MSHookMessage($SpringBoard, @selector(applicationDidFinishLaunching:), &$SpringBoard$applicationDidFinishLaunching$);
     _SpringBoard$dealloc =
         MSHookMessage($SpringBoard, @selector(dealloc), &$SpringBoard$dealloc);
-    _SpringBoard$menuButtonDown$ =
-        MSHookMessage($SpringBoard, @selector(menuButtonDown:), &$SpringBoard$menuButtonDown$);
-    _SpringBoard$menuButtonUp$ =
-        MSHookMessage($SpringBoard, @selector(menuButtonUp:), &$SpringBoard$menuButtonUp$);
-    if (invocationMethod == HOME_DOUBLE_TAP)
-        _SpringBoard$handleMenuDoubleTap =
-            MSHookMessage($SpringBoard, @selector(handleMenuDoubleTap), &$SpringBoard$handleMenuDoubleTap);
     _SpringBoard$_handleMenuButtonEvent =
         MSHookMessage($SpringBoard, @selector(_handleMenuButtonEvent), &$SpringBoard$_handleMenuButtonEvent);
+
+    if (invocationMethod == HOME_DOUBLE_TAP) {
+        _SpringBoard$handleMenuDoubleTap =
+            MSHookMessage($SpringBoard, @selector(handleMenuDoubleTap), &$SpringBoard$handleMenuDoubleTap);
+    } else {
+        _SpringBoard$menuButtonDown$ =
+            MSHookMessage($SpringBoard, @selector(menuButtonDown:), &$SpringBoard$menuButtonDown$);
+        _SpringBoard$menuButtonUp$ =
+            MSHookMessage($SpringBoard, @selector(menuButtonUp:), &$SpringBoard$menuButtonUp$);
+    }
 
     class_addMethod($SpringBoard, @selector(setBackgroundingEnabled:forDisplayIdentifier:),
         (IMP)&$SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$, "v@:c@");
