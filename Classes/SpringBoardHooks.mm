@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-11 10:16:58
+ * Last-modified: 2009-05-11 10:52:31
  */
 
 /**
@@ -214,18 +214,20 @@ HOOK(SpringBoard, handleMenuDoubleTap, void)
     }
 }
 
+// NOTE: Only hooked when feedbackType == TASK_MENU_POPUP
 HOOK(SpringBoard, _handleMenuButtonEvent, void)
 {
     // Handle single tap
-    Ivar ivar = class_getInstanceVariable([self class], "_menuButtonClickCount");
-    unsigned int *_menuButtonClickCount = (unsigned int *)((char *)self + ivar_getOffset(ivar));
-
-    if (feedbackType == TASK_MENU_POPUP && alert) {
+    if (alert) {
         // Task menu is visible
         // FIXME: with short press, the task menu may have just been invoked...
         if (invocationTimerDidFire == NO)
             // Hide and destroy the task menu
             [self dismissBackgrounderFeedback];
+
+        // NOTE: _handleMenuButtonEvent is responsible for resetting the home tap count
+        Ivar ivar = class_getInstanceVariable([self class], "_menuButtonClickCount");
+        unsigned int *_menuButtonClickCount = (unsigned int *)((char *)self + ivar_getOffset(ivar));
         *_menuButtonClickCount = 0x8000;
     } else {
         CALL_ORIG(SpringBoard, _handleMenuButtonEvent);
@@ -545,8 +547,6 @@ void initSpringBoardHooks()
         MSHookMessage($SpringBoard, @selector(applicationDidFinishLaunching:), &$SpringBoard$applicationDidFinishLaunching$);
     _SpringBoard$dealloc =
         MSHookMessage($SpringBoard, @selector(dealloc), &$SpringBoard$dealloc);
-    _SpringBoard$_handleMenuButtonEvent =
-        MSHookMessage($SpringBoard, @selector(_handleMenuButtonEvent), &$SpringBoard$_handleMenuButtonEvent);
 
     if (invocationMethod == HOME_DOUBLE_TAP) {
         _SpringBoard$handleMenuDoubleTap =
@@ -557,6 +557,10 @@ void initSpringBoardHooks()
         _SpringBoard$menuButtonUp$ =
             MSHookMessage($SpringBoard, @selector(menuButtonUp:), &$SpringBoard$menuButtonUp$);
     }
+
+    if (feedbackType == TASK_MENU_POPUP)
+        _SpringBoard$_handleMenuButtonEvent =
+            MSHookMessage($SpringBoard, @selector(_handleMenuButtonEvent), &$SpringBoard$_handleMenuButtonEvent);
 
     class_addMethod($SpringBoard, @selector(setBackgroundingEnabled:forDisplayIdentifier:),
         (IMP)&$SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$, "v@:c@");
