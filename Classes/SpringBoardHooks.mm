@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-10 22:53:34
+ * Last-modified: 2009-05-11 09:57:58
  */
 
 /**
@@ -82,6 +82,43 @@ static NSArray *blacklistedApps = nil;
 static NSMutableDictionary *activeApplications = nil;
 static NSMutableDictionary *statusBarStates = nil;
 static NSString *deactivatingApplication = nil;
+
+//______________________________________________________________________________
+//______________________________________________________________________________
+
+static void loadPreferences()
+{
+    CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("persistent"), CFSTR(APP_ID));
+    if (propList) {
+        // NOTE: Defaults to YES
+        if (CFGetTypeID(propList) == CFBooleanGetTypeID())
+            isPersistent = CFBooleanGetValue(reinterpret_cast<CFBooleanRef>(propList));
+        CFRelease(propList);
+    }
+
+    propList = CFPreferencesCopyAppValue(CFSTR("blacklistedApplications"), CFSTR(APP_ID));
+    if (propList) {
+        if (CFGetTypeID(propList) == CFArrayGetTypeID())
+            blacklistedApps = [[NSArray alloc] initWithArray:(NSArray *)propList];
+        CFRelease(propList);
+    }
+
+    CFPropertyListRef prefMethod = CFPreferencesCopyAppValue(CFSTR("invocationMethod"), CFSTR(APP_ID));
+    if (prefMethod) {
+        // NOTE: Defaults to HOME_SHORT_PRESS
+        if ([(NSString *)prefMethod isEqualToString:@"homeDoubleTap"])
+            invocationMethod = HOME_DOUBLE_TAP;
+        CFRelease(prefMethod);
+    }
+
+    CFPropertyListRef prefFeedback = CFPreferencesCopyAppValue(CFSTR("feedbackType"), CFSTR(APP_ID));
+    if (prefFeedback) {
+        // NOTE: Defaults to SIMPLE_POPUP
+        if ([(NSString *)prefFeedback isEqualToString:@"taskMenuPopup"])
+            feedbackType = TASK_MENU_POPUP;
+        CFRelease(prefFeedback);
+    }
+}
 
 //______________________________________________________________________________
 //______________________________________________________________________________
@@ -212,41 +249,6 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
     // Create a dictionary to store the statusbar state for active apps
     // FIXME: Determine a way to do this without requiring extra storage
     statusBarStates = [[NSMutableDictionary alloc] initWithCapacity:5];
-
-    // Load preferences
-    CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("persistent"), CFSTR(APP_ID));
-    if (propList) {
-        // NOTE: Defaults to YES
-        if (CFGetTypeID(propList) == CFBooleanGetTypeID())
-            isPersistent = CFBooleanGetValue(reinterpret_cast<CFBooleanRef>(propList));
-        CFRelease(propList);
-    }
-
-    propList = CFPreferencesCopyAppValue(CFSTR("blacklistedApplications"), CFSTR(APP_ID));
-    if (propList) {
-        if (CFGetTypeID(propList) == CFArrayGetTypeID())
-            blacklistedApps = [[NSArray alloc] initWithArray:(NSArray *)propList];
-        CFRelease(propList);
-    }
-
-    CFPropertyListRef prefMethod = CFPreferencesCopyAppValue(CFSTR("invocationMethod"), CFSTR(APP_ID));
-    if (prefMethod) {
-        // NOTE: Defaults to HOME_SHORT_PRESS
-        if ([(NSString *)prefMethod isEqualToString:@"homeDoubleTap"]) {
-            invocationMethod = HOME_DOUBLE_TAP;
-            _SpringBoard$handleMenuDoubleTap =
-                MSHookMessage([self class], @selector(handleMenuDoubleTap), &$SpringBoard$handleMenuDoubleTap);
-        }
-        CFRelease(prefMethod);
-    }
-
-    CFPropertyListRef prefFeedback = CFPreferencesCopyAppValue(CFSTR("feedbackType"), CFSTR(APP_ID));
-    if (prefFeedback) {
-        // NOTE: Defaults to SIMPLE_POPUP
-        if ([(NSString *)prefFeedback isEqualToString:@"taskMenuPopup"])
-            feedbackType = TASK_MENU_POPUP;
-        CFRelease(prefFeedback);
-    }
 
     if (feedbackType == TASK_MENU_POPUP)
         // Initialize task menu popup
@@ -526,6 +528,8 @@ HOOK(SBApplication, _startTerminationWatchdogTimer, void)
 
 void initSpringBoardHooks()
 {
+    loadPreferences();
+
     Class $SBDisplayStack(objc_getClass("SBDisplayStack"));
     _SBDisplayStack$init =
         MSHookMessage($SBDisplayStack, @selector(init), &$SBDisplayStack$init);
@@ -545,6 +549,9 @@ void initSpringBoardHooks()
         MSHookMessage($SpringBoard, @selector(menuButtonDown:), &$SpringBoard$menuButtonDown$);
     _SpringBoard$menuButtonUp$ =
         MSHookMessage($SpringBoard, @selector(menuButtonUp:), &$SpringBoard$menuButtonUp$);
+    if (invocationMethod == HOME_DOUBLE_TAP)
+        _SpringBoard$handleMenuDoubleTap =
+            MSHookMessage($SpringBoard, @selector(handleMenuDoubleTap), &$SpringBoard$handleMenuDoubleTap);
     _SpringBoard$_handleMenuButtonEvent =
         MSHookMessage($SpringBoard, @selector(_handleMenuButtonEvent), &$SpringBoard$_handleMenuButtonEvent);
 
