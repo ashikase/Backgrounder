@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-11 21:22:15
+ * Last-modified: 2009-05-11 22:13:53
  */
 
 /**
@@ -42,14 +42,15 @@
 
 #import "TaskMenuPopup.h"
 
+#import "Common.h"
+
 #import <objc/message.h>
-#include <signal.h>
-#include <substrate.h>
 
 #import <CoreGraphics/CoreGraphics.h>
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <UIKit/UINavigationBarBackground.h>
+#import <UIKit/UIRemoveControlTextButton.h>
 
 #import <SpringBoard/SBApplication.h>
 #import <SpringBoard/SBApplicationController.h>
@@ -58,6 +59,15 @@
 
 #import "SpringBoardHooks.h"
 
+
+HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
+    id, id control, UITableViewCell *target, NSString *label)
+{
+    return CALL_ORIG(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$, control, target, @"Quit");
+}
+
+//______________________________________________________________________________
+//______________________________________________________________________________
 
 @interface TaskList : UIView <UITableViewDelegate, UITableViewDataSource>
 {
@@ -253,6 +263,19 @@ static UIImage *imageForQuitButton()
     return cell;
 }
 
+- (void)tableView:(UITableView *)tableView
+  commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    // TODO
+}
+
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    // Get the display identifier of the application for this cell
+    NSString *identifier = (indexPath.section == 0) ? currentApp : [otherApps objectAtIndex:indexPath.row];
+    return ![identifier isEqualToString:@"com.apple.springboard"];
+}
+
 #pragma mark - UITableViewCellDelegate
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
@@ -407,6 +430,12 @@ static id $BGAlert$alertDisplayViewWithSize$(SBAlert *self, SEL sel, CGSize size
 
 void initTaskMenuPopup()
 {
+    // Override default text for cell "delete" button
+    Class $UIRemoveControlTextButton(objc_getClass("UIRemoveControlTextButton"));
+    _UIRemoveControlTextButton$initWithRemoveControl$withTarget$withLabel$ =
+        MSHookMessage($UIRemoveControlTextButton, @selector(initWithRemoveControl:withTarget:withLabel:),
+            &$UIRemoveControlTextButton$initWithRemoveControl$withTarget$withLabel$);
+
     // Create custom alert-display class
     Class $SBAlertDisplay(objc_getClass("SBAlertDisplay"));
     Class $BGAlertDisplay = objc_allocateClassPair($SBAlertDisplay, "BackgrounderAlertDisplay", 0);
