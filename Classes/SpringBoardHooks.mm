@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-11 21:35:55
+ * Last-modified: 2009-05-12 11:13:25
  */
 
 /**
@@ -416,23 +416,36 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
     }
 }
 
-static void $SpringBoard$quitAppWithDisplayIdentifier$(SpringBoard *self, SEL sel,NSString *identifier)
+static void $SpringBoard$quitAppWithDisplayIdentifier$(SpringBoard *self, SEL sel, NSString *identifier)
 {
-    Class $SBApplicationController(objc_getClass("SBApplicationController"));
-    SBApplicationController *appCont = [$SBApplicationController sharedInstance];
-    SBApplication *app = [appCont applicationWithDisplayIdentifier:identifier];
+    if ([identifier isEqualToString:@"com.apple.springboard"]) {
+        // Is SpringBoard
+        [self relaunchSpringBoard];
+    } else {
+        // Is an application
+        Class $SBApplicationController(objc_getClass("SBApplicationController"));
+        SBApplicationController *appCont = [$SBApplicationController sharedInstance];
+        SBApplication *app = [appCont applicationWithDisplayIdentifier:identifier];
 
-    if (app) {
-        // Disable backgrounding for the application
-        [self setBackgroundingEnabled:NO forDisplayIdentifier:identifier];
+        if (app) {
+            // FIXME: if ([blacklistedApps containsObject:identifier]) {
+            if ([identifier isEqualToString:@"com.apple.mobilemail"] ||
+                [identifier isEqualToString:@"com.apple.mobilephone"]) {
+                // Is blacklisted; should force-quit
+                [app kill];
+            } else {
+                // Disable backgrounding for the application
+                [self setBackgroundingEnabled:NO forDisplayIdentifier:identifier];
 
-        // NOTE: Must set animation flag for deactivation, otherwise
-        //       application window does not disappear (reason yet unknown)
-        [app setDeactivationSetting:0x2 flag:YES]; // animate
-        [app setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0]]; // animation duration
+                // NOTE: Must set animation flag for deactivation, otherwise
+                //       application window does not disappear (reason yet unknown)
+                [app setDeactivationSetting:0x2 flag:YES]; // animate
+                [app setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0]]; // animation duration
 
-        // Deactivate the application
-        [[displayStacks objectAtIndex:3] pushDisplay:app];
+                // Deactivate the application
+                [[displayStacks objectAtIndex:3] pushDisplay:app];
+            }
+        }
     }
 }
 
