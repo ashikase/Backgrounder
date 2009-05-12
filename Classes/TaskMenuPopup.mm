@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-12 10:47:51
+ * Last-modified: 2009-05-12 14:30:25
  */
 
 /**
@@ -247,7 +247,8 @@ HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
             [springBoard dismissBackgrounderFeedback];
         } else {
             [otherApps removeObjectAtIndex:indexPath.row];
-            [tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:YES];
+            [tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath]
+                withRowAnimation:UITableViewRowAnimationFade];
         }
     }
 }
