@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-12 10:40:04
+ * Last-modified: 2009-05-12 10:47:51
  */
 
 /**
@@ -187,44 +187,8 @@ HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    return 68;
+    return 68.0f;
 }
-
-extern "C" UIImage * _UIImageWithName(NSString *name);
-
-#if 0
-static UIImage *imageForQuitButton()
-{
-    // Load the red circle image
-    CGImageRef circleRef = [_UIImageWithName(@"UIRemoveControlMinus.png") CGImage];
-    CGRect circleRect = CGRectMake(0, 0, CGImageGetWidth(circleRef), CGImageGetHeight(circleRef));
-
-    // Create a new context to draw to
-    CGContextRef context = CGBitmapContextCreate(NULL, circleRect.size.width, circleRect.size.height,
-            CGImageGetBitsPerComponent(circleRef), 4 * circleRect.size.width, CGImageGetColorSpace(circleRef),
-            CGImageGetAlphaInfo(circleRef));
-
-    // Draw the circle
-    CGContextDrawImage(context, circleRect, circleRef);
-
-    // Load and draw the minus sign
-    CGImageRef minusRef = [_UIImageWithName(@"UIRemoveControlMinusCenter.png") CGImage];
-    CGRect minusRect = CGRectMake(0, 0, CGImageGetWidth(minusRef), CGImageGetHeight(minusRef));
-    minusRect.origin.x = (circleRect.size.width - minusRect.size.width) / 2.0;
-    // NOTE: the offset starts at the lower left
-    minusRect.origin.y = 1 + (circleRect.size.height - minusRect.size.height) / 2.0;
-    CGContextDrawImage(context, minusRect, minusRef);
-
-    CGImageRef imageRef = CGBitmapContextCreateImage(context);
-
-    UIImage *image = [UIImage imageWithCGImage:imageRef];
-
-    CGContextRelease(context);
-    CGImageRelease(imageRef);
-
-    return image;
-}
-#endif
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
@@ -253,7 +217,7 @@ static UIImage *imageForQuitButton()
     if ([identifier isEqualToString:@"com.apple.springboard"]) {
         image = [UIImage imageWithContentsOfFile:@"/System/Library/CoreServices/SpringBoard.app/applelogo.png"];
         image = [image _imageScaledToSize:CGSizeMake(59, 62) interpolationQuality:0];
-        // Also, mark that this cell represents SpringBoard
+        // Take opportunity to mark that this cell represents SpringBoard
         [cell setTag:2];
     } else {
         image = [UIImage imageWithContentsOfFile:[app pathForIcon]];
@@ -264,18 +228,6 @@ static UIImage *imageForQuitButton()
     if ([identifier isEqualToString:@"com.apple.mobilemail"] ||
         [identifier isEqualToString:@"com.apple.mobilephone"])
         [cell setTag:1];
-
-#if 0
-    // Add a quit button to the cell
-    // NOTE: The button frame is set to be as tall as the row, and slightly
-    //       wider than the button image; this is doen to provide an easy-to-hit
-    //       "tap zone".
-    UIButton *button = [[UIButton alloc] initWithFrame:CGRectMake(0, 0, 35, 68)];
-    [button setImage:imageForQuitButton() forState:0];
-    [button addTarget:tableView action:@selector(_accessoryButtonAction:) forControlEvents:64];
-    [cell setAccessoryView:button];
-    [button release];
-#endif
 
     return cell;
 }
@@ -317,20 +269,6 @@ static UIImage *imageForQuitButton()
         // Switch to selected application
         [springBoard switchToAppWithDisplayIdentifier:[otherApps objectAtIndex:indexPath.row]];
     }
-}
-
-- (void)tableView:(UITableView *)tableView accessoryButtonTappedForRowWithIndexPath:(NSIndexPath *)indexPath
-{
-    // Get the display identifier of the application for this cell
-    NSString *identifier = nil;
-    if (indexPath.section == 0)
-        identifier = currentApp;
-    else
-        identifier = [otherApps objectAtIndex:indexPath.row];
-
-    Class $SpringBoard(objc_getClass("SpringBoard"));
-    SpringBoard *sb = [$SpringBoard sharedApplication];
-    [sb quitAppWithDisplayIdentifier:identifier];
 }
 
 @end
