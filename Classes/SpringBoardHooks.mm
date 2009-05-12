@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-12 11:13:25
+ * Last-modified: 2009-05-12 14:17:00
  */
 
 /**
@@ -76,6 +76,8 @@ static NSArray *blacklistedApps = nil;
 static NSMutableDictionary *activeApplications = nil;
 static NSMutableDictionary *statusBarStates = nil;
 static NSString *deactivatingApplication = nil;
+
+static NSString *killedApplication = nil;
 
 //______________________________________________________________________________
 //______________________________________________________________________________
@@ -260,6 +262,7 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
 
 HOOK(SpringBoard, dealloc, void)
 {
+    [killedApplication release];
     [activeApplications release];
     [displayStacks release];
     CALL_ORIG(SpringBoard, dealloc);
@@ -432,6 +435,7 @@ static void $SpringBoard$quitAppWithDisplayIdentifier$(SpringBoard *self, SEL se
             if ([identifier isEqualToString:@"com.apple.mobilemail"] ||
                 [identifier isEqualToString:@"com.apple.mobilephone"]) {
                 // Is blacklisted; should force-quit
+                killedApplication = [identifier copy];
                 [app kill];
             } else {
                 // Disable backgrounding for the application
@@ -534,6 +538,17 @@ HOOK(SBApplication, _startTerminationWatchdogTimer, void)
         CALL_ORIG(SBApplication, _startTerminationWatchdogTimer);
 }
 
+HOOK(SBApplication, _relaunchAfterAbnormalExit$, void, BOOL flag)
+{
+    if ([[self displayIdentifier] isEqualToString:killedApplication]) {
+        // Was killed by Backgrounder; do not allow relaunch
+        [killedApplication release];
+        killedApplication = nil;
+    } else {
+        CALL_ORIG(SBApplication, _relaunchAfterAbnormalExit$, flag);
+    }
+}
+
 //______________________________________________________________________________
 //______________________________________________________________________________
 
@@ -589,6 +604,8 @@ void initSpringBoardHooks()
         MSHookMessage($SBApplication, @selector(exitedCommon), &$SBApplication$exitedCommon);
     _SBApplication$_startTerminationWatchdogTimer =
         MSHookMessage($SBApplication, @selector(_startTerminationWatchdogTimer), &$SBApplication$_startTerminationWatchdogTimer);
+    _SBApplication$_relaunchAfterAbnormalExit$ =
+        MSHookMessage($SBApplication, @selector(_relaunchAfterAbnormalExit:), &$SBApplication$_relaunchAfterAbnormalExit$);
 }
 
 /* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
