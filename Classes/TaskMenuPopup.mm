@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-11 22:57:14
+ * Last-modified: 2009-05-12 10:40:04
  */
 
 /**
@@ -63,7 +63,21 @@
 HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
     id, id control, UITableViewCell *target, NSString *label)
 {
-    return CALL_ORIG(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$, control, target, @"Quit");
+    NSString *newLabel = nil;
+    switch ([target tag]) {
+        case 1:
+            // Is blacklisted application
+            newLabel = @"Force Quit";
+            break;
+        case 2:
+            // Is SpringBoard
+            newLabel = @"Respring";
+            break;
+        default:
+            newLabel = @"Quit";
+    }
+    return CALL_ORIG(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
+        control, target, newLabel);
 }
 
 //______________________________________________________________________________
@@ -239,10 +253,17 @@ static UIImage *imageForQuitButton()
     if ([identifier isEqualToString:@"com.apple.springboard"]) {
         image = [UIImage imageWithContentsOfFile:@"/System/Library/CoreServices/SpringBoard.app/applelogo.png"];
         image = [image _imageScaledToSize:CGSizeMake(59, 62) interpolationQuality:0];
+        // Also, mark that this cell represents SpringBoard
+        [cell setTag:2];
     } else {
         image = [UIImage imageWithContentsOfFile:[app pathForIcon]];
     }
     [cell setImage:image];
+
+    // Mark whether this application is blacklisted
+    if ([identifier isEqualToString:@"com.apple.mobilemail"] ||
+        [identifier isEqualToString:@"com.apple.mobilephone"])
+        [cell setTag:1];
 
 #if 0
     // Add a quit button to the cell
@@ -277,13 +298,6 @@ static UIImage *imageForQuitButton()
             [tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:YES];
         }
     }
-}
-
-- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    // Get the display identifier of the application for this cell
-    NSString *identifier = (indexPath.section == 0) ? currentApp : [otherApps objectAtIndex:indexPath.row];
-    return ![identifier isEqualToString:@"com.apple.springboard"];
 }
 
 #pragma mark - UITableViewCellDelegate
