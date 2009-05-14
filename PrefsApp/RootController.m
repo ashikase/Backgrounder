@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-14 14:40:22
+ * Last-modified: 2009-05-14 14:56:18
  */
 
 /**
@@ -119,12 +119,10 @@
             [cell setSelectionStyle:2]; // Gray
 
             UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
-            NSString *labelText = @"(via Safari)";
-            [label setText:labelText];
+            [label setText:@"(via Safari)"];
             [label setTextColor:[UIColor colorWithRed:0.2f green:0.31f blue:0.52f alpha:1.0f]];
-            UIFont *font = [UIFont systemFontOfSize:16.0f];
-            [label setFont:font];
-            CGSize size = [labelText sizeWithFont:font];
+            [label setFont:[UIFont systemFontOfSize:16.0f]];
+            CGSize size = [label.text sizeWithFont:label.font];
             [label setFrame:CGRectMake(0, 0, size.width, size.height)];
 
             [cell setAccessoryView:label];
