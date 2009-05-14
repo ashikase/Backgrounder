@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-13 13:31:49
+ * Last-modified: 2009-05-13 16:45:28
  */
 
 /**
@@ -81,6 +81,8 @@ static NSString *deactivatingApplication = nil;
 
 static NSString *killedApplication = nil;
 
+static BOOL animateStatusBar = YES;
+
 //______________________________________________________________________________
 //______________________________________________________________________________
 
@@ -139,6 +141,21 @@ HOOK(SBDisplayStack, dealloc, void)
 //______________________________________________________________________________
 //______________________________________________________________________________
 
+HOOK(SBStatusBarController, setStatusBarMode$mode$orientation$duration$fenceID$animation$,
+    void, int mode, int orientation, float duration, int fenceID, int animation)
+{
+    if (!animateStatusBar) {
+        duration = 0;
+        // Reset the flag to default (animation enabled)
+        animateStatusBar = YES;
+    }
+    CALL_ORIG(SBStatusBarController, setStatusBarMode$mode$orientation$duration$fenceID$animation$,
+            mode, orientation, duration, fenceID, animation);
+}
+
+//______________________________________________________________________________
+//______________________________________________________________________________
+
 HOOK(SBUIController, animateLaunchApplication$, void, id app)
 {
     if ([app pid] != -1) {
@@ -146,6 +163,9 @@ HOOK(SBUIController, animateLaunchApplication$, void, id app)
         // Make sure SpringBoard dock and icons are hidden
         [[objc_getClass("SBIconController") sharedInstance] scatter:NO];
         [self showButtonBar:NO animate:NO action:NULL delegate:nil];
+
+        // Prevent status bar from fading in
+        animateStatusBar = NO;
 
         // Launch without animation
         NSArray *state = [statusBarStates objectForKey:[app displayIdentifier]];
@@ -397,6 +417,9 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
                     [otherApp setActivationSetting:0x40 value:[state objectAtIndex:0]]; // statusbarmode
                     [otherApp setActivationSetting:0x80 value:[state objectAtIndex:1]]; // statusBarOrienation
 
+                    // Prevent status bar from fading in
+                    animateStatusBar = NO;
+
                     // Activate the new app
                     [[displayStacks objectAtIndex:2] pushDisplay:otherApp];
                 }
@@ -553,6 +576,11 @@ void initSpringBoardHooks()
         MSHookMessage($SBDisplayStack, @selector(init), &$SBDisplayStack$init);
     _SBDisplayStack$dealloc =
         MSHookMessage($SBDisplayStack, @selector(dealloc), &$SBDisplayStack$dealloc);
+
+    Class $SBStatusBarController(objc_getClass("SBStatusBarController"));
+    _SBStatusBarController$setStatusBarMode$mode$orientation$duration$fenceID$animation$ =
+        MSHookMessage($SBStatusBarController, @selector(setStatusBarMode:orientation:duration:fenceID:animation:),
+            &$SBStatusBarController$setStatusBarMode$mode$orientation$duration$fenceID$animation$);
 
     Class $SBUIController(objc_getClass("SBUIController"));
     _SBUIController$animateLaunchApplication$ =
