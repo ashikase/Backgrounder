@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-02-11 12:18:33
+ * Last-modified: 2009-05-14 14:40:22
  */
 
 /**
@@ -88,23 +88,26 @@
 
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return 2;
+	return 3;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(int)section
 {
-    return (section == 0) ? @"Documentation" : @"Preferences";
+    static NSString *headers[] = {@"Documentation", @"Preferences", nil};
+    return headers[section];
 }
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    return (section == 0) ? 4 : 2;
+    static int rows[] = {4, 2, 1};
+    return rows[section];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    static NSString *reuseIdSimple = @"SimpleCell";
+    static NSString *reuseIdName = @"NameCell";
     static NSString *reuseIdSafari = @"SafariCell";
+    static NSString *reuseIdSimple = @"SimpleCell";
 
     UITableViewCell *cell = nil;
     if (indexPath.section == 0 && indexPath.row == 3) {
@@ -129,6 +132,35 @@
         }
 
         [cell setText:@"Project Homepage"];
+    } else if (indexPath.section == 2) {
+        // Credits cell
+        // Try to retrieve from the table view a now-unused cell with the given identifier
+        cell = [tableView dequeueReusableCellWithIdentifier:reuseIdName];
+        if (cell == nil) {
+            // Cell does not exist, create a new one
+            cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdName] autorelease];
+            [cell setSelectionStyle:0]; // None
+
+            // Make cell background transparent
+            UIView *bgView = [[UIView alloc] initWithFrame:CGRectZero];
+            [bgView setBackgroundColor:[UIColor clearColor]];
+            [cell setBackgroundView:bgView];
+            [bgView release];
+
+            // Must create own label to allow transparency
+            UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
+            [label setText:@"by Lance Fetters (ashikase)"];
+            [label setTextColor:[UIColor colorWithRed:0.3f green:0.34f blue:0.42f alpha:1.0f]];
+            [label setShadowColor:[UIColor whiteColor]];
+            [label setShadowOffset:CGSizeMake(1, 1)];
+            [label setBackgroundColor:[UIColor clearColor]];
+            [label setFont:[UIFont systemFontOfSize:16.0f]];
+            CGSize size = [label.text sizeWithFont:label.font];
+            [label setFrame:CGRectMake((300.0f - size.width) / 2.0f, 0, size.width, size.height)];
+
+            [[cell contentView] addSubview:label];
+            [label release];
+        }
     } else {
         static NSString *cellTitles[][3] = {
             { @"How to Use", @"Release Notes", @"Known Issues" },
@@ -151,6 +183,11 @@
 
 #pragma mark - UITableViewCellDelegate
 
+- (float)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return (indexPath.section == 2) ? 22.0f : 44.0f;
+}
+
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     UIViewController *vc = nil;
@@ -167,12 +204,17 @@
             vc = [[[DocumentationController alloc]
                 initWithContentsOfFile:fileNames[indexPath.row] title:titles[indexPath.row]]
                 autorelease];
-    } else {
+    } else if (indexPath.section == 1) {
         // Preferences
         if (indexPath.row == 0)
             vc = [[[GlobalPrefsController alloc] initWithStyle:1] autorelease];
         else
             vc = [[[AppSpecificPrefsController alloc] initWithStyle:1] autorelease];
+    } else {
+        // Credits
+        NSString *link = [NSString stringWithFormat:@"mailto:%s@%s?subject=%s",
+            "gaizin", "gmail.com", "[Backgrounder]"];
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:link]];
     }
 
     if (vc)
