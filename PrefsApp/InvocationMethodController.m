@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-02-21 12:33:19
+ * Last-modified: 2009-05-14 15:33:13
  */
 
 /**
@@ -136,8 +136,11 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
+    // Store the selected option
     [[Preferences sharedInstance] setInvocationMethod:indexPath.section];
-    [[self navigationController] popToRootViewControllerAnimated:YES];
+
+    // Return to the previous view controller
+    [[self navigationController] popViewControllerAnimated:YES];
 }
 
 #pragma mark - Navigation bar delegates

@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-09 14:25:00
+ * Last-modified: 2009-05-14 15:33:45
  */
 
 /**
@@ -118,8 +118,6 @@
         title = @"(BETA!) Task List Mode (BETA!)";
         description = @"A list of currently running applications. \
                       Allows for quickly switching and closing applications.";
-                     // jump to another application, as well \
-                     // as to close those that you no longer wish to use (and thus free-up memory).";
         imageName = @"mode_tasklist.png";
     }
 
@@ -142,11 +140,10 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     // Store the selected option
-    Preferences *prefs = [Preferences sharedInstance];
-    [prefs setFeedbackType:indexPath.section];
+    [[Preferences sharedInstance] setFeedbackType:indexPath.section];
 
-    // Return to the top view controller
-    [[self navigationController] popToRootViewControllerAnimated:YES];
+    // Return to the previous view controller
+    [[self navigationController] popViewControllerAnimated:YES];
 }
 
 #pragma mark - Navigation bar delegates
