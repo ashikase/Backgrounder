@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-09 18:46:50
+ * Last-modified: 2009-05-14 15:28:46
  */
 
 /**
@@ -86,17 +86,17 @@
 
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return 1;
+	return 2;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(int)section
 {
-    return nil;
+    return (section == 0) ? @"General" : @"Operation";
 }
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    return 3;
+    return (section == 0) ? 1 : 2;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -105,7 +105,7 @@
     static NSString *reuseIdSimple = @"SimpleCell";
 
     UITableViewCell *cell = nil;
-    if (indexPath.row == 0) {
+    if (indexPath.section == 0) {
         // Try to retrieve from the table view a now-unused cell with the given identifier
         cell = [tableView dequeueReusableCellWithIdentifier:reuseIdToggle];
         if (cell == nil) {
@@ -131,14 +131,8 @@
             [cell setSelectionStyle:2]; // Gray
             [cell setAccessoryType:1]; // Simple arrow
         }
-
-        if (indexPath.row == 1)
-            [cell setText:@"Mode"];
-        else
-            [cell setText:@"Button"];
+        [cell setText:(indexPath.row == 0) ? @"Mode" : @"Button"];
     }
-
-    [cell setImage:nil];
     return cell;
 }
 
@@ -155,12 +149,14 @@
 {
     UIViewController *vc = nil;
 
-    if (indexPath.row == 1)
-        // Operating mode
-        vc = [[[FeedbackTypeController alloc] initWithStyle:1] autorelease];
-    else if (indexPath.row == 2)
-        // Invocation method
-        vc = [[[InvocationMethodController alloc] initWithStyle:1] autorelease];
+    if (indexPath.section == 1) {
+        if (indexPath.row == 0)
+            // Operating mode
+            vc = [[[FeedbackTypeController alloc] initWithStyle:1] autorelease];
+        else
+            // Invocation method
+            vc = [[[InvocationMethodController alloc] initWithStyle:1] autorelease];
+    }
 
     if (vc)
         [[self navigationController] pushViewController:vc animated:YES];
