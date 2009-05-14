@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-12 14:17:00
+ * Last-modified: 2009-05-13 13:02:15
  */
 
 /**
@@ -44,11 +44,13 @@
 
 #import <CoreFoundation/CoreFoundation.h>
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 #import <SpringBoard/SBApplication.h>
 #import <SpringBoard/SBApplicationController.h>
 #import <SpringBoard/SBAlertItemsController.h>
 #import <SpringBoard/SBAwayController.h>
+#import <SpringBoard/SBIconController.h>
 #import <SpringBoard/SBDisplayStack.h>
 #import <SpringBoard/SBStatusBarController.h>
 #import <SpringBoard/SBUIController.h>
@@ -140,7 +142,12 @@ HOOK(SBDisplayStack, dealloc, void)
 HOOK(SBUIController, animateLaunchApplication$, void, id app)
 {
     if ([app pid] != -1) {
-        // Application is backgrounded; don't animate
+        // Application is backgrounded
+        // Make sure SpringBoard dock and icons are hidden
+        [[objc_getClass("SBIconController") sharedInstance] scatter:NO];
+        [self showButtonBar:NO animate:NO action:NULL delegate:nil];
+
+        // Launch without animation
         NSArray *state = [statusBarStates objectForKey:[app displayIdentifier]];
         [app setActivationSetting:0x40 value:[state objectAtIndex:0]]; // statusbarmode
         [app setActivationSetting:0x80 value:[state objectAtIndex:1]]; // statusBarOrienation
@@ -309,7 +316,7 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
 
         Class $SBAlert = objc_getClass("BackgrounderAlert");
         alert = [[$SBAlert alloc] initWithCurrentApp:identifier otherApps:array];
-        [alert activate];
+        [(SBAlert *)alert activate];
     }
 }
 
