@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-13 13:02:15
+ * Last-modified: 2009-05-13 13:31:49
  */
 
 /**
@@ -178,8 +178,7 @@ static void cancelInvocationTimer()
 HOOK(SpringBoard, menuButtonDown$, void, GSEvent *event)
 {
     // FIXME: If already invoked, should not set timer... right? (needs thought)
-    Class $SBAwayController = objc_getClass("SBAwayController");
-    if (![[$SBAwayController sharedAwayController] isLocked]) {
+    if (![[objc_getClass("SBAwayController") sharedAwayController] isLocked]) {
         // Not locked
         if (!alert)
             // Task menu is not visible; setup toggle-delay timer
@@ -212,8 +211,7 @@ HOOK(SpringBoard, handleMenuDoubleTap, void)
         CALL_ORIG(SpringBoard, handleMenuDoubleTap);
     } else {
         // Popup not active
-        Class $SBAwayController = objc_getClass("SBAwayController");
-        if (![[$SBAwayController sharedAwayController] isLocked])
+        if (![[objc_getClass("SBAwayController") sharedAwayController] isLocked])
             // Not locked; toggle backgrounding
             [self invokeBackgrounder];
     }
@@ -291,12 +289,10 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
             NSString *status = [NSString stringWithFormat:@"Backgrounding %s",
                      (isEnabled ? "Disabled" : "Enabled")];
 
-            Class $BGAlertItem = objc_getClass("BackgrounderAlertItem");
             NSString *message = (invocationMethod == HOME_SHORT_PRESS) ? @"(Continue holding to force-quit)" : nil;
-            alert = [[$BGAlertItem alloc] initWithTitle:status message:message];
+            alert = [[objc_getClass("BackgrounderAlertItem") alloc] initWithTitle:status message:message];
 
-            Class $SBAlertItemsController(objc_getClass("SBAlertItemsController"));
-            SBAlertItemsController *controller = [$SBAlertItemsController sharedInstance];
+            SBAlertItemsController *controller = [objc_getClass("SBAlertItemsController") sharedInstance];
             [controller activateAlertItem:alert];
             if (invocationMethod == HOME_DOUBLE_TAP)
                 [self performSelector:@selector(dismissBackgrounderFeedback) withObject:nil afterDelay:1.0];
@@ -314,8 +310,7 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
         if (index != NSNotFound)
             [array exchangeObjectAtIndex:index withObjectAtIndex:0];
 
-        Class $SBAlert = objc_getClass("BackgrounderAlert");
-        alert = [[$SBAlert alloc] initWithCurrentApp:identifier otherApps:array];
+        alert = [[objc_getClass("BackgrounderAlert") alloc] initWithCurrentApp:identifier otherApps:array];
         [(SBAlert *)alert activate];
     }
 }
@@ -341,9 +336,8 @@ static void $SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$(SpringBoa
         BOOL isEnabled = [object boolValue];
         if (isEnabled != enable) {
             // Tell the application to change its backgrounding status
-            Class $SBApplicationController(objc_getClass("SBApplicationController"));
-            SBApplicationController *appCont = [$SBApplicationController sharedInstance];
-            SBApplication *app = [appCont applicationWithDisplayIdentifier:identifier];
+            SBApplication *app = [[objc_getClass("SBApplicationController") sharedInstance]
+                applicationWithDisplayIdentifier:identifier];
             // FIXME: If the target application does not have the Backgrounder
             //        hooks enabled, this will cause it to exit abnormally
             kill([app pid], SIGUSR1);
@@ -365,8 +359,7 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
 
         // If the current app will be backgrounded, store the status bar state
         if ([activeApplications objectForKey:currIdent]) {
-            Class $SBStatusBarController(objc_getClass("SBStatusBarController"));
-            SBStatusBarController *sbCont = [$SBStatusBarController sharedStatusBarController];
+            SBStatusBarController *sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
             NSNumber *mode = [NSNumber numberWithInt:[sbCont statusBarMode]];
             NSNumber *orientation = [NSNumber numberWithInt:[sbCont statusBarOrientation]];
             [statusBarStates setObject:[NSArray arrayWithObjects:mode, orientation, nil] forKey:currIdent];
@@ -374,9 +367,7 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
 
         if ([identifier isEqualToString:@"com.apple.springboard"]) {
             // Switching to SpringBoard
-            Class $SBUIController(objc_getClass("SBUIController"));
-            SBUIController *uiCont = [$SBUIController sharedInstance];
-            [uiCont quitTopApplication];
+            [[objc_getClass("SBUIController") sharedInstance] quitTopApplication];
         } else {
             // NOTE: Must set animation flag for deactivation, otherwise
             //       application window does not disappear (reason yet unknown)
@@ -390,10 +381,8 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
 
             if (![identifier isEqualToString:@"com.apple.springboard"]) {
                 // Switching to an application other than SpringBoard
-                Class $SBApplicationController(objc_getClass("SBApplicationController"));
-                SBApplicationController *appCont = [$SBApplicationController sharedInstance];
-                SBApplication *otherApp = [appCont applicationWithDisplayIdentifier:identifier];
-
+                SBApplication *otherApp = [[objc_getClass("SBApplicationController") sharedInstance]
+                    applicationWithDisplayIdentifier:identifier];
                 if (otherApp) {
                     //[otherApp setActivationSetting:0x4 flag:YES]; // animated
                     // NOTE: setting lastApp and appToApp (and the related
@@ -433,10 +422,8 @@ static void $SpringBoard$quitAppWithDisplayIdentifier$(SpringBoard *self, SEL se
         [self relaunchSpringBoard];
     } else {
         // Is an application
-        Class $SBApplicationController(objc_getClass("SBApplicationController"));
-        SBApplicationController *appCont = [$SBApplicationController sharedInstance];
-        SBApplication *app = [appCont applicationWithDisplayIdentifier:identifier];
-
+        SBApplication *app = [[objc_getClass("SBApplicationController") sharedInstance]
+            applicationWithDisplayIdentifier:identifier];
         if (app) {
             // FIXME: if ([blacklistedApps containsObject:identifier]) {
             if ([identifier isEqualToString:@"com.apple.mobilemail"] ||
@@ -519,8 +506,7 @@ HOOK(SBApplication, exitedCommon, void)
 HOOK(SBApplication, deactivate, BOOL)
 {
     if ([[self displayIdentifier] isEqualToString:deactivatingApplication]) {
-        Class $SpringBoard(objc_getClass("SpringBoard"));
-        [[$SpringBoard sharedApplication] dismissBackgrounderFeedback];
+        [[objc_getClass("SpringBoard") sharedApplication] dismissBackgrounderFeedback];
         [deactivatingApplication release];
         deactivatingApplication = nil;
     }
@@ -528,8 +514,7 @@ HOOK(SBApplication, deactivate, BOOL)
     // If the app will be backgrounded, store the status bar state
     NSString *identifier = [self displayIdentifier];
     if ([activeApplications objectForKey:identifier]) {
-        Class $SBStatusBarController(objc_getClass("SBStatusBarController"));
-        SBStatusBarController *sbCont = [$SBStatusBarController sharedStatusBarController];
+        SBStatusBarController *sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
         NSNumber *mode = [NSNumber numberWithInt:[sbCont statusBarMode]];
         NSNumber *orientation = [NSNumber numberWithInt:[sbCont statusBarOrientation]];
         [statusBarStates setObject:[NSArray arrayWithObjects:mode, orientation, nil] forKey:identifier];

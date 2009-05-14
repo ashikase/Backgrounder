@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-12 14:30:25
+ * Last-modified: 2009-05-13 13:38:54
  */
 
 /**
@@ -106,8 +106,7 @@ HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
         CGSize size = frame.size;
 
         // Get the status bar height (normally 0 (hidden) or 20 (shown))
-        Class $SBStatusBarController(objc_getClass("SBStatusBarController"));
-        UIWindow *statusBar = [[$SBStatusBarController sharedStatusBarController] statusBarWindow];
+        UIWindow *statusBar = [[objc_getClass("SBStatusBarController") sharedStatusBarController] statusBarWindow];
         float statusBarHeight = [statusBar frame].size.height;
 
         // Create a top navigation bar
@@ -131,8 +130,7 @@ HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
         [table release];
 
         // Create a bottom bar which contains instructional information
-        Class $UINavigationBarBackground(objc_getClass("UINavigationBarBackground"));
-        UINavigationBarBackground *footer = [[$UINavigationBarBackground alloc]
+        UINavigationBarBackground *footer = [[objc_getClass("UINavigationBarBackground") alloc]
             initWithFrame:CGRectMake(0, size.height - 44, size.width, 44)
             withBarStyle:0
             withTintColor:[UIColor colorWithWhite:0.23 alpha:1]];
@@ -206,8 +204,8 @@ HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
     NSString *identifier = (indexPath.section == 0) ? currentApp : [otherApps objectAtIndex:indexPath.row];
 
     // Get the SBApplication object
-    Class $SBApplicationController(objc_getClass("SBApplicationController"));
-    SBApplication *app = [[$SBApplicationController sharedInstance] applicationWithDisplayIdentifier:identifier];
+    SBApplication *app = [[objc_getClass("SBApplicationController") sharedInstance]
+        applicationWithDisplayIdentifier:identifier];
 
     // Set the cell's text to the name of the application
     [cell setText:[app displayName]];
@@ -257,8 +255,7 @@ HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    Class $SpringBoard(objc_getClass("SpringBoard"));
-    SpringBoard *springBoard = [$SpringBoard sharedApplication];
+    SpringBoard *springBoard = [objc_getClass("SpringBoard") sharedApplication];
 
     if (indexPath.section == 0) {
         [springBoard dismissBackgrounderFeedback];
@@ -281,8 +278,7 @@ static id $BGAlertDisplay$initWithSize$(SBAlertDisplay *self, SEL sel, CGSize si
 {
     CGRect rect = CGRectMake(0, 0, size.width, size.height);
 
-    Class $SBAlertDisplay = objc_getClass("SBAlertDisplay");
-    objc_super $super = {self, $SBAlertDisplay};
+    objc_super $super = {self, objc_getClass("SBAlertDisplay")};
     self = objc_msgSendSuper(&$super, @selector(initWithFrame:), rect);
     if (self) {
         [self setBackgroundColor:[UIColor colorWithWhite:0.30 alpha:1]];
@@ -332,8 +328,7 @@ static void $BGAlertDisplay$alertDidAnimateOut$finished$context$(SBAlertDisplay 
     NSString *animationID, NSNumber *finished, void *context)
 {
     // Continue dismissal by calling super's dismiss method
-    Class $SBAlertDisplay = objc_getClass("SBAlertDisplay");
-    objc_super $super = {self, $SBAlertDisplay};
+    objc_super $super = {self, objc_getClass("SBAlertDisplay")};
     objc_msgSendSuper(&$super, @selector(dismiss));
 }
 
@@ -342,8 +337,7 @@ static void $BGAlertDisplay$alertDidAnimateOut$finished$context$(SBAlertDisplay 
 
 static id $BGAlert$initWithCurrentApp$otherApps$(SBAlert *self, SEL sel, NSString *currentApp, NSArray *otherApps)
 {
-    Class $SBAlert = objc_getClass("SBAlert");
-    objc_super $super = {self, $SBAlert};
+    objc_super $super = {self, objc_getClass("SBAlert")};
     self = objc_msgSendSuper(&$super, @selector(init));
     if (self) {
         object_setInstanceVariable(self, "currentApp", reinterpret_cast<void *>([currentApp retain])); 
@@ -360,8 +354,7 @@ static void $BGAlert$dealloc(SBAlert *self, SEL sel)
     [currentApp release];
     [otherApps release];
 
-    Class $SBAlert = objc_getClass("SBAlert");
-    objc_super $super = {self, $SBAlert};
+    objc_super $super = {self, objc_getClass("SBAlert")};
     self = objc_msgSendSuper(&$super, @selector(dealloc));
 }
 
@@ -381,8 +374,7 @@ static NSArray * $BGAlert$otherApps(SBAlert *self, SEL sel)
 
 static id $BGAlert$alertDisplayViewWithSize$(SBAlert *self, SEL sel, CGSize size)
 {
-    Class $BGAlertDisplay = objc_getClass("BackgrounderAlertDisplay");
-    return [[[$BGAlertDisplay alloc] initWithSize:size] autorelease];
+    return [[[objc_getClass("BackgrounderAlertDisplay") alloc] initWithSize:size] autorelease];
 }
 
 //______________________________________________________________________________

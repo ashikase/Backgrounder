@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-11 21:26:23
+ * Last-modified: 2009-05-13 13:33:30
  */
 
 /**
@@ -50,8 +50,7 @@
 
 static id $BGAlertItem$initWithTitle$message$(id self, SEL sel, NSString *title, NSString *message)
 {
-    Class $SBAlertItem = objc_getClass("SBAlertItem");
-    objc_super $super = {self, $SBAlertItem};
+    objc_super $super = {self, objc_getClass("SBAlertItem")};
     self = objc_msgSendSuper(&$super, @selector(init));
     if (self) {
         object_setInstanceVariable(self, "title", reinterpret_cast<void *>([title copy])); 
@@ -68,8 +67,7 @@ static void $BGAlertItem$dealloc(id self, SEL sel)
     [title release];
     [message release];
 
-    Class $SBAlertItem = objc_getClass("SBAlertItem");
-    objc_super $super = {self, $SBAlertItem};
+    objc_super $super = {self, objc_getClass("SBAlertItem")};
     self = objc_msgSendSuper(&$super, @selector(dealloc));
 }
 
@@ -89,8 +87,7 @@ static void $BGAlertItem$configure$requirePasscodeForActions$(id self, SEL sel, 
 void initSimplePopup()
 {
     // Create custom alert-item class
-    Class $SBAlertItem(objc_getClass("SBAlertItem"));
-    Class $BGAlertItem = objc_allocateClassPair($SBAlertItem, "BackgrounderAlertItem", 0);
+    Class $BGAlertItem = objc_allocateClassPair(objc_getClass("SBAlertItem"), "BackgrounderAlertItem", 0);
     class_addIvar($BGAlertItem, "title", sizeof(id), 0, "@");
     class_addIvar($BGAlertItem, "message", sizeof(id), 0, "@");
     class_addMethod($BGAlertItem, @selector(initWithTitle:message:),
