@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-13 13:38:54
+ * Last-modified: 2009-05-15 23:07:33
  */
 
 /**
@@ -104,10 +104,7 @@ HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
     self = [super initWithFrame:frame];
     if (self) {
         CGSize size = frame.size;
-
-        // Get the status bar height (normally 0 (hidden) or 20 (shown))
-        UIWindow *statusBar = [[objc_getClass("SBStatusBarController") sharedStatusBarController] statusBarWindow];
-        float statusBarHeight = [statusBar frame].size.height;
+        const float statusBarHeight = 20.0f;
 
         // Create a top navigation bar
         UINavigationItem *navItem = [[UINavigationItem alloc] initWithTitle:@"Active Applications"];
@@ -302,6 +299,16 @@ static void $BGAlertDisplay$alertDisplayWillBecomeVisible(SBAlertDisplay *self, 
 
 static void $BGAlertDisplay$alertDisplayBecameVisible(SBAlertDisplay *self, SEL sel)
 {
+    // Task list displays a black status bar; save current status-bar settings
+    SBStatusBarController *sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
+    int &currentStatusBarMode = MSHookIvar<int>(self, "currentStatusBarMode");
+    int &currentStatusBarOrientation = MSHookIvar<int>(self, "currentStatusBarOrientation");
+    currentStatusBarMode = [sbCont statusBarMode];
+    if (currentStatusBarMode != 2) {
+        currentStatusBarOrientation = [sbCont statusBarOrientation];
+        [sbCont setStatusBarMode:2 orientation:0 duration:0.4f fenceID:0 animation:0];
+    }
+
     // FIXME: The proper method for animating an SBAlertDisplay is currently
     //        unknown; for now, the following method seems to work well enough
     [UIView beginAnimations:nil context:NULL];
@@ -314,6 +321,15 @@ static void $BGAlertDisplay$alertDisplayBecameVisible(SBAlertDisplay *self, SEL 
 
 static void $BGAlertDisplay$dismiss(SBAlertDisplay *self, SEL sel)
 {
+    int &currentStatusBarMode = MSHookIvar<int>(self, "currentStatusBarMode");
+    if (currentStatusBarMode != 2) {
+        // Restore the previous status-bar mode
+        int &currentStatusBarOrientation = MSHookIvar<int>(self, "currentStatusBarOrientation");
+        SBStatusBarController *sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
+        [sbCont setStatusBarMode:currentStatusBarMode orientation:currentStatusBarOrientation
+            duration:0.4f fenceID:0 animation:0];
+    }
+
     // FIXME: The proper method for animating an SBAlertDisplay is currently
     //        unknown; for now, the following method seems to work well enough
     [UIView beginAnimations:nil context:NULL];
@@ -391,7 +407,10 @@ void initTaskMenuPopup()
     // Create custom alert-display class
     Class $SBAlertDisplay(objc_getClass("SBAlertDisplay"));
     Class $BGAlertDisplay = objc_allocateClassPair($SBAlertDisplay, "BackgrounderAlertDisplay", 0);
-    class_addIvar($BGAlertDisplay, "navController", sizeof(id), 0, "@");
+    unsigned int size, align;
+    NSGetSizeAndAlignment("i", &size, &align);
+    class_addIvar($BGAlertDisplay, "currentStatusBarMode", size, align, "i");
+    class_addIvar($BGAlertDisplay, "currentStatusBarOrientation", size, align, "i");
     class_addMethod($BGAlertDisplay, @selector(initWithSize:),
             (IMP)&$BGAlertDisplay$initWithSize$, "@@:{CGSize=ff}");
     class_addMethod($BGAlertDisplay, @selector(alertDisplayWillBecomeVisible),
