@@ -1,6 +1,6 @@
 Package: jp.ashikase.backgrounder
 Name: Backgrounder
-Version: svn.r187
+Version: svn.r206
 Architecture: iphoneos-arm
 Description: Run applications in the background
 Homepage: http://iphone-backgrounder.googlecode.com/
