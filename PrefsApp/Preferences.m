@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-* Last-modified: 2009-02-20 23:53:40
+* Last-modified: 2009-05-16 23:06:45
  */
 
 /**
@@ -164,7 +164,7 @@ static NSArray *allowedFeedbackTypes = nil;
     [dict setObject:[NSArray array] forKey:@"enabledApplications"];
 
     NSArray *array = [NSArray arrayWithObjects:
-        @"com.apple.mobilephone", @"com.apple.mobilemail", @"com.apple.mobilesafari",
+        @"com.apple.mobilephone", @"com.apple.mobilemail", @"com.apple.mobilesafari", @"com.apple.mobileipod",
         nil];
     [dict setObject:array forKey:@"blacklistedApplications"];
 
