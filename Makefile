@@ -1,6 +1,7 @@
 NAME = Backgrounder
 
 # These paths must be changed to match the compilation environment
+TOOLCHAIN=/opt/iPhone/sdk/sys.open2x
 SYS_PATH = /opt/iPhone/sys
 SUB_PATH = /files/Platforms/iPhone/Projects/Others/saurik/mobilesubstrate
 LDID = /opt/iPhone/ldid
@@ -24,13 +25,16 @@ SRCS = \
 	   Classes/SpringBoardHooks.mm \
 	   Classes/TaskMenuPopup.mm
 
-all: $(NAME).dylib $(control)
+all: config $(NAME).dylib
+
+config:
+	ln -snf ${TOOLCHAIN} $(SYS_PATH)
 
 clean:
 	rm -f $(NAME).dylib
 
 # Replace 'iphone' with the IP or hostname of your device
-install:
+install: config $(NAME).dylib
 	ssh root@iphone rm -f /Library/MobileSubstrate/DynamicLibraries/$(NAME).dylib
 	scp $(NAME).dylib root@iphone:/Library/MobileSubstrate/DynamicLibraries/
 	ssh root@iphone restart
