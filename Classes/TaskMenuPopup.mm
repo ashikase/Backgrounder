@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-16 18:27:06
+ * Last-modified: 2009-05-16 18:39:49
  */
 
 /**
@@ -53,13 +53,10 @@
 #import <UIKit/UINavigationBarBackground.h>
 #import <UIKit/UIRemoveControlTextButton.h>
 
-#import <SpringBoard/SBApplication.h>
 #import <SpringBoard/SBApplicationIcon.h>
-#import <SpringBoard/SBApplicationController.h>
 #import <SpringBoard/SBIconBadge.h>
 #import <SpringBoard/SBIconModel.h>
 #import <SpringBoard/SBStatusBarController.h>
-#import <SpringBoard/SBUIController.h>
 
 #import "SpringBoardHooks.h"
 
@@ -259,14 +256,11 @@ HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
     // Get the display identifier of the application for this cell
     NSString *identifier = (indexPath.section == 0) ? currentApp : [otherApps objectAtIndex:indexPath.row];
 
-    // Get the SBApplication object
-    SBApplication *app = [[objc_getClass("SBApplicationController") sharedInstance]
-        applicationWithDisplayIdentifier:identifier];
-
+    // Get the application icon object
     SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
 
     // Set the cell's text to the name of the application
-    [cell setText:[app displayName]];
+    [cell setText:[icon displayName]];
 
     // Set the cell's image to the application's icon image
     UIImage *image = nil;
