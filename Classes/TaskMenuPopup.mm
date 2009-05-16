@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-15 23:07:33
+ * Last-modified: 2009-05-16 18:27:06
  */
 
 /**
@@ -48,12 +48,16 @@
 
 #import <CoreGraphics/CoreGraphics.h>
 #import <Foundation/Foundation.h>
+#import <QuartzCore/CALayer.h>
 #import <UIKit/UIKit.h>
 #import <UIKit/UINavigationBarBackground.h>
 #import <UIKit/UIRemoveControlTextButton.h>
 
 #import <SpringBoard/SBApplication.h>
+#import <SpringBoard/SBApplicationIcon.h>
 #import <SpringBoard/SBApplicationController.h>
+#import <SpringBoard/SBIconBadge.h>
+#import <SpringBoard/SBIconModel.h>
 #import <SpringBoard/SBStatusBarController.h>
 #import <SpringBoard/SBUIController.h>
 
@@ -79,6 +83,61 @@ HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
     return CALL_ORIG(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
         control, target, newLabel);
 }
+
+//______________________________________________________________________________
+//______________________________________________________________________________
+
+#import "../../DebugUIKit.h"
+
+@interface TaskListCell : UITableViewCell
+{
+    UIImage *badge;
+    UIImageView *badgeView;
+}
+
+@property(nonatomic, retain) UIImage *badge;
+
+@end
+
+@implementation TaskListCell
+
+@synthesize badge;
+
+- (id)initWithFrame:(CGRect)frame reuseIdentifier:(NSString *)reuseIdentifier
+{
+    self = [super initWithFrame:frame reuseIdentifier:reuseIdentifier];
+    if (self) {
+        badgeView = [[UIImageView alloc] initWithFrame:CGRectZero];
+        [self.contentView addSubview:badgeView];
+    }
+    return self;
+}
+
+- (void)dealloc
+{
+    [badge release];
+    [badgeView release];
+
+    [super dealloc];
+}
+
+- (void)layoutSubviews
+{
+    [super layoutSubviews];
+
+    if (badge) {
+        // Determine position of upper-right corner of icon image
+        UIImageView *imageView = MSHookIvar<UIImageView *>(self, "_imageView");
+        CGRect imageRect = [imageView frame];
+        CGPoint corner = CGPointMake(imageRect.origin.x + imageRect.size.width - 1, imageRect.origin.y);
+
+        [badgeView setImage:badge];
+        [badgeView setOrigin:CGPointMake(corner.x - badge.size.width + 11.0f, corner.y - 8.0f)];
+        [self.contentView bringSubviewToFront:badgeView];
+    }
+}
+
+@end
 
 //______________________________________________________________________________
 //______________________________________________________________________________
@@ -182,7 +241,7 @@ HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    return 68.0f;
+    return 76.0f;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -190,10 +249,10 @@ HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
     static NSString *reuseIdentifier = @"TaskMenuCell";
 
     // Try to retrieve from the table view a now-unused cell with the given identifier
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
+    TaskListCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
     if (cell == nil) {
         // Cell does not exist, create a new one
-        cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
+        cell = [[[TaskListCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
         [cell setSelectionStyle:2];
     }
 
@@ -204,18 +263,30 @@ HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
     SBApplication *app = [[objc_getClass("SBApplicationController") sharedInstance]
         applicationWithDisplayIdentifier:identifier];
 
+    SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
+
     // Set the cell's text to the name of the application
     [cell setText:[app displayName]];
 
     // Set the cell's image to the application's icon image
     UIImage *image = nil;
     if ([identifier isEqualToString:@"com.apple.springboard"]) {
+        // Is SpringBoard
         image = [UIImage imageWithContentsOfFile:@"/System/Library/CoreServices/SpringBoard.app/applelogo.png"];
-        image = [image _imageScaledToSize:CGSizeMake(59, 62) interpolationQuality:0];
+        image = [image _imageScaledToSize:CGSizeMake(59, 60) interpolationQuality:0];
         // Take opportunity to mark that this cell represents SpringBoard
         [cell setTag:2];
     } else {
-        image = [UIImage imageWithContentsOfFile:[app pathForIcon]];
+        // Is an application
+        image = [icon icon];
+
+        SBIconBadge *badge = MSHookIvar<SBIconBadge *>(icon, "_badge");
+        if (badge) {
+            UIGraphicsBeginImageContext([badge frame].size);
+            [[badge layer] renderInContext:UIGraphicsGetCurrentContext()];
+            [cell setBadge:UIGraphicsGetImageFromCurrentImageContext()];
+            UIGraphicsEndImageContext();
+        }
     }
     [cell setImage:image];
 
