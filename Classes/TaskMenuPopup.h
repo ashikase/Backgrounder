@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-15 16:56:20
+ * Last-modified: 2009-05-16 19:45:25
  */
 
 /**
@@ -62,11 +62,13 @@
 {
     NSString *currentApp;
     NSArray *otherApps;
+    NSArray *blacklistedApps;
 }
 
-- (id)initWithCurrentApp:(NSString *)currentApp otherApps:(NSArray *)otherApps;
+- (id)initWithCurrentApp:(NSString *)currentApp otherApps:(NSArray *)otherApps blacklistedApps:(NSArray *)blacklistedApps;
 - (NSString *)currentApp;
 - (NSArray *)otherApps;
+- (NSArray *)blacklistedApps;
 
 @end
 

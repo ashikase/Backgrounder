@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-13 16:58:02
+ * Last-modified: 2009-05-16 19:39:40
  */
 
 /**
@@ -330,7 +330,7 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
         if (index != NSNotFound)
             [array exchangeObjectAtIndex:index withObjectAtIndex:0];
 
-        alert = [[objc_getClass("BackgrounderAlert") alloc] initWithCurrentApp:identifier otherApps:array];
+        alert = [[objc_getClass("BackgrounderAlert") alloc] initWithCurrentApp:identifier otherApps:array blacklistedApps:blacklistedApps];
         [(SBAlert *)alert activate];
     }
 }
@@ -452,9 +452,7 @@ static void $SpringBoard$quitAppWithDisplayIdentifier$(SpringBoard *self, SEL se
         SBApplication *app = [[objc_getClass("SBApplicationController") sharedInstance]
             applicationWithDisplayIdentifier:identifier];
         if (app) {
-            // FIXME: if ([blacklistedApps containsObject:identifier]) {
-            if ([identifier isEqualToString:@"com.apple.mobilemail"] ||
-                [identifier isEqualToString:@"com.apple.mobilephone"]) {
+            if ([blacklistedApps containsObject:identifier]) {
                 // Is blacklisted; should force-quit
                 killedApplication = [identifier copy];
                 [app kill];

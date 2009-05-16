@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-16 18:39:49
+ * Last-modified: 2009-05-16 21:57:22
  */
 
 /**
@@ -143,10 +143,12 @@ HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
 {
     NSString *currentApp;
     NSMutableArray *otherApps;
+    NSArray *blacklistedApps;
 }
 
 @property(nonatomic, copy) NSString *currentApp;
 @property(nonatomic, retain) NSMutableArray *otherApps;
+@property(nonatomic, retain) NSArray *blacklistedApps;
 
 @end
 
@@ -154,6 +156,7 @@ HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
 
 @synthesize currentApp;
 @synthesize otherApps;
+@synthesize blacklistedApps;
 
 - (id)initWithFrame:(CGRect)frame
 {
@@ -215,6 +218,7 @@ HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
 {
     [currentApp release];
     [otherApps release];
+    [blacklistedApps release];
 
     [super dealloc];
 }
@@ -285,8 +289,7 @@ HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
     [cell setImage:image];
 
     // Mark whether this application is blacklisted
-    if ([identifier isEqualToString:@"com.apple.mobilemail"] ||
-        [identifier isEqualToString:@"com.apple.mobilephone"])
+    if ([blacklistedApps containsObject:identifier])
         [cell setTag:1];
 
     return cell;
@@ -360,6 +363,7 @@ static void $BGAlertDisplay$alertDisplayWillBecomeVisible(SBAlertDisplay *self, 
     TaskList *tl = [[self subviews] objectAtIndex:0];
     [tl setCurrentApp:[[self alert] currentApp]];
     [tl setOtherApps:[NSMutableArray arrayWithArray:[[self alert] otherApps]]];
+    [tl setBlacklistedApps:[[self alert] blacklistedApps]];
 }
 
 static void $BGAlertDisplay$alertDisplayBecameVisible(SBAlertDisplay *self, SEL sel)
@@ -416,24 +420,27 @@ static void $BGAlertDisplay$alertDidAnimateOut$finished$context$(SBAlertDisplay 
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-static id $BGAlert$initWithCurrentApp$otherApps$(SBAlert *self, SEL sel, NSString *currentApp, NSArray *otherApps)
+static id $BGAlert$initWithCurrentApp$otherApps$blacklistedApps$(SBAlert *self, SEL sel, NSString *currentApp, NSArray *otherApps, NSArray *blacklistedApps)
 {
     objc_super $super = {self, objc_getClass("SBAlert")};
     self = objc_msgSendSuper(&$super, @selector(init));
     if (self) {
         object_setInstanceVariable(self, "currentApp", reinterpret_cast<void *>([currentApp retain])); 
         object_setInstanceVariable(self, "otherApps", reinterpret_cast<void *>([otherApps retain])); 
+        object_setInstanceVariable(self, "blacklistedApps", reinterpret_cast<void *>([blacklistedApps retain])); 
     }
     return self;
 }
 
 static void $BGAlert$dealloc(SBAlert *self, SEL sel)
 {
-    id currentApp = nil, otherApps = nil;
+    id currentApp = nil, otherApps = nil, blacklistedApps = nil;
     object_getInstanceVariable(self, "currentApp", reinterpret_cast<void **>(&currentApp));
     object_getInstanceVariable(self, "otherApps", reinterpret_cast<void **>(&otherApps));
+    object_getInstanceVariable(self, "blacklistedApps", reinterpret_cast<void **>(&blacklistedApps));
     [currentApp release];
     [otherApps release];
+    [blacklistedApps release];
 
     objc_super $super = {self, objc_getClass("SBAlert")};
     self = objc_msgSendSuper(&$super, @selector(dealloc));
@@ -451,6 +458,13 @@ static NSArray * $BGAlert$otherApps(SBAlert *self, SEL sel)
     NSArray *otherApps = nil;
     object_getInstanceVariable(self, "otherApps", reinterpret_cast<void **>(&otherApps));
     return otherApps;
+}
+
+static NSArray * $BGAlert$blacklistedApps(SBAlert *self, SEL sel)
+{
+    NSArray *blacklistedApps = nil;
+    object_getInstanceVariable(self, "blacklistedApps", reinterpret_cast<void **>(&blacklistedApps));
+    return blacklistedApps;
 }
 
 static id $BGAlert$alertDisplayViewWithSize$(SBAlert *self, SEL sel, CGSize size)
@@ -491,16 +505,20 @@ void initTaskMenuPopup()
     // Create custom alert class
     Class $SBAlert(objc_getClass("SBAlert"));
     Class $BGAlert = objc_allocateClassPair($SBAlert, "BackgrounderAlert", 0);
-    class_addIvar($BGAlert, "currentApp", sizeof(id), 0, "@");
-    class_addIvar($BGAlert, "otherApps", sizeof(id), 0, "@");
-    class_addMethod($BGAlert, @selector(initWithCurrentApp:otherApps:),
-            (IMP)&$BGAlert$initWithCurrentApp$otherApps$, "@@:@@");
+    NSGetSizeAndAlignment("@", &size, &align);
+    class_addIvar($BGAlert, "currentApp", size, align, "@");
+    class_addIvar($BGAlert, "otherApps", size, align, "@");
+    class_addIvar($BGAlert, "blacklistedApps", size, align, "@");
+    class_addMethod($BGAlert, @selector(initWithCurrentApp:otherApps:blacklistedApps:),
+            (IMP)&$BGAlert$initWithCurrentApp$otherApps$blacklistedApps$, "@@:@@@");
     class_addMethod($BGAlert, @selector(dealloc),
             (IMP)&$BGAlert$dealloc, "v@:");
     class_addMethod($BGAlert, @selector(currentApp),
             (IMP)&$BGAlert$currentApp, "@@:");
     class_addMethod($BGAlert, @selector(otherApps),
             (IMP)&$BGAlert$otherApps, "@@:");
+    class_addMethod($BGAlert, @selector(blacklistedApps),
+            (IMP)&$BGAlert$blacklistedApps, "@@:");
     class_addMethod($BGAlert, @selector(alertDisplayViewWithSize:),
             (IMP)&$BGAlert$alertDisplayViewWithSize$, "@@:{CGSize=ff}");
     objc_registerClassPair($BGAlert);
