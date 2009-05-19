@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-02-21 10:28:20
+ * Last-modified: 2009-05-18 09:47:04
  */
 
 /**
@@ -117,7 +117,6 @@ static NSArray *applicationDisplayIdentifiers()
             //        a given folder contains.
             if (identifier &&
                 ![identifier hasPrefix:@"jp.ashikase.springjumps."] &&
-                ![identifier hasPrefix:@"com.bigboss.categories."] &&
                 ![identifier isEqualToString:@"com.iptm.bigboss.sbsettings"] &&
                 ![identifier isEqualToString:@"com.apple.webapp"])
             [identifiers addObject:identifier];
