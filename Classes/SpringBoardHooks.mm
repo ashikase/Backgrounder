@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-19 10:02:17
+ * Last-modified: 2009-05-19 11:50:06
  */
 
 /**
@@ -266,10 +266,8 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
     displayStacks = [[NSMutableArray alloc] initWithCapacity:5];
 
     // NOTE: The initial capacity value was chosen to hold the default active
-    //       apps (SpringBoard, MobilePhone, and MobileMail) plus two others
-    activeApps = [[NSMutableDictionary alloc] initWithCapacity:5];
-    // SpringBoard is always active
-    [activeApps setObject:[NSNumber numberWithBool:YES] forKey:@"com.apple.springboard"];
+    //       apps (MobilePhone and MobileMail) plus two others
+    activeApps = [[NSMutableDictionary alloc] initWithCapacity:4];
 
     // Create a dictionary to store the statusbar state for active apps
     // FIXME: Determine a way to do this without requiring extra storage
@@ -320,15 +318,17 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
     } else if (feedbackType == TASK_MENU_POPUP) {
         // Display task menu popup
         NSMutableArray *array = [NSMutableArray arrayWithArray:[activeApps allKeys]];
-        if (!identifier)
-            // Is SpringBoard
-            identifier = @"com.apple.springboard";
+        if (identifier) {
+            // Is an application
         // This array will be used for "other apps", so remove the active app
         [array removeObject:identifier];
-        // SpringBoard should always be first in the list for applications
-        int index = [array indexOfObject:@"com.apple.springboard"];
-        if (index != NSNotFound)
-            [array exchangeObjectAtIndex:index withObjectAtIndex:0];
+
+            // SpringBoard should always be first in the list of other applications
+            [array insertObject:@"com.apple.springboard" atIndex:0];
+        } else {
+            // Is SpringBoard
+            identifier = @"com.apple.springboard";
+        }
 
         alert = [[objc_getClass("BackgrounderAlert") alloc] initWithCurrentApp:identifier otherApps:array blacklistedApps:blacklistedApps];
         [(SBAlert *)alert activate];
