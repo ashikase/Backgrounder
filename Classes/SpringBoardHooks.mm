@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-16 19:39:40
+ * Last-modified: 2009-05-19 10:02:17
  */
 
 /**
@@ -75,11 +75,11 @@ static int invocationMethod = HOME_SHORT_PRESS;
 
 static NSArray *blacklistedApps = nil;
 
-static NSMutableDictionary *activeApplications = nil;
+static NSMutableDictionary *activeApps = nil;
 static NSMutableDictionary *statusBarStates = nil;
-static NSString *deactivatingApplication = nil;
+static NSString *deactivatingApp = nil;
 
-static NSString *killedApplication = nil;
+static NSString *killedApp = nil;
 
 static BOOL animateStatusBar = YES;
 
@@ -267,9 +267,9 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
 
     // NOTE: The initial capacity value was chosen to hold the default active
     //       apps (SpringBoard, MobilePhone, and MobileMail) plus two others
-    activeApplications = [[NSMutableDictionary alloc] initWithCapacity:5];
+    activeApps = [[NSMutableDictionary alloc] initWithCapacity:5];
     // SpringBoard is always active
-    [activeApplications setObject:[NSNumber numberWithBool:YES] forKey:@"com.apple.springboard"];
+    [activeApps setObject:[NSNumber numberWithBool:YES] forKey:@"com.apple.springboard"];
 
     // Create a dictionary to store the statusbar state for active apps
     // FIXME: Determine a way to do this without requiring extra storage
@@ -287,8 +287,8 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
 
 HOOK(SpringBoard, dealloc, void)
 {
-    [killedApplication release];
-    [activeApplications release];
+    [killedApp release];
+    [activeApps release];
     [displayStacks release];
     CALL_ORIG(SpringBoard, dealloc);
 }
@@ -302,7 +302,7 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
     NSString *identifier = [app displayIdentifier];
     if (feedbackType == SIMPLE_POPUP) {
         if (app && ![blacklistedApps containsObject:identifier]) {
-            BOOL isEnabled = [[activeApplications objectForKey:identifier] boolValue];
+            BOOL isEnabled = [[activeApps objectForKey:identifier] boolValue];
             [self setBackgroundingEnabled:(!isEnabled) forDisplayIdentifier:identifier];
 
             // Display simple popup
@@ -319,7 +319,7 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
         }
     } else if (feedbackType == TASK_MENU_POPUP) {
         // Display task menu popup
-        NSMutableArray *array = [NSMutableArray arrayWithArray:[activeApplications allKeys]];
+        NSMutableArray *array = [NSMutableArray arrayWithArray:[activeApps allKeys]];
         if (!identifier)
             // Is SpringBoard
             identifier = @"com.apple.springboard";
@@ -351,7 +351,7 @@ static void $SpringBoard$dismissBackgrounderFeedback(SpringBoard *self, SEL sel)
 
 static void $SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$(SpringBoard *self, SEL sel, BOOL enable, NSString *identifier)
 {
-    NSNumber *object = [activeApplications objectForKey:identifier];
+    NSNumber *object = [activeApps objectForKey:identifier];
     if (object != nil) {
         BOOL isEnabled = [object boolValue];
         if (isEnabled != enable) {
@@ -363,7 +363,7 @@ static void $SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$(SpringBoa
             kill([app pid], SIGUSR1);
 
             // Store the new backgrounding status of the application
-            [activeApplications setObject:[NSNumber numberWithBool:(!isEnabled)]
+            [activeApps setObject:[NSNumber numberWithBool:(!isEnabled)]
                 forKey:identifier];
         }
     }
@@ -375,10 +375,10 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
     NSString *currIdent = currApp ? [currApp displayIdentifier] : @"com.apple.springboard";
     if (![currIdent isEqualToString:identifier]) {
         // Save the identifier for later use
-        deactivatingApplication = [currIdent copy];
+        deactivatingApp = [currIdent copy];
 
         // If the current app will be backgrounded, store the status bar state
-        if ([activeApplications objectForKey:currIdent]) {
+        if ([activeApps objectForKey:currIdent]) {
             SBStatusBarController *sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
             NSNumber *mode = [NSNumber numberWithInt:[sbCont statusBarMode]];
             NSNumber *orientation = [NSNumber numberWithInt:[sbCont statusBarOrientation]];
@@ -454,7 +454,7 @@ static void $SpringBoard$quitAppWithDisplayIdentifier$(SpringBoard *self, SEL se
         if (app) {
             if ([blacklistedApps containsObject:identifier]) {
                 // Is blacklisted; should force-quit
-                killedApplication = [identifier copy];
+                killedApp = [identifier copy];
                 [app kill];
             } else {
                 // Disable backgrounding for the application
@@ -493,14 +493,14 @@ HOOK(SBApplication, launchSucceeded, void)
         CFRelease(propList);
     }
 
-    if ([activeApplications objectForKey:identifier] == nil) {
+    if ([activeApps objectForKey:identifier] == nil) {
         // Initial launch; check if this application is set to always background
         if (isAlwaysEnabled)
             // Tell the application to enable backgrounding
             kill([self pid], SIGUSR1);
 
         // Store the backgrounding status of the application
-        [activeApplications setObject:[NSNumber numberWithBool:isAlwaysEnabled] forKey:identifier];
+        [activeApps setObject:[NSNumber numberWithBool:isAlwaysEnabled] forKey:identifier];
     } else {
         // Was restored from backgrounded state
         if (!isPersistent && !isAlwaysEnabled) {
@@ -508,7 +508,7 @@ HOOK(SBApplication, launchSucceeded, void)
             kill([self pid], SIGUSR1);
 
             // Store the backgrounding status of the application
-            [activeApplications setObject:[NSNumber numberWithBool:NO] forKey:identifier];
+            [activeApps setObject:[NSNumber numberWithBool:NO] forKey:identifier];
         }
     }
 
@@ -520,7 +520,7 @@ HOOK(SBApplication, exitedCommon, void)
     // Application has exited (either normally or abnormally);
     // remove from active applications list
     NSString *identifier = [self displayIdentifier];
-    [activeApplications removeObjectForKey:identifier];
+    [activeApps removeObjectForKey:identifier];
 
     // ... also remove status bar state data from states list
     [statusBarStates removeObjectForKey:identifier];
@@ -530,15 +530,15 @@ HOOK(SBApplication, exitedCommon, void)
 
 HOOK(SBApplication, deactivate, BOOL)
 {
-    if ([[self displayIdentifier] isEqualToString:deactivatingApplication]) {
+    if ([[self displayIdentifier] isEqualToString:deactivatingApp]) {
         [[objc_getClass("SpringBoard") sharedApplication] dismissBackgrounderFeedback];
-        [deactivatingApplication release];
-        deactivatingApplication = nil;
+        [deactivatingApp release];
+        deactivatingApp = nil;
     }
 
     // If the app will be backgrounded, store the status bar state
     NSString *identifier = [self displayIdentifier];
-    if ([activeApplications objectForKey:identifier]) {
+    if ([activeApps objectForKey:identifier]) {
         SBStatusBarController *sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
         NSNumber *mode = [NSNumber numberWithInt:[sbCont statusBarMode]];
         NSNumber *orientation = [NSNumber numberWithInt:[sbCont statusBarOrientation]];
@@ -550,17 +550,17 @@ HOOK(SBApplication, deactivate, BOOL)
 
 HOOK(SBApplication, _startTerminationWatchdogTimer, void)
 {
-    BOOL isBackgroundingEnabled = [[activeApplications objectForKey:[self displayIdentifier]] boolValue];
+    BOOL isBackgroundingEnabled = [[activeApps objectForKey:[self displayIdentifier]] boolValue];
     if (!isBackgroundingEnabled)
         CALL_ORIG(SBApplication, _startTerminationWatchdogTimer);
 }
 
 HOOK(SBApplication, _relaunchAfterAbnormalExit$, void, BOOL flag)
 {
-    if ([[self displayIdentifier] isEqualToString:killedApplication]) {
+    if ([[self displayIdentifier] isEqualToString:killedApp]) {
         // Was killed by Backgrounder; do not allow relaunch
-        [killedApplication release];
-        killedApplication = nil;
+        [killedApp release];
+        killedApp = nil;
     } else {
         CALL_ORIG(SBApplication, _relaunchAfterAbnormalExit$, flag);
     }
