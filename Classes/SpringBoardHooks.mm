@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-20 23:19:49
+ * Last-modified: 2009-05-20 23:28:35
  */
 
 /**
@@ -201,16 +201,6 @@ static void cancelInvocationTimer()
 // NOTE: Only hooked when invocationMethod == HOME_SHORT_PRESS
 HOOK(SpringBoard, menuButtonDown$, void, GSEvent *event)
 {
-
-        SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:@"com.SoftwareDesigns.PickAndChoose"];
-        UIView *closebox = MSHookIvar<UIView *>(icon, "_closeBox");
-        if (closebox) {
-            CGRect rect = [closebox frame];
-            NSLog(@"~~~~ pushbutton: x:%f y:%f w:%f h:%f", rect.origin.x, rect.origin.y, rect.size.width, rect.size.height);
-        } else {
-            NSLog(@"~~~~ NO pushbutton");
-        }
-
     // FIXME: If already invoked, should not set timer... right? (needs thought)
     if (![[objc_getClass("SBAwayController") sharedAwayController] isLocked]) {
         // Not locked
@@ -533,7 +523,7 @@ HOOK(SBApplication, launchSucceeded, void)
             [bgEnabledApps addObject:identifier];
         }
 
-        // Update the SpringBoard icon to indicate that the app is active
+        // Update the SpringBoard icon to indicate that the app is running
         SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
         UIImageView *badgeView = [[UIImageView alloc] initWithImage:[UIImage imageWithContentsOfFile:@"/Applications/Backgrounder.app/images/badge.png"]];
         [badgeView setOrigin:CGPointMake(-12.0f, 39.0f)];
@@ -561,7 +551,7 @@ HOOK(SBApplication, exitedCommon, void)
     // ... also remove status bar state data from states list
     [statusBarStates removeObjectForKey:identifier];
 
-    // Update the SpringBoard icon to indicate that the app is inactive
+    // Update the SpringBoard icon to indicate that the app is not running
     SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
     [[icon viewWithTag:1000] removeFromSuperview];
 
