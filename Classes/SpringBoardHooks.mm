@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-19 16:04:34
+ * Last-modified: 2009-05-19 16:25:12
  */
 
 /**
@@ -229,9 +229,13 @@ HOOK(SpringBoard, handleMenuDoubleTap, void)
     if (![[objc_getClass("SBAwayController") sharedAwayController] isLocked]) {
         // Not locked
         if (alert == nil) {
-            // Popup not active; invoke and return
-            [self invokeBackgrounder];
-            return;
+            // Popup not active
+            if (feedbackType == TASK_MENU_POPUP ||
+                    [[displayStacks objectAtIndex:0] topApplication] != nil) {
+                // invoke and return
+                [self invokeBackgrounder];
+                return;
+            }
         } else {
             // Popup is active; dismiss and perform normal behaviour
             [self dismissBackgrounderFeedback];
