@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-19 16:25:12
+ * Last-modified: 2009-05-20 20:47:06
  */
 
 /**
@@ -400,34 +400,32 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
             //[currApp setDeactivationSetting:0x0100 value:[NSNumber numberWithDouble:1.0]]; // animation scale
             //[currApp setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0]]; // animation duration
 
-            if (![identifier isEqualToString:@"com.apple.springboard"]) {
-                // Switching to an application other than SpringBoard
-                SBApplication *otherApp = [[objc_getClass("SBApplicationController") sharedInstance]
-                    applicationWithDisplayIdentifier:identifier];
-                if (otherApp) {
-                    //[otherApp setActivationSetting:0x4 flag:YES]; // animated
-                    // NOTE: setting lastApp and appToApp (and the related
-                    //       deactivation flags above) gives an interesting
-                    //       switching effect; however, it does not seem to work
-                    //       with animatedNoPNG, and thus makes it appear that the
-                    //       application being switched to has been restarted.
-                    //[otherApp setActivationSetting:0x20000 flag:YES]; // animatedNoPNG
-                    //[otherApp setActivationSetting:0x10000 flag:YES]; // lastApp
-                    //[otherApp setActivationSetting:0x20000000 flag:YES]; // appToApp
-                    NSArray *state = [statusBarStates objectForKey:identifier];
-                    [otherApp setActivationSetting:0x40 value:[state objectAtIndex:0]]; // statusbarmode
-                    [otherApp setActivationSetting:0x80 value:[state objectAtIndex:1]]; // statusBarOrienation
+            // Switching to an application other than SpringBoard
+            SBApplication *otherApp = [[objc_getClass("SBApplicationController") sharedInstance]
+                applicationWithDisplayIdentifier:identifier];
+            if (otherApp) {
+                //[otherApp setActivationSetting:0x4 flag:YES]; // animated
+                // NOTE: setting lastApp and appToApp (and the related
+                //       deactivation flags above) gives an interesting
+                //       switching effect; however, it does not seem to work
+                //       with animatedNoPNG, and thus makes it appear that the
+                //       application being switched to has been restarted.
+                //[otherApp setActivationSetting:0x20000 flag:YES]; // animatedNoPNG
+                //[otherApp setActivationSetting:0x10000 flag:YES]; // lastApp
+                //[otherApp setActivationSetting:0x20000000 flag:YES]; // appToApp
+                NSArray *state = [statusBarStates objectForKey:identifier];
+                [otherApp setActivationSetting:0x40 value:[state objectAtIndex:0]]; // statusbarmode
+                [otherApp setActivationSetting:0x80 value:[state objectAtIndex:1]]; // statusBarOrienation
 
-                    // Make sure SpringBoard dock and icons are hidden
-                    [[objc_getClass("SBIconController") sharedInstance] scatter:NO];
-                    [[objc_getClass("SBUIController") sharedInstance] showButtonBar:NO animate:NO action:NULL delegate:nil];
+                // Make sure SpringBoard dock and icons are hidden
+                [[objc_getClass("SBIconController") sharedInstance] scatter:NO];
+                [[objc_getClass("SBUIController") sharedInstance] showButtonBar:NO animate:NO action:NULL delegate:nil];
 
-                    // Prevent status bar from fading in
-                    animateStatusBar = NO;
+                // Prevent status bar from fading in
+                animateStatusBar = NO;
 
-                    // Activate the new app
-                    [[displayStacks objectAtIndex:2] pushDisplay:otherApp];
-                }
+                // Activate the new app
+                [[displayStacks objectAtIndex:2] pushDisplay:otherApp];
             }
 
             if (currApp)
@@ -475,12 +473,6 @@ static void $SpringBoard$quitAppWithDisplayIdentifier$(SpringBoard *self, SEL se
 
 //______________________________________________________________________________
 //______________________________________________________________________________
-
-HOOK(SBApplication, shouldLaunchPNGless, BOOL)
-{
-    // Only show splash-screen on initial launch
-    return ([self pid] != -1) ? YES : CALL_ORIG(SBApplication, shouldLaunchPNGless);
-}
 
 HOOK(SBApplication, launchSucceeded, void)
 {
@@ -620,8 +612,6 @@ void initSpringBoardHooks()
     class_addMethod($SpringBoard, @selector(quitAppWithDisplayIdentifier:), (IMP)&$SpringBoard$quitAppWithDisplayIdentifier$, "v@:@");
 
     Class $SBApplication(objc_getClass("SBApplication"));
-    _SBApplication$shouldLaunchPNGless =
-        MSHookMessage($SBApplication, @selector(shouldLaunchPNGless), &$SBApplication$shouldLaunchPNGless);
     _SBApplication$launchSucceeded =
         MSHookMessage($SBApplication, @selector(launchSucceeded), &$SBApplication$launchSucceeded);
     _SBApplication$deactivate =
