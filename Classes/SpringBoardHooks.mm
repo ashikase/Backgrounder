@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-19 15:16:12
+ * Last-modified: 2009-05-19 16:04:34
  */
 
 /**
@@ -73,9 +73,10 @@ static int feedbackType = SIMPLE_POPUP;
 #define HOME_DOUBLE_TAP 1
 static int invocationMethod = HOME_SHORT_PRESS;
 
+static NSMutableArray *activeApps = nil;
+static NSMutableArray *bgEnabledApps = nil;
 static NSArray *blacklistedApps = nil;
 
-static NSMutableDictionary *activeApps = nil;
 static NSMutableDictionary *statusBarStates = nil;
 static NSString *deactivatingApp = nil;
 
@@ -270,7 +271,8 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
 
     // NOTE: The initial capacity value was chosen to hold the default active
     //       apps (MobilePhone and MobileMail) plus two others
-    activeApps = [[NSMutableDictionary alloc] initWithCapacity:4];
+    activeApps = [[NSMutableArray alloc] initWithCapacity:4];
+    bgEnabledApps = [[NSMutableArray alloc] initWithCapacity:2];
 
     // Create a dictionary to store the statusbar state for active apps
     // FIXME: Determine a way to do this without requiring extra storage
@@ -289,6 +291,7 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
 HOOK(SpringBoard, dealloc, void)
 {
     [killedApp release];
+    [bgEnabledApps release];
     [activeApps release];
     [displayStacks release];
     CALL_ORIG(SpringBoard, dealloc);
@@ -303,7 +306,7 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
     NSString *identifier = [app displayIdentifier];
     if (feedbackType == SIMPLE_POPUP) {
         if (app && ![blacklistedApps containsObject:identifier]) {
-            BOOL isEnabled = [[activeApps objectForKey:identifier] boolValue];
+            BOOL isEnabled = [bgEnabledApps containsObject:identifier];
             [self setBackgroundingEnabled:(!isEnabled) forDisplayIdentifier:identifier];
 
             // Display simple popup
@@ -320,7 +323,7 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
         }
     } else if (feedbackType == TASK_MENU_POPUP) {
         // Display task menu popup
-        NSMutableArray *array = [NSMutableArray arrayWithArray:[activeApps allKeys]];
+        NSMutableArray *array = [NSMutableArray arrayWithArray:activeApps];
         if (identifier) {
             // Is an application
         // This array will be used for "other apps", so remove the active app
@@ -354,21 +357,20 @@ static void $SpringBoard$dismissBackgrounderFeedback(SpringBoard *self, SEL sel)
 
 static void $SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$(SpringBoard *self, SEL sel, BOOL enable, NSString *identifier)
 {
-    NSNumber *object = [activeApps objectForKey:identifier];
-    if (object != nil) {
-        BOOL isEnabled = [object boolValue];
-        if (isEnabled != enable) {
-            // Tell the application to change its backgrounding status
-            SBApplication *app = [[objc_getClass("SBApplicationController") sharedInstance]
-                applicationWithDisplayIdentifier:identifier];
-            // FIXME: If the target application does not have the Backgrounder
-            //        hooks enabled, this will cause it to exit abnormally
-            kill([app pid], SIGUSR1);
+    BOOL isEnabled = [bgEnabledApps containsObject:identifier];
+    if (isEnabled != enable) {
+        // Tell the application to change its backgrounding status
+        SBApplication *app = [[objc_getClass("SBApplicationController") sharedInstance]
+            applicationWithDisplayIdentifier:identifier];
+        // FIXME: If the target application does not have the Backgrounder
+        //        hooks enabled, this will cause it to exit abnormally
+        kill([app pid], SIGUSR1);
 
-            // Store the new backgrounding status of the application
-            [activeApps setObject:[NSNumber numberWithBool:(!isEnabled)]
-                forKey:identifier];
-        }
+        // Store the new backgrounding status of the application
+        if (enable)
+            [bgEnabledApps addObject:identifier];
+        else
+            [bgEnabledApps removeObject:identifier];
     }
 }
 
@@ -488,23 +490,26 @@ HOOK(SBApplication, launchSucceeded, void)
         CFRelease(propList);
     }
 
-    if ([activeApps objectForKey:identifier] == nil) {
-        // Initial launch; check if this application is set to always background
-        if (isAlwaysEnabled)
-            // Tell the application to enable backgrounding
-            kill([self pid], SIGUSR1);
-
-        // Store the backgrounding status of the application
-        [activeApps setObject:[NSNumber numberWithBool:isAlwaysEnabled] forKey:identifier];
-    } else {
+    if ([activeApps containsObject:identifier]) {
         // Was restored from backgrounded state
         if (!isPersistent && !isAlwaysEnabled) {
             // Tell the application to disable backgrounding
             kill([self pid], SIGUSR1);
 
             // Store the backgrounding status of the application
-            [activeApps setObject:[NSNumber numberWithBool:NO] forKey:identifier];
+            [bgEnabledApps removeObject:identifier];
+        } 
+    } else {
+        // Initial launch; check if this application is set to always background
+        if (isAlwaysEnabled) {
+            // Tell the application to enable backgrounding
+            kill([self pid], SIGUSR1);
+
+            // Store the backgrounding status of the application
+            [bgEnabledApps addObject:identifier];
         }
+        // Track active status of application
+        [activeApps addObject:identifier];
     }
 
     CALL_ORIG(SBApplication, launchSucceeded);
@@ -515,7 +520,10 @@ HOOK(SBApplication, exitedCommon, void)
     // Application has exited (either normally or abnormally);
     // remove from active applications list
     NSString *identifier = [self displayIdentifier];
-    [activeApps removeObjectForKey:identifier];
+    [activeApps removeObject:identifier];
+
+    // FIXME: This is only necessary in abnormal exit case
+    [bgEnabledApps removeObject:identifier];
 
     // ... also remove status bar state data from states list
     [statusBarStates removeObjectForKey:identifier];
@@ -543,8 +551,7 @@ HOOK(SBApplication, deactivate, BOOL)
 
 HOOK(SBApplication, _startTerminationWatchdogTimer, void)
 {
-    BOOL isBackgroundingEnabled = [[activeApps objectForKey:[self displayIdentifier]] boolValue];
-    if (!isBackgroundingEnabled)
+    if (![bgEnabledApps containsObject:[self displayIdentifier]])
         CALL_ORIG(SBApplication, _startTerminationWatchdogTimer);
 }
 
