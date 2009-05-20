@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-19 13:53:31
+ * Last-modified: 2009-05-19 15:16:12
  */
 
 /**
@@ -380,12 +380,6 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
         // Save the identifier for later use
         deactivatingApp = [currIdent copy];
 
-        // Store the status bar state of the current application
-        SBStatusBarController *sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
-        NSNumber *mode = [NSNumber numberWithInt:[sbCont statusBarMode]];
-        NSNumber *orientation = [NSNumber numberWithInt:[sbCont statusBarOrientation]];
-        [statusBarStates setObject:[NSArray arrayWithObjects:mode, orientation, nil] forKey:currIdent];
-
         if ([identifier isEqualToString:@"com.apple.springboard"]) {
             // Switching to SpringBoard
             [[objc_getClass("SBUIController") sharedInstance] quitTopApplication];
@@ -531,20 +525,18 @@ HOOK(SBApplication, exitedCommon, void)
 
 HOOK(SBApplication, deactivate, BOOL)
 {
-    if ([[self displayIdentifier] isEqualToString:deactivatingApp]) {
+    NSString *identifier = [self displayIdentifier];
+    if ([identifier isEqualToString:deactivatingApp]) {
         [[objc_getClass("SpringBoard") sharedApplication] dismissBackgrounderFeedback];
         [deactivatingApp release];
         deactivatingApp = nil;
     }
 
-    // If the app will be backgrounded, store the status bar state
-    NSString *identifier = [self displayIdentifier];
-    if ([activeApps objectForKey:identifier]) {
-        SBStatusBarController *sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
-        NSNumber *mode = [NSNumber numberWithInt:[sbCont statusBarMode]];
-        NSNumber *orientation = [NSNumber numberWithInt:[sbCont statusBarOrientation]];
-        [statusBarStates setObject:[NSArray arrayWithObjects:mode, orientation, nil] forKey:identifier];
-    }
+    // Store the status bar state of the current application
+    SBStatusBarController *sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
+    NSNumber *mode = [NSNumber numberWithInt:[sbCont statusBarMode]];
+    NSNumber *orientation = [NSNumber numberWithInt:[sbCont statusBarOrientation]];
+    [statusBarStates setObject:[NSArray arrayWithObjects:mode, orientation, nil] forKey:identifier];
 
     return CALL_ORIG(SBApplication, deactivate);
 }
