@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-20 23:28:35
+ * Last-modified: 2009-05-22 11:44:54
  */
 
 /**
@@ -84,7 +84,7 @@ static NSString *deactivatingApp = nil;
 static NSString *killedApp = nil;
 
 static BOOL animateStatusBar = YES;
-static BOOL animateRestore = YES;
+static BOOL animationsEnabled = YES;
 
 //______________________________________________________________________________
 //______________________________________________________________________________
@@ -159,7 +159,7 @@ HOOK(SBStatusBarController, setStatusBarMode$mode$orientation$duration$fenceID$a
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-// NOTE: Only hooked when animateRestore == NO
+// NOTE: Only hooked when animationsEnabled == NO
 HOOK(SBUIController, animateLaunchApplication$, void, id app)
 {
     if ([app pid] != -1) {
@@ -397,7 +397,7 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
             SBApplication *otherApp = [[objc_getClass("SBApplicationController") sharedInstance]
                 applicationWithDisplayIdentifier:identifier];
             if (otherApp) {
-                if (animateRestore) {
+                if (animationsEnabled) {
                     if ([currIdent isEqualToString:@"com.apple.springboard"]) {
                         [otherApp setActivationSetting:0x4 flag:YES]; // animated
                     } else {
@@ -443,10 +443,10 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
                 animateStatusBar = NO;
 
                 // Activate the new app
-                [[displayStacks objectAtIndex:(animateRestore ? 1 : 2)] pushDisplay:otherApp];
+                [[displayStacks objectAtIndex:(animationsEnabled ? 1 : 2)] pushDisplay:otherApp];
             }
 
-            if (!animateRestore && currApp)
+            if (!animationsEnabled && currApp)
                 // Deactivate the current app
                 [[displayStacks objectAtIndex:3] pushDisplay:currApp];
             else
@@ -480,7 +480,8 @@ static void $SpringBoard$quitAppWithDisplayIdentifier$(SpringBoard *self, SEL se
                 // NOTE: Must set animation flag for deactivation, otherwise
                 //       application window does not disappear (reason yet unknown)
                 [app setDeactivationSetting:0x2 flag:YES]; // animate
-                [app setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0]]; // animation duration
+                if (!animationsEnabled)
+                    [app setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0]]; // animation duration
 
                 // Deactivate the application
                 [[displayStacks objectAtIndex:3] pushDisplay:app];
@@ -538,15 +539,22 @@ HOOK(SBApplication, launchSucceeded, void)
     CALL_ORIG(SBApplication, launchSucceeded);
 }
 
+HOOK(SBApplication, exitedAbnormally, void)
+{
+    [bgEnabledApps removeObject:[self displayIdentifier]];
+
+    if (animationsEnabled && ![self isSystemApplication])
+        [[NSFileManager defaultManager] removeItemAtPath:[self pathForDefaultImage:"Default"] error:nil];
+
+    CALL_ORIG(SBApplication, exitedAbnormally);
+}
+
 HOOK(SBApplication, exitedCommon, void)
 {
     // Application has exited (either normally or abnormally);
     // remove from active applications list
     NSString *identifier = [self displayIdentifier];
     [activeApps removeObject:identifier];
-
-    // FIXME: This is only necessary in abnormal exit case
-    [bgEnabledApps removeObject:identifier];
 
     // ... also remove status bar state data from states list
     [statusBarStates removeObjectForKey:identifier];
@@ -593,6 +601,15 @@ HOOK(SBApplication, _relaunchAfterAbnormalExit$, void, BOOL flag)
     }
 }
 
+// NOTE: Only hooked when animationsEnabled == YES
+HOOK(SBApplication, pathForDefaultImage$, id, char *def)
+{
+    return ([self isSystemApplication] || ![activeApps containsObject:[self displayIdentifier]]) ?
+        CALL_ORIG(SBApplication, pathForDefaultImage$, def) :
+        [NSString stringWithFormat:@"%@/Library/Caches/Snapshots/%@-Default.jpg",
+            [[self seatbeltProfilePath] stringByDeletingPathExtension], [self bundleIdentifier]];
+}
+
 //______________________________________________________________________________
 //______________________________________________________________________________
 
@@ -611,7 +628,7 @@ void initSpringBoardHooks()
         MSHookMessage($SBStatusBarController, @selector(setStatusBarMode:orientation:duration:fenceID:animation:),
             &$SBStatusBarController$setStatusBarMode$mode$orientation$duration$fenceID$animation$);
 
-    if (!animateRestore) {
+    if (!animationsEnabled) {
         Class $SBUIController(objc_getClass("SBUIController"));
         _SBUIController$animateLaunchApplication$ =
             MSHookMessage($SBUIController, @selector(animateLaunchApplication:), &$SBUIController$animateLaunchApplication$);
@@ -649,12 +666,16 @@ void initSpringBoardHooks()
         MSHookMessage($SBApplication, @selector(launchSucceeded), &$SBApplication$launchSucceeded);
     _SBApplication$deactivate =
         MSHookMessage($SBApplication, @selector(deactivate), &$SBApplication$deactivate);
+    _SBApplication$exitedAbnormally =
+        MSHookMessage($SBApplication, @selector(exitedAbnormally), &$SBApplication$exitedAbnormally);
     _SBApplication$exitedCommon =
         MSHookMessage($SBApplication, @selector(exitedCommon), &$SBApplication$exitedCommon);
     _SBApplication$_startTerminationWatchdogTimer =
         MSHookMessage($SBApplication, @selector(_startTerminationWatchdogTimer), &$SBApplication$_startTerminationWatchdogTimer);
     _SBApplication$_relaunchAfterAbnormalExit$ =
         MSHookMessage($SBApplication, @selector(_relaunchAfterAbnormalExit:), &$SBApplication$_relaunchAfterAbnormalExit$);
+    _SBApplication$pathForDefaultImage$ =
+        MSHookMessage($SBApplication, @selector(pathForDefaultImage:), &$SBApplication$pathForDefaultImage$);
 }
 
 /* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */

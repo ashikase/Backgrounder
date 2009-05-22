@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-22 10:45:04
+ * Last-modified: 2009-05-22 10:53:24
  */
 
 /**
@@ -51,6 +51,7 @@ struct GSEvent;
 
 static BOOL backgroundingEnabled = NO;
 static BOOL isBlacklisted = NO;
+static BOOL animationsEnabled = YES;
 
 //______________________________________________________________________________
 //______________________________________________________________________________
@@ -87,6 +88,13 @@ static void $UIApplication$setBackgroundingEnabled$(id self, SEL sel, BOOL enabl
 
 //______________________________________________________________________________
 //______________________________________________________________________________
+
+// NOTE: Only hooked when animationsEnabled = YES
+HOOK(UIApplication, nameOfDefaultImageToUpdateAtSuspension, NSString *)
+{
+    NSString *path = CALL_ORIG(UIApplication, nameOfDefaultImageToUpdateAtSuspension);
+    return path ? path : @"Default";
+}
 
 // Prevent execution of application's on-suspend/resume methods
 HOOK(UIApplication, applicationWillSuspend, void)
@@ -126,6 +134,16 @@ HOOK(UIApplication, applicationDidBecomeActive$, void, id application)
         CALL_ORIG(UIApplication, applicationDidBecomeActive$, application);
 }
 
+// NOTE: Only hooked when animationsEnabled = YES
+HOOK(UIApplication, applicationWillTerminate$, void, id application)
+{
+    if (CALL_ORIG(UIApplication, nameOfDefaultImageToUpdateAtSuspension) == nil)
+        // App does not normally produce a default image; safe to delete
+        [application removeDefaultImage:@"Default"];
+
+    CALL_ORIG(UIApplication, applicationWillTerminate$, application);
+}
+
 // Overriding this method prevents the application from quitting on suspend
 HOOK(UIApplication, applicationSuspend$, void, GSEvent *event)
 {
@@ -163,6 +181,22 @@ HOOK(UIApplication, _loadMainNibFile, void)
             MSHookMessage($AppDelegate, @selector(applicationWillResignActive:), &$UIApplication$applicationWillResignActive$);
         _UIApplication$applicationDidBecomeActive$ =
             MSHookMessage($AppDelegate, @selector(applicationDidBecomeActive:), &$UIApplication$applicationDidBecomeActive$);
+    }
+
+    if (animationsEnabled) {
+        Class $UIApplication([self class]);
+        _UIApplication$nameOfDefaultImageToUpdateAtSuspension =
+            MSHookMessage($UIApplication, @selector(nameOfDefaultImageToUpdateAtSuspension),
+                &$UIApplication$nameOfDefaultImageToUpdateAtSuspension);
+
+        id delegate = [self delegate];
+        Class $AppDelegate(delegate ? [delegate class] : [self class]);
+        _UIApplication$applicationWillTerminate$ =
+            MSHookMessage($AppDelegate, @selector(applicationWillTerminate:), &$UIApplication$applicationWillTerminate$);
+
+        // Make sure that "default images" directory exists
+        NSString *path = [NSString stringWithFormat:@"%@/%@", [self userLibraryDirectory], @"Caches/Snapshots"];
+        [[NSFileManager defaultManager] createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:NULL];
     }
 }
 

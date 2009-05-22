@@ -7,7 +7,7 @@ SUB_PATH = /files/Platforms/iPhone/Projects/Others/saurik/mobilesubstrate
 LDID = /opt/iPhone/ldid
 
 CXX = arm-apple-darwin9-g++
-CXXFLAGS = -g0 -O2 -Wall -Werror -I$(SUB_PATH) -IClasses
+CXXFLAGS = -g0 -O2 -Wall -Werror -Wno-write-strings -I$(SUB_PATH) -IClasses
 LDFLAGS = -lobjc \
 		  -multiply_defined suppress \
 		  -framework CoreFoundation \
