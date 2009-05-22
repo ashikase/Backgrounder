@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-11 21:26:56
+ * Last-modified: 2009-05-22 10:45:04
  */
 
 /**
@@ -50,6 +50,23 @@ struct GSEvent;
 
 
 static BOOL backgroundingEnabled = NO;
+static BOOL isBlacklisted = NO;
+
+//______________________________________________________________________________
+//______________________________________________________________________________
+
+static void loadPreferences()
+{
+    CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("blacklistedApplications"), CFSTR(APP_ID));
+    if (propList) {
+        if (CFGetTypeID(propList) == CFArrayGetTypeID())
+            isBlacklisted = [(NSArray *)propList containsObject:[[NSBundle mainBundle] bundleIdentifier]];
+        CFRelease(propList);
+    }
+}
+
+//______________________________________________________________________________
+//______________________________________________________________________________
 
 // Callback
 static void toggleBackgrounding(int signal)
@@ -131,36 +148,33 @@ HOOK(UIApplication, _loadMainNibFile, void)
     //       but possible), this extension's hooks will not be installed.
     CALL_ORIG(UIApplication, _loadMainNibFile);
 
-    Class $UIApplication([self class]);
-    _UIApplication$applicationSuspend$ =
-        MSHookMessage($UIApplication, @selector(applicationSuspend:), &$UIApplication$applicationSuspend$);
-    _UIApplication$applicationWillSuspend =
-        MSHookMessage($UIApplication, @selector(applicationWillSuspend), &$UIApplication$applicationWillSuspend);
-    _UIApplication$applicationDidResume =
-        MSHookMessage($UIApplication, @selector(applicationDidResume), &$UIApplication$applicationDidResume);
+    if (!isBlacklisted) {
+        Class $UIApplication([self class]);
+        _UIApplication$applicationSuspend$ =
+            MSHookMessage($UIApplication, @selector(applicationSuspend:), &$UIApplication$applicationSuspend$);
+        _UIApplication$applicationWillSuspend =
+            MSHookMessage($UIApplication, @selector(applicationWillSuspend), &$UIApplication$applicationWillSuspend);
+        _UIApplication$applicationDidResume =
+            MSHookMessage($UIApplication, @selector(applicationDidResume), &$UIApplication$applicationDidResume);
 
-    id delegate = [self delegate];
-    Class $AppDelegate(delegate ? [delegate class] : [self class]);
-    _UIApplication$applicationWillResignActive$ =
-        MSHookMessage($AppDelegate, @selector(applicationWillResignActive:), &$UIApplication$applicationWillResignActive$);
-    _UIApplication$applicationDidBecomeActive$ =
-        MSHookMessage($AppDelegate, @selector(applicationDidBecomeActive:), &$UIApplication$applicationDidBecomeActive$);
+        id delegate = [self delegate];
+        Class $AppDelegate(delegate ? [delegate class] : [self class]);
+        _UIApplication$applicationWillResignActive$ =
+            MSHookMessage($AppDelegate, @selector(applicationWillResignActive:), &$UIApplication$applicationWillResignActive$);
+        _UIApplication$applicationDidBecomeActive$ =
+            MSHookMessage($AppDelegate, @selector(applicationDidBecomeActive:), &$UIApplication$applicationDidBecomeActive$);
+    }
 }
 
 void initApplicationHooks()
 {
-    BOOL isBlacklisted = NO;
-    CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("blacklistedApplications"), CFSTR(APP_ID));
-    if (propList) {
-        if (CFGetTypeID(propList) == CFArrayGetTypeID())
-            isBlacklisted = [(NSArray *)propList containsObject:[[NSBundle mainBundle] bundleIdentifier]];
-        CFRelease(propList);
-    }
+    loadPreferences();
+
+    Class $UIApplication(objc_getClass("UIApplication"));
+    _UIApplication$_loadMainNibFile =
+        MSHookMessage($UIApplication, @selector(_loadMainNibFile), &$UIApplication$_loadMainNibFile);
 
     if (!isBlacklisted) {
-        Class $UIApplication(objc_getClass("UIApplication"));
-        _UIApplication$_loadMainNibFile =
-            MSHookMessage($UIApplication, @selector(_loadMainNibFile), &$UIApplication$_loadMainNibFile);
         class_addMethod($UIApplication, @selector(isBackgroundingEnabled), (IMP)&$UIApplication$isBackgroundingEnabled, "c@:");
         class_addMethod($UIApplication, @selector(setBackgroundingEnabled:), (IMP)&$UIApplication$setBackgroundingEnabled$, "v@:c");
     }
