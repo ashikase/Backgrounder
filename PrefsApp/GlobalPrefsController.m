@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-14 15:28:46
+ * Last-modified: 2009-05-22 12:48:07
  */
 
 /**
@@ -96,7 +96,7 @@
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    return (section == 0) ? 1 : 2;
+    return 2;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -118,10 +118,13 @@
             [cell setAccessoryView:toggle];
             [toggle release];
         }
-        [cell setText:@"Persistence"];
+        [cell setText:(indexPath.row == 0) ? @"Persistence" : @"Animations"];
 
         UISwitch *toggle = [cell accessoryView];
-        [toggle setOn:[[Preferences sharedInstance] isPersistent]];
+        if (indexPath.row == 0)
+            [toggle setOn:[[Preferences sharedInstance] isPersistent]];
+        else
+            [toggle setOn:[[Preferences sharedInstance] animationsEnabled]];
     } else {
         // Try to retrieve from the table view a now-unused cell with the given identifier
         cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSimple];
@@ -140,7 +143,11 @@
 
 - (void)switchToggled:(UISwitch *)control
 {
-    [[Preferences sharedInstance] setPersistent:[control isOn]];
+    NSIndexPath *indexPath = [self.tableView indexPathForCell:[control superview]];
+    if (indexPath.row == 0)
+        [[Preferences sharedInstance] setPersistent:[control isOn]];
+    else
+        [[Preferences sharedInstance] setAnimationsEnabled:[control isOn]];
 }
 
 #pragma mark - UITableViewCellDelegate

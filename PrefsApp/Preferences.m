@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-* Last-modified: 2009-05-16 23:06:45
+* Last-modified: 2009-05-22 12:46:22
  */
 
 /**
@@ -53,6 +53,7 @@ static NSArray *allowedFeedbackTypes = nil;
 
 @synthesize firstRun;
 @synthesize persistent;
+@synthesize animationsEnabled;
 @synthesize invocationMethod;
 @synthesize feedbackType;
 @synthesize enabledApplications;
@@ -110,6 +111,7 @@ static NSArray *allowedFeedbackTypes = nil;
 
     [dict setObject:[NSNumber numberWithBool:firstRun] forKey:@"firstRun"];
     [dict setObject:[NSNumber numberWithBool:persistent] forKey:@"persistent"];
+    [dict setObject:[NSNumber numberWithBool:animationsEnabled] forKey:@"animationsEnabled"];
 
     NSString *string = nil;
     @try {
@@ -158,6 +160,7 @@ static NSArray *allowedFeedbackTypes = nil;
 
     [dict setObject:[NSNumber numberWithBool:YES] forKey:@"firstRun"];
     [dict setObject:[NSNumber numberWithBool:YES] forKey:@"persistent"];
+    [dict setObject:[NSNumber numberWithBool:YES] forKey:@"animationsEnabled"];
     [dict setObject:@"homeShortPress" forKey:@"invocationMethod"];
     [dict setObject:@"simplePopup" forKey:@"feedbackType"];
 
@@ -178,6 +181,7 @@ static NSArray *allowedFeedbackTypes = nil;
     
     firstRun = [defaults boolForKey:@"firstRun"];
     persistent = [defaults boolForKey:@"persistent"];
+    animationsEnabled = [defaults boolForKey:@"animationsEnabled"];
 
     NSString *string = [defaults stringForKey:@"invocationMethod"];
     unsigned int index = [allowedInvocationMethods indexOfObject:string];
