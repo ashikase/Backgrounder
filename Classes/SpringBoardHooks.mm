@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-22 14:26:23
+ * Last-modified: 2009-05-22 20:00:00
  */
 
 /**
@@ -412,11 +412,6 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
                     if ([currIdent isEqualToString:@"com.apple.springboard"]) {
                         [otherApp setActivationSetting:0x4 flag:YES]; // animated
                     } else {
-                        // NOTE: setting lastApp and appToApp (and the related
-                        //       deactivation flags above) gives an interesting
-                        //       switching effect; however, it does not seem to work
-                        //       with animatedNoPNG, and thus makes it appear that the
-                        //       application being switched to has been restarted.
                         [otherApp setActivationSetting:0x20 flag:YES]; // suspendOthers
                         [otherApp setActivationSetting:0x200 flag:YES]; // animateOthersSuspension
                         [otherApp setActivationSetting:0x20000000 flag:YES]; // appToApp
@@ -425,37 +420,22 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
                     // NOTE: Must set animation flag for deactivation, otherwise
                     //       application window does not disappear (reason yet unknown)
                     [currApp setDeactivationSetting:0x2 flag:YES]; // animate
-                    //[currApp setDeactivationSetting:0x400 flag:YES]; // returnToLastApp
-                    //[currApp setDeactivationSetting:0x10000 flag:YES]; // appToApp
-                    //[currApp setDeactivationSetting:0x0100 value:[NSNumber numberWithDouble:0.1]]; // animation scale
-                    //[currApp setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0.4]]; // animation duration
-                    //[currApp setDeactivationSetting:0x0100 value:[NSNumber numberWithDouble:1.0]]; // animation scale
-                    //[currApp setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0]]; // animation duration
 
-                    //[otherApp setActivationSetting:0x4 flag:YES]; // animated
-                    // NOTE: setting lastApp and appToApp (and the related
-                    //       deactivation flags above) gives an interesting
-                    //       switching effect; however, it does not seem to work
-                    //       with animatedNoPNG, and thus makes it appear that the
-                    //       application being switched to has been restarted.
-                    //[otherApp setActivationSetting:0x20000 flag:YES]; // animatedNoPNG
-                    //[otherApp setActivationSetting:0x10000 flag:YES]; // lastApp
-                    //[otherApp setActivationSetting:0x20000000 flag:YES]; // appToApp
                     NSArray *state = [statusBarStates objectForKey:identifier];
                     [otherApp setActivationSetting:0x40 value:[state objectAtIndex:0]]; // statusbarmode
                     [otherApp setActivationSetting:0x80 value:[state objectAtIndex:1]]; // statusBarOrienation
+
+                    // Make sure SpringBoard dock and icons are hidden
+                    [[objc_getClass("SBIconController") sharedInstance] scatter:NO];
+                    [[objc_getClass("SBUIController") sharedInstance] showButtonBar:NO animate:NO action:NULL delegate:nil];
+
+                    // Prevent status bar from fading in
+                    animateStatusBar = NO;
                 }
-
-                // Make sure SpringBoard dock and icons are hidden
-                [[objc_getClass("SBIconController") sharedInstance] scatter:NO];
-                [[objc_getClass("SBUIController") sharedInstance] showButtonBar:NO animate:NO action:NULL delegate:nil];
-
-                // Prevent status bar from fading in
-                animateStatusBar = NO;
-
-                // Activate the new app
-                [[displayStacks objectAtIndex:(animationsEnabled ? 1 : 2)] pushDisplay:otherApp];
             }
+
+            // Activate the target application
+            [[displayStacks objectAtIndex:(animationsEnabled ? 1 : 2)] pushDisplay:otherApp];
 
             if (!animationsEnabled && currApp)
                 // Deactivate the current app
