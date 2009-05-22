@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-22 12:40:25
+ * Last-modified: 2009-05-22 14:26:23
  */
 
 /**
@@ -171,9 +171,13 @@ HOOK(SBUIController, animateLaunchApplication$, void, id app)
 {
     if ([app pid] != -1) {
         // Application is backgrounded
-        // Make sure SpringBoard dock and icons are hidden
-        [[objc_getClass("SBIconController") sharedInstance] scatter:NO];
-        [self showButtonBar:NO animate:NO action:NULL delegate:nil];
+
+        // FIXME: Find a better solution for the Categories "transparent-window" issue
+        if ([[app displayIdentifier] hasPrefix:@"com.bigboss.categories."]) {
+            // Make sure SpringBoard dock and icons are hidden
+            [[objc_getClass("SBIconController") sharedInstance] scatter:NO];
+            [self showButtonBar:NO animate:NO action:NULL delegate:nil];
+        }
 
         // Prevent status bar from fading in
         animateStatusBar = NO;

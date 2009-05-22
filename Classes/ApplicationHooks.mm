@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-22 12:39:57
+ * Last-modified: 2009-05-22 14:24:49
  */
 
 /**
@@ -99,8 +99,9 @@ static void $UIApplication$setBackgroundingEnabled$(id self, SEL sel, BOOL enabl
 // NOTE: Only hooked when animationsEnabled = YES
 HOOK(UIApplication, nameOfDefaultImageToUpdateAtSuspension, NSString *)
 {
+    // FIXME: Find a better solution for the Categories "transparent-window" issue
     NSString *path = CALL_ORIG(UIApplication, nameOfDefaultImageToUpdateAtSuspension);
-    return path ? path : @"Default";
+    return (path || [[self displayIdentifier] hasPrefix:@"com.bigboss.categories."]) ? path : @"Default";
 }
 
 // Prevent execution of application's on-suspend/resume methods
