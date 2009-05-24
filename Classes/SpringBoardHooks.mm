@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-22 20:00:00
+ * Last-modified: 2009-05-24 12:34:29
  */
 
 /**
@@ -85,6 +85,7 @@ static NSString *killedApp = nil;
 
 static BOOL animateStatusBar = YES;
 static BOOL animationsEnabled = YES;
+static BOOL badgeEnabled = YES;
 
 //______________________________________________________________________________
 //______________________________________________________________________________
@@ -103,6 +104,13 @@ static void loadPreferences()
     if (propList) {
         if (CFGetTypeID(propList) == CFBooleanGetTypeID())
             animationsEnabled = CFBooleanGetValue(reinterpret_cast<CFBooleanRef>(propList));
+        CFRelease(propList);
+    }
+
+    propList = CFPreferencesCopyAppValue(CFSTR("badgeEnabled"), CFSTR(APP_ID));
+    if (propList) {
+        if (CFGetTypeID(propList) == CFBooleanGetTypeID())
+            badgeEnabled = CFBooleanGetValue(reinterpret_cast<CFBooleanRef>(propList));
         CFRelease(propList);
     }
 
@@ -515,13 +523,15 @@ HOOK(SBApplication, launchSucceeded, void)
             [bgEnabledApps addObject:identifier];
         }
 
-        // Update the SpringBoard icon to indicate that the app is running
-        SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
-        UIImageView *badgeView = [[UIImageView alloc] initWithImage:[UIImage imageWithContentsOfFile:@"/Applications/Backgrounder.app/images/badge.png"]];
-        [badgeView setOrigin:CGPointMake(-12.0f, 39.0f)];
-        [badgeView setTag:1000];
-        [icon addSubview:badgeView];
-        [badgeView release];
+        if (badgeEnabled) {
+            // Update the SpringBoard icon to indicate that the app is running
+            SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
+            UIImageView *badgeView = [[UIImageView alloc] initWithImage:[UIImage imageWithContentsOfFile:@"/Applications/Backgrounder.app/images/badge.png"]];
+            [badgeView setOrigin:CGPointMake(-12.0f, 39.0f)];
+            [badgeView setTag:1000];
+            [icon addSubview:badgeView];
+            [badgeView release];
+        }
 
         // Track active status of application
         [activeApps addObject:identifier];
@@ -550,9 +560,11 @@ HOOK(SBApplication, exitedCommon, void)
     // ... also remove status bar state data from states list
     [statusBarStates removeObjectForKey:identifier];
 
-    // Update the SpringBoard icon to indicate that the app is not running
-    SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
-    [[icon viewWithTag:1000] removeFromSuperview];
+    if (badgeEnabled) {
+        // Update the SpringBoard icon to indicate that the app is not running
+        SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
+        [[icon viewWithTag:1000] removeFromSuperview];
+    }
 
     CALL_ORIG(SBApplication, exitedCommon);
 }

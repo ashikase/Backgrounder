@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-22 12:48:07
+ * Last-modified: 2009-05-24 14:40:31
  */
 
 /**
@@ -96,7 +96,7 @@
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    return 2;
+    return (section == 0) ? 3 : 2;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -106,6 +106,8 @@
 
     UITableViewCell *cell = nil;
     if (indexPath.section == 0) {
+        static NSString *cellTitles[] = {@"Persistence", @"Animations", @"Badge"};
+
         // Try to retrieve from the table view a now-unused cell with the given identifier
         cell = [tableView dequeueReusableCellWithIdentifier:reuseIdToggle];
         if (cell == nil) {
@@ -118,13 +120,20 @@
             [cell setAccessoryView:toggle];
             [toggle release];
         }
-        [cell setText:(indexPath.row == 0) ? @"Persistence" : @"Animations"];
+        [cell setText:cellTitles[indexPath.row]];
 
         UISwitch *toggle = [cell accessoryView];
-        if (indexPath.row == 0)
-            [toggle setOn:[[Preferences sharedInstance] isPersistent]];
-        else
-            [toggle setOn:[[Preferences sharedInstance] animationsEnabled]];
+        switch (indexPath.row) {
+            case 0:
+                [toggle setOn:[[Preferences sharedInstance] isPersistent]];
+                break;
+            case 1:
+                [toggle setOn:[[Preferences sharedInstance] animationsEnabled]];
+                break;
+            case 2:
+                [toggle setOn:[[Preferences sharedInstance] badgeEnabled]];
+                break;
+        }
     } else {
         // Try to retrieve from the table view a now-unused cell with the given identifier
         cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSimple];
@@ -144,10 +153,17 @@
 - (void)switchToggled:(UISwitch *)control
 {
     NSIndexPath *indexPath = [self.tableView indexPathForCell:[control superview]];
-    if (indexPath.row == 0)
-        [[Preferences sharedInstance] setPersistent:[control isOn]];
-    else
-        [[Preferences sharedInstance] setAnimationsEnabled:[control isOn]];
+    switch (indexPath.row) {
+        case 0:
+            [[Preferences sharedInstance] setPersistent:[control isOn]];
+            break;
+        case 1:
+            [[Preferences sharedInstance] setAnimationsEnabled:[control isOn]];
+            break;
+        case 2:
+            [[Preferences sharedInstance] setBadgeEnabled:[control isOn]];
+            break;
+    }
 }
 
 #pragma mark - UITableViewCellDelegate
