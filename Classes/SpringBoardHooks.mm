@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-06-24 15:06:54
+ * Last-modified: 2009-06-24 15:18:06
  */
 
 /**
@@ -144,6 +144,12 @@ static void loadPreferences()
 
 NSMutableArray *displayStacks = nil;
 
+// Display stack names
+#define SBWPreActivateDisplayStack        [displayStacks objectAtIndex:0]
+#define SBWActiveDisplayStack             [displayStacks objectAtIndex:1]
+#define SBWSuspendingDisplayStack         [displayStacks objectAtIndex:2]
+#define SBWSuspendedEventOnlyDisplayStack [displayStacks objectAtIndex:3]
+
 HOOK(SBDisplayStack, init, id)
 {
     id stack = CALL_ORIG(SBDisplayStack, init);
@@ -195,7 +201,8 @@ HOOK(SBUIController, animateLaunchApplication$, void, id app)
         NSArray *state = [statusBarStates objectForKey:[app displayIdentifier]];
         [app setActivationSetting:0x40 value:[state objectAtIndex:0]]; // statusbarmode
         [app setActivationSetting:0x80 value:[state objectAtIndex:1]]; // statusBarOrienation
-        [[displayStacks objectAtIndex:2] pushDisplay:app];
+        // FIXME: Originally Activating (and not Active)
+        [SBWActiveDisplayStack pushDisplay:app];
     } else {
         // Normal launch
         CALL_ORIG(SBUIController, animateLaunchApplication$, app);
@@ -254,7 +261,7 @@ HOOK(SpringBoard, handleMenuDoubleTap, void)
         if (alert == nil) {
             // Popup not active
             if (feedbackType == TASK_MENU_POPUP ||
-                    [[displayStacks objectAtIndex:0] topApplication] != nil) {
+                    [SBWActiveDisplayStack topApplication] != nil) {
                 // invoke and return
                 [self invokeBackgrounder];
                 return;
@@ -329,7 +336,7 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
     if (invocationMethod == HOME_SHORT_PRESS)
         invocationTimerDidFire = YES;
 
-    id app = [[displayStacks objectAtIndex:0] topApplication];
+    id app = [SBWActiveDisplayStack topApplication];
     NSString *identifier = [app displayIdentifier];
     if (feedbackType == SIMPLE_POPUP) {
         if (app && ![blacklistedApps containsObject:identifier]) {
@@ -403,7 +410,7 @@ static void $SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$(SpringBoa
 
 static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SEL sel, NSString *identifier)
 {
-    SBApplication *currApp = [[displayStacks objectAtIndex:0] topApplication];
+    SBApplication *currApp = [SBWActiveDisplayStack topApplication];
     NSString *currIdent = currApp ? [currApp displayIdentifier] : @"com.apple.springboard";
     if (![currIdent isEqualToString:identifier]) {
         // Save the identifier for later use
@@ -444,11 +451,12 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
             }
 
             // Activate the target application
-            [[displayStacks objectAtIndex:(animationsEnabled ? 1 : 2)] pushDisplay:otherApp];
+            // FIXME: Originally was Pre or Activating (and not Active)
+            [(animationsEnabled ? SBWPreActivateDisplayStack : SBWActiveDisplayStack) pushDisplay:otherApp];
 
             if (!animationsEnabled && currApp)
                 // Deactivate the current app
-                [[displayStacks objectAtIndex:3] pushDisplay:currApp];
+                [SBWSuspendingDisplayStack pushDisplay:currApp];
             else
                 // Is SpringBoard
                 [self dismissBackgrounderFeedback];
@@ -484,7 +492,7 @@ static void $SpringBoard$quitAppWithDisplayIdentifier$(SpringBoard *self, SEL se
                     [app setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0]]; // animation duration
 
                 // Deactivate the application
-                [[displayStacks objectAtIndex:3] pushDisplay:app];
+                [SBWSuspendingDisplayStack pushDisplay:app];
             }
         }
     }
