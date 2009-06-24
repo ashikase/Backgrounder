@@ -3,7 +3,7 @@
 EXE=BackgrounderPrefs
 APP=Backgrounder
 PREFS_NAME="jp.ashikase.backgrounder.*"
-TOOLCHAIN=/opt/iPhone/sdk/sys.open2x
+TOOLCHAIN=/opt/iPhone/sdk/iPhoneOS3.0.jb
 DEBUG=
 
 usage()

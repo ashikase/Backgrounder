@@ -20,7 +20,8 @@ LDFLAGS = -march=armv6 \
 		  -framework SpringBoardServices \
           -lobjc
 
-INCLUDES = -I./Classes
+INCLUDES = -F$(SYS_PATH)/System/Library/PrivateFrameworks \
+		   -I./Classes
 
 SUBDIRS    = . Classes
 

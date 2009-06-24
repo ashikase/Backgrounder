@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-09 13:36:23
+ * Last-modified: 2009-06-24 20:57:52
  */
 
 /**
@@ -42,7 +42,7 @@
 
 #import "MultiLineCell.h"
 
-#include <objc/objc-runtime.h>
+#include <objc/runtime.h>
 
 #define HORIZ_MARGIN 10.0f
 #define VERT_MARGIN 11.0f
