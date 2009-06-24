@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-06-24 21:58:40
+ * Last-modified: 2009-06-24 21:59:50
  */
 
 /**
@@ -349,8 +349,7 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
             NSString *status = [NSString stringWithFormat:@"Backgrounding %s",
                      (isEnabled ? "Disabled" : "Enabled")];
 
-            NSString *message = (invocationMethod == HOME_SHORT_PRESS) ? @"(Continue holding to force-quit)" : nil;
-            alert = [[objc_getClass("BackgrounderAlertItem") alloc] initWithTitle:status message:message];
+            alert = [[objc_getClass("BackgrounderAlertItem") alloc] initWithTitle:status message:nil];
 
             SBAlertItemsController *controller = [objc_getClass("SBAlertItemsController") sharedInstance];
             [controller activateAlertItem:alert];
