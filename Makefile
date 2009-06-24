@@ -1,14 +1,17 @@
 NAME = Backgrounder
 
 # These paths must be changed to match the compilation environment
-TOOLCHAIN=/opt/iPhone/sdk/sys.open2x
+TOOLCHAIN = /opt/iPhone/sdk/iPhoneOS3.0.jb
 SYS_PATH = /opt/iPhone/sys
-SUB_PATH = /files/Platforms/iPhone/Projects/Others/saurik/mobilesubstrate
+MS_PATH = /files/Platforms/iPhone/Projects/Others/saurik/mobilesubstrate
 LDID = /opt/iPhone/ldid
 
 CXX = arm-apple-darwin9-g++
-CXXFLAGS = -g0 -O2 -Wall -Werror -Wno-write-strings -I$(SUB_PATH) -IClasses
-LDFLAGS = -lobjc \
+CXXFLAGS = -g0 -O2 -Wall -Werror -Wno-write-strings
+LD = $(CXX)
+LDFLAGS = -march=armv6 \
+		  -mcpu=arm1176jzf-s \
+		  -bind_at_load \
 		  -multiply_defined suppress \
 		  -framework CoreFoundation \
 		  -framework Foundation \
@@ -16,22 +19,25 @@ LDFLAGS = -lobjc \
 		  -framework GraphicsServices \
 		  -framework CoreGraphics \
 		  -F$(SYS_PATH)/System/Library/PrivateFrameworks \
-		  -L$(SUB_PATH) -lsubstrate
+		  -L$(MS_PATH) -lsubstrate \
+		  -lobjc
 
-SRCS = \
-	   main.mm \
-	   Classes/ApplicationHooks.mm \
-	   Classes/SimplePopup.mm \
-	   Classes/SpringBoardHooks.mm \
-	   Classes/TaskMenuPopup.mm
+INCLUDES = -F$(SYS_PATH)/System/Library/PrivateFrameworks \
+		   -F$(SYS_PATH)/System/Library/CoreServices \
+		   -I$(MS_PATH) \
+		   -I./Classes
+
+SUBDIRS    = . Classes
+
+DIRLIST    := $(SUBDIRS:%=%)
+SRCS       := $(foreach dir,$(DIRLIST), $(wildcard $(dir)/*.mm))
+HDRS       := $(foreach dir,$(DIRLIST), $(wildcard $(dir)/*.h))
+OBJS       := $(SRCS:.mm=.o)
 
 all: config $(NAME).dylib
 
 config:
-	ln -snf ${TOOLCHAIN} $(SYS_PATH)
-
-clean:
-	rm -f $(NAME).dylib
+	ln -snf $(TOOLCHAIN) $(SYS_PATH)
 
 # Replace 'iphone' with the IP or hostname of your device
 install: config $(NAME).dylib
@@ -39,8 +45,14 @@ install: config $(NAME).dylib
 	scp $(NAME).dylib root@iphone:/Library/MobileSubstrate/DynamicLibraries/
 	ssh root@iphone restart
 
-$(NAME).dylib: $(SRCS)
-	$(CXX) -dynamiclib $(CXXFLAGS) -o $@ $(filter %.mm,$^) -init _$(NAME)Initialize $(LDFLAGS)
+$(NAME).dylib: $(OBJS) $(HDRS)
+	$(LD) -dynamiclib $(LDFLAGS) $(OBJS) -init _$(NAME)Initialize -o $@
 	$(LDID) -S $@
+
+%.o: %.mm
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+	   
+clean:
+	rm -f $(OBJS) $(NAME).dylib
 
 .PHONY: all clean

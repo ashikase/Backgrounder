@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-24 12:34:29
+ * Last-modified: 2009-06-24 15:06:54
  */
 
 /**
@@ -47,6 +47,7 @@
 #import <UIKit/UIKit.h>
 
 #import <SpringBoard/SBApplication.h>
+#import <SpringBoard/SBApplicationIcon.h>
 #import <SpringBoard/SBApplicationController.h>
 #import <SpringBoard/SBAlertItemsController.h>
 #import <SpringBoard/SBAwayController.h>
@@ -183,7 +184,7 @@ HOOK(SBUIController, animateLaunchApplication$, void, id app)
         // FIXME: Find a better solution for the Categories "transparent-window" issue
         if ([[app displayIdentifier] hasPrefix:@"com.bigboss.categories."]) {
             // Make sure SpringBoard dock and icons are hidden
-            [[objc_getClass("SBIconController") sharedInstance] scatter:NO];
+            [[objc_getClass("SBIconController") sharedInstance] scatter:NO startTime:CFAbsoluteTimeGetCurrent()];
             [self showButtonBar:NO animate:NO action:NULL delegate:nil];
         }
 
@@ -410,7 +411,7 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
 
         if ([identifier isEqualToString:@"com.apple.springboard"]) {
             // Switching to SpringBoard
-            [[objc_getClass("SBUIController") sharedInstance] quitTopApplication];
+            [[objc_getClass("SBUIController") sharedInstance] quitTopApplication:NULL];
         } else {
             // Switching to an application other than SpringBoard
             SBApplication *otherApp = [[objc_getClass("SBApplicationController") sharedInstance]
@@ -434,7 +435,7 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
                     [otherApp setActivationSetting:0x80 value:[state objectAtIndex:1]]; // statusBarOrienation
 
                     // Make sure SpringBoard dock and icons are hidden
-                    [[objc_getClass("SBIconController") sharedInstance] scatter:NO];
+                    [[objc_getClass("SBIconController") sharedInstance] scatter:NO startTime:CFAbsoluteTimeGetCurrent()];
                     [[objc_getClass("SBUIController") sharedInstance] showButtonBar:NO animate:NO action:NULL delegate:nil];
 
                     // Prevent status bar from fading in
@@ -545,7 +546,7 @@ HOOK(SBApplication, exitedAbnormally, void)
     [bgEnabledApps removeObject:[self displayIdentifier]];
 
     if (animationsEnabled && ![self isSystemApplication])
-        [[NSFileManager defaultManager] removeItemAtPath:[self pathForDefaultImage:"Default"] error:nil];
+        [[NSFileManager defaultManager] removeItemAtPath:[self defaultImage:"Default"] error:nil];
 
     CALL_ORIG(SBApplication, exitedAbnormally);
 }
@@ -605,6 +606,7 @@ HOOK(SBApplication, _relaunchAfterAbnormalExit$, void, BOOL flag)
 }
 
 // NOTE: Only hooked when animationsEnabled == YES
+#if 0
 HOOK(SBApplication, pathForDefaultImage$, id, char *def)
 {
     return ([self isSystemApplication] || ![activeApps containsObject:[self displayIdentifier]]) ?
@@ -612,6 +614,7 @@ HOOK(SBApplication, pathForDefaultImage$, id, char *def)
         [NSString stringWithFormat:@"%@/Library/Caches/Snapshots/%@-Default.jpg",
             [[self seatbeltProfilePath] stringByDeletingPathExtension], [self bundleIdentifier]];
 }
+#endif
 
 //______________________________________________________________________________
 //______________________________________________________________________________
@@ -677,8 +680,10 @@ void initSpringBoardHooks()
         MSHookMessage($SBApplication, @selector(_startTerminationWatchdogTimer), &$SBApplication$_startTerminationWatchdogTimer);
     _SBApplication$_relaunchAfterAbnormalExit$ =
         MSHookMessage($SBApplication, @selector(_relaunchAfterAbnormalExit:), &$SBApplication$_relaunchAfterAbnormalExit$);
+#if 0
     _SBApplication$pathForDefaultImage$ =
         MSHookMessage($SBApplication, @selector(pathForDefaultImage:), &$SBApplication$pathForDefaultImage$);
+#endif
 }
 
 /* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */

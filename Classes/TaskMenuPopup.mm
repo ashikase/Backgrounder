@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-17 14:27:25
+ * Last-modified: 2009-06-24 14:20:00
  */
 
 /**
@@ -60,6 +60,9 @@
 
 #import "SpringBoardHooks.h"
 
+@interface UINavigationBarBackground (ThreeO)
+- (id)initWithFrame:(CGRect)frame withBarStyle:(int)style withTintColor:(UIColor *)color isTranslucent:(BOOL)translucent;
+@end
 
 HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
     id, id control, UITableViewCell *target, NSString *label)
@@ -189,7 +192,8 @@ HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
         UINavigationBarBackground *footer = [[objc_getClass("UINavigationBarBackground") alloc]
             initWithFrame:CGRectMake(0, size.height - 44, size.width, 44)
             withBarStyle:0
-            withTintColor:[UIColor colorWithWhite:0.23 alpha:1]];
+            withTintColor:[UIColor colorWithWhite:0.23 alpha:1]
+            isTranslucent:NO];
         [self addSubview:footer];
         [footer release];
 
@@ -244,7 +248,8 @@ HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
 {
     NSString *identifier = (indexPath.section == 0) ? currentApp : [otherApps objectAtIndex:indexPath.row];
     SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
-    return ([icon badge] ? 76.0f : 68.0f);
+    SBIconBadge *badge = MSHookIvar<SBIconBadge *>(icon, "_badge");
+    return (badge ? 76.0f : 68.0f);
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -377,7 +382,7 @@ static void $BGAlertDisplay$alertDisplayBecameVisible(SBAlertDisplay *self, SEL 
     currentStatusBarMode = [sbCont statusBarMode];
     if (currentStatusBarMode != 2) {
         currentStatusBarOrientation = [sbCont statusBarOrientation];
-        [sbCont setStatusBarMode:2 orientation:0 duration:0.4f fenceID:0 animation:0];
+        [sbCont setStatusBarMode:2 orientation:0 duration:0.4f animation:0];
     }
 
     // FIXME: The proper method for animating an SBAlertDisplay is currently
@@ -398,7 +403,7 @@ static void $BGAlertDisplay$dismiss(SBAlertDisplay *self, SEL sel)
         int &currentStatusBarOrientation = MSHookIvar<int>(self, "currentStatusBarOrientation");
         SBStatusBarController *sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
         [sbCont setStatusBarMode:currentStatusBarMode orientation:currentStatusBarOrientation
-            duration:0.4f fenceID:0 animation:0];
+            duration:0.4f animation:0];
     }
 
     // FIXME: The proper method for animating an SBAlertDisplay is currently
