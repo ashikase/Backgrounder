@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-06-24 15:18:06
+ * Last-modified: 2009-06-24 21:57:40
  */
 
 /**
@@ -91,6 +91,7 @@ static BOOL badgeEnabled = YES;
 //______________________________________________________________________________
 //______________________________________________________________________________
 
+#if 0
 static void loadPreferences()
 {
     CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("persistent"), CFSTR(APP_ID));
@@ -138,6 +139,7 @@ static void loadPreferences()
         CFRelease(prefFeedback);
     }
 }
+#endif
 
 //______________________________________________________________________________
 //______________________________________________________________________________
@@ -629,7 +631,7 @@ HOOK(SBApplication, pathForDefaultImage$, id, char *def)
 
 void initSpringBoardHooks()
 {
-    loadPreferences();
+    //loadPreferences();
 
     Class $SBDisplayStack(objc_getClass("SBDisplayStack"));
     _SBDisplayStack$init =
