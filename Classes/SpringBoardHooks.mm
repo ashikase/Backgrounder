@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-06-24 21:57:40
+ * Last-modified: 2009-06-24 21:58:40
  */
 
 /**
@@ -86,7 +86,7 @@ static NSString *killedApp = nil;
 
 static BOOL animateStatusBar = YES;
 static BOOL animationsEnabled = YES;
-static BOOL badgeEnabled = YES;
+static BOOL badgeEnabled = NO;
 
 //______________________________________________________________________________
 //______________________________________________________________________________
