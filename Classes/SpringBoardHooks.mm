@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-06-25 14:31:48
+ * Last-modified: 2009-06-25 16:59:50
  */
 
 /**
@@ -619,10 +619,15 @@ HOOK(SBApplication, deactivate, BOOL)
 }
 #endif
 
-HOOK(SBApplication, _startTerminationWatchdogTimer, void)
+// NOTE: Observed types:
+//         0: Launch
+//         1: Resume
+//         2: Deactivation
+//         3: Termination
+HOOK(SBApplication, _startWatchdogTimerType$, void, int type)
 {
-    if (![bgEnabledApps containsObject:[self displayIdentifier]])
-        CALL_ORIG(SBApplication, _startTerminationWatchdogTimer);
+    if (type != 3 || ![bgEnabledApps containsObject:[self displayIdentifier]])
+        CALL_ORIG(SBApplication, _startWatchdogTimerType$, type);
 }
 
 #if 0
@@ -719,8 +724,8 @@ void initSpringBoardHooks()
     _SBApplication$exitedCommon =
         MSHookMessage($SBApplication, @selector(exitedCommon), &$SBApplication$exitedCommon);
 #endif
-    _SBApplication$_startTerminationWatchdogTimer =
-        MSHookMessage($SBApplication, @selector(_startTerminationWatchdogTimer), &$SBApplication$_startTerminationWatchdogTimer);
+    _SBApplication$_startWatchdogTimerType$ =
+        MSHookMessage($SBApplication, @selector(_startWatchdogTimerType:), &$SBApplication$_startWatchdogTimerType$);
 #if 0
     _SBApplication$_relaunchAfterAbnormalExit$ =
         MSHookMessage($SBApplication, @selector(_relaunchAfterAbnormalExit:), &$SBApplication$_relaunchAfterAbnormalExit$);
