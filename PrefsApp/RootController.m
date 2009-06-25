@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-14 14:56:18
+ * Last-modified: 2009-06-24 21:27:52
  */
 
 /**
@@ -88,18 +88,21 @@
 
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return 3;
+	//return 3;
+	return 2;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(int)section
 {
-    static NSString *headers[] = {@"Documentation", @"Preferences", nil};
+    //static NSString *headers[] = {@"Documentation", @"Preferences", nil};
+    static NSString *headers[] = {@"Documentation", nil};
     return headers[section];
 }
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    static int rows[] = {4, 2, 1};
+    //static int rows[] = {4, 2, 1};
+    static int rows[] = {4, 1};
     return rows[section];
 }
 
@@ -130,7 +133,8 @@
         }
 
         [cell setText:@"Project Homepage"];
-    } else if (indexPath.section == 2) {
+    //} else if (indexPath.section == 2) {
+    } else if (indexPath.section == 1) {
         // Credits cell
         // Try to retrieve from the table view a now-unused cell with the given identifier
         cell = [tableView dequeueReusableCellWithIdentifier:reuseIdName];
@@ -183,7 +187,8 @@
 
 - (float)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    return (indexPath.section == 2) ? 22.0f : 44.0f;
+    //return (indexPath.section == 2) ? 22.0f : 44.0f;
+    return (indexPath.section == 1) ? 22.0f : 44.0f;
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
@@ -202,12 +207,14 @@
             vc = [[[DocumentationController alloc]
                 initWithContentsOfFile:fileNames[indexPath.row] title:titles[indexPath.row]]
                 autorelease];
+#if 0
     } else if (indexPath.section == 1) {
         // Preferences
         if (indexPath.row == 0)
             vc = [[[GlobalPrefsController alloc] initWithStyle:1] autorelease];
         else
             vc = [[[AppSpecificPrefsController alloc] initWithStyle:1] autorelease];
+#endif
     } else {
         // Credits
         NSString *link = [NSString stringWithFormat:@"mailto:%s@%s?subject=%s",
