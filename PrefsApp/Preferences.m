@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-* Last-modified: 2009-05-24 12:40:04
+* Last-modified: 2009-06-24 21:40:45
  */
 
 /**
@@ -52,6 +52,7 @@ static NSArray *allowedFeedbackTypes = nil;
 @implementation Preferences
 
 @synthesize firstRun;
+@synthesize threeOWarning;
 @synthesize persistent;
 @synthesize animationsEnabled;
 @synthesize badgeEnabled;
@@ -111,6 +112,7 @@ static NSArray *allowedFeedbackTypes = nil;
     NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity:4];
 
     [dict setObject:[NSNumber numberWithBool:firstRun] forKey:@"firstRun"];
+    [dict setObject:[NSNumber numberWithBool:threeOWarning] forKey:@"threeOWarning"];
     [dict setObject:[NSNumber numberWithBool:persistent] forKey:@"persistent"];
     [dict setObject:[NSNumber numberWithBool:animationsEnabled] forKey:@"animationsEnabled"];
     [dict setObject:[NSNumber numberWithBool:badgeEnabled] forKey:@"badgeEnabled"];
@@ -161,6 +163,7 @@ static NSArray *allowedFeedbackTypes = nil;
     NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity:4];
 
     [dict setObject:[NSNumber numberWithBool:YES] forKey:@"firstRun"];
+    [dict setObject:[NSNumber numberWithBool:YES] forKey:@"threeOWarning"];
     [dict setObject:[NSNumber numberWithBool:YES] forKey:@"persistent"];
     [dict setObject:[NSNumber numberWithBool:YES] forKey:@"animationsEnabled"];
     [dict setObject:[NSNumber numberWithBool:YES] forKey:@"badgeEnabled"];
@@ -183,6 +186,7 @@ static NSArray *allowedFeedbackTypes = nil;
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     
     firstRun = [defaults boolForKey:@"firstRun"];
+    threeOWarning = [defaults boolForKey:@"threeOWarning"];
     persistent = [defaults boolForKey:@"persistent"];
     animationsEnabled = [defaults boolForKey:@"animationsEnabled"];
     badgeEnabled = [defaults boolForKey:@"badgeEnabled"];

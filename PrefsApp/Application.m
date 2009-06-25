@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-14 15:24:17
+ * Last-modified: 2009-06-24 21:53:40
  */
 
 /**
@@ -56,6 +56,7 @@
 - (void)applicationDidFinishLaunching:(UIApplication *)application
 {
     Preferences *prefs = [Preferences sharedInstance];
+#if 0
     if ([prefs firstRun]) {
         // Show a once-only warning
         NSString *title = [NSString stringWithFormat:@"Welcome to %@", @APP_TITLE];
@@ -66,6 +67,20 @@
 
         // Save settings so that this warning will not be shown again
         [prefs setFirstRun:NO];
+        [prefs writeToDisk];
+    }
+#endif
+
+    if ([prefs threeOWarning]) {
+        // Show a once-only warning regarding 3.0 support
+        NSString *title = [NSString stringWithFormat:@"IMPORTANT", @APP_TITLE];
+        NSString *message = @THREE_O_MSG;
+        UIAlertView *alert = [[[UIAlertView alloc] initWithTitle:title message:message
+                 delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil] autorelease];
+        [alert show];
+
+        // Save settings so that this warning will not be shown again
+        [prefs setThreeOWarning:NO];
         [prefs writeToDisk];
     }
 

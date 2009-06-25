@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-01-24 19:16:48
+ * Last-modified: 2009-06-25 15:38:27
  */
 
 /**
@@ -43,6 +43,7 @@
 // General
 #define APP_TITLE "Backgrounder"
 #define FIRST_RUN_MSG "WARNING: Any changes made to preferences will cause SpringBoard to restart upon exit."
+#define THREE_O_MSG "Due to changes in iPhoneOS 3.0,\n all optional features are currently BROKEN.\n\nOnly basic backgrounding is enabled.\n\nPlease understand that reimplementing the missing features, if even possible,\nwill take time."
 
 // Documentation
 #define DOC_BUNDLE_PATH "doc"
