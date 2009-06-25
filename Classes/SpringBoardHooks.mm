@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-06-24 21:59:50
+ * Last-modified: 2009-06-24 22:17:27
  */
 
 /**
@@ -201,8 +201,8 @@ HOOK(SBUIController, animateLaunchApplication$, void, id app)
 
         // Launch without animation
         NSArray *state = [statusBarStates objectForKey:[app displayIdentifier]];
-        [app setActivationSetting:0x40 value:[state objectAtIndex:0]]; // statusbarmode
-        [app setActivationSetting:0x80 value:[state objectAtIndex:1]]; // statusBarOrienation
+        [app setDisplaySetting:0x10 value:[state objectAtIndex:0]]; // statusBarMode
+        [app setDisplaySetting:0x20 value:[state objectAtIndex:1]]; // statusBarOrienation
         // FIXME: Originally Activating (and not Active)
         [SBWActiveDisplayStack pushDisplay:app];
     } else {
@@ -439,8 +439,8 @@ static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SE
                     [currApp setDeactivationSetting:0x2 flag:YES]; // animate
 
                     NSArray *state = [statusBarStates objectForKey:identifier];
-                    [otherApp setActivationSetting:0x40 value:[state objectAtIndex:0]]; // statusbarmode
-                    [otherApp setActivationSetting:0x80 value:[state objectAtIndex:1]]; // statusBarOrienation
+                    [otherApp setDisplaySetting:0x10 value:[state objectAtIndex:0]]; // statusBarMode
+                    [otherApp setDisplaySetting:0x20 value:[state objectAtIndex:1]]; // statusBarOrienation
 
                     // Make sure SpringBoard dock and icons are hidden
                     [[objc_getClass("SBIconController") sharedInstance] scatter:NO startTime:CFAbsoluteTimeGetCurrent()];
