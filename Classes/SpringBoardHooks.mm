@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-06-24 22:17:27
+ * Last-modified: 2009-06-24 22:42:38
  */
 
 /**
@@ -502,7 +502,7 @@ static void $SpringBoard$quitAppWithDisplayIdentifier$(SpringBoard *self, SEL se
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-HOOK(SBApplication, launchSucceeded, void)
+HOOK(SBApplication, launchSucceeded$, void, BOOL unknownFlag)
 {
     NSString *identifier = [self displayIdentifier];
 
@@ -547,7 +547,7 @@ HOOK(SBApplication, launchSucceeded, void)
         [activeApps addObject:identifier];
     }
 
-    CALL_ORIG(SBApplication, launchSucceeded);
+    CALL_ORIG(SBApplication, launchSucceeded$, unknownFlag);
 }
 
 HOOK(SBApplication, exitedAbnormally, void)
@@ -677,8 +677,8 @@ void initSpringBoardHooks()
     class_addMethod($SpringBoard, @selector(quitAppWithDisplayIdentifier:), (IMP)&$SpringBoard$quitAppWithDisplayIdentifier$, "v@:@");
 
     Class $SBApplication(objc_getClass("SBApplication"));
-    _SBApplication$launchSucceeded =
-        MSHookMessage($SBApplication, @selector(launchSucceeded), &$SBApplication$launchSucceeded);
+    _SBApplication$launchSucceeded$ =
+        MSHookMessage($SBApplication, @selector(launchSucceeded:), &$SBApplication$launchSucceeded$);
     _SBApplication$deactivate =
         MSHookMessage($SBApplication, @selector(deactivate), &$SBApplication$deactivate);
     _SBApplication$exitedAbnormally =
