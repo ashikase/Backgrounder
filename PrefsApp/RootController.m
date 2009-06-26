@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-06-24 21:27:52
+ * Last-modified: 2009-06-26 15:24:27
  */
 
 /**
@@ -214,12 +214,12 @@
             vc = [[[GlobalPrefsController alloc] initWithStyle:1] autorelease];
         else
             vc = [[[AppSpecificPrefsController alloc] initWithStyle:1] autorelease];
-#endif
     } else {
         // Credits
         NSString *link = [NSString stringWithFormat:@"mailto:%s@%s?subject=%s",
             "gaizin", "gmail.com", "[Backgrounder]"];
         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:link]];
+#endif
     }
 
     if (vc)
