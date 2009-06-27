@@ -1,10 +1,10 @@
-Package: jp.ashikase.backgrounder
+Package: backgrounder
 Name: Backgrounder
 Version: svn.r247
 Architecture: iphoneos-arm
 Description: Run applications in the background
 Homepage: http://iphone-backgrounder.googlecode.com/
-Depiction: http://moreinfo.thebigboss.org/moreinfo/backgrounderDp.php
+Depiction: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=backgrounder3Data
 Maintainer: BigBoss <bigboss@thebigboss.org>
 Author: Lance Fetters (ashikase) <gaizin@gmail.com>
 Section: System
