@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-06-25 16:59:50
+ * Last-modified: 2009-06-27 01:58:27
  */
 
 /**
@@ -599,9 +599,11 @@ HOOK(SBApplication, exitedCommon, void)
 
     CALL_ORIG(SBApplication, exitedCommon);
 }
+#endif
 
 HOOK(SBApplication, deactivate, BOOL)
 {
+#if 0
     NSString *identifier = [self displayIdentifier];
     if ([identifier isEqualToString:deactivatingApp]) {
         [[objc_getClass("SpringBoard") sharedApplication] dismissBackgrounderFeedback];
@@ -614,10 +616,30 @@ HOOK(SBApplication, deactivate, BOOL)
     NSNumber *mode = [NSNumber numberWithInt:[sbCont statusBarMode]];
     NSNumber *orientation = [NSNumber numberWithInt:[sbCont statusBarOrientation]];
     [statusBarStates setObject:[NSArray arrayWithObjects:mode, orientation, nil] forKey:identifier];
-
-    return CALL_ORIG(SBApplication, deactivate);
-}
 #endif
+
+    BOOL isBackgrounded = [bgEnabledApps containsObject:[self displayIdentifier]];
+    BOOL flag;
+    if (isBackgrounded) {
+        // Temporarily enable the eventOnly flag to prevent the applications's views
+        // from being deallocated.
+        // NOTE: Credit for this goes to phoenix3200 (author of Pandora Controls, http://phoenix-dev.com/)
+        // FIXME: Run a trace on deactivate to determine why this works.
+        flag = [self deactivationSetting:0x1];
+        [self setDeactivationSetting:0x1 flag:YES];
+    }
+
+    BOOL result = CALL_ORIG(SBApplication, deactivate);
+
+    if (isBackgrounded)
+        // Must disable the eventOnly flag before returning, or else the application
+        // will remain in the event-only display stack and prevent SpringBoard from
+        // operating properly.
+        // NOTE: This is the continuation of phoenix3200's fix
+        [self setDeactivationSetting:0x1 flag:flag];
+
+    return result;
+}
 
 // NOTE: Observed types:
 //         0: Launch
@@ -715,9 +737,9 @@ void initSpringBoardHooks()
 #if 0
     _SBApplication$launchSucceeded$ =
         MSHookMessage($SBApplication, @selector(launchSucceeded:), &$SBApplication$launchSucceeded$);
+#endif
     _SBApplication$deactivate =
         MSHookMessage($SBApplication, @selector(deactivate), &$SBApplication$deactivate);
-#endif
     _SBApplication$exitedAbnormally =
         MSHookMessage($SBApplication, @selector(exitedAbnormally), &$SBApplication$exitedAbnormally);
 #if 0
