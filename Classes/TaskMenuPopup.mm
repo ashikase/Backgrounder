@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-06-24 14:20:00
+ * Last-modified: 2009-06-27 19:46:15
  */
 
 /**
@@ -51,7 +51,7 @@
 #import <QuartzCore/CALayer.h>
 #import <UIKit/UIKit.h>
 #import <UIKit/UINavigationBarBackground.h>
-#import <UIKit/UIRemoveControlTextButton.h>
+#import <UIKit/UITableViewCellDeleteConfirmationControl.h>
 
 #import <SpringBoard/SBApplicationIcon.h>
 #import <SpringBoard/SBIconBadge.h>
@@ -64,24 +64,22 @@
 - (id)initWithFrame:(CGRect)frame withBarStyle:(int)style withTintColor:(UIColor *)color isTranslucent:(BOOL)translucent;
 @end
 
-HOOK(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
-    id, id control, UITableViewCell *target, NSString *label)
+HOOK(UITableView, titleForDeleteConfirmationButton$, NSString *, id cell)
 {
-    NSString *newLabel = nil;
-    switch ([target tag]) {
+    NSString *title = nil;
+    switch ([cell tag]) {
         case 1:
             // Is blacklisted application
-            newLabel = @"Force Quit";
+            title = @"Force Quit";
             break;
         case 2:
             // Is SpringBoard
-            newLabel = @"Respring";
+            title = @"Respring";
             break;
         default:
-            newLabel = @"Quit";
+            title = @"Quit";
     }
-    return CALL_ORIG(UIRemoveControlTextButton, initWithRemoveControl$withTarget$withLabel$,
-        control, target, newLabel);
+    return title;
 }
 
 //______________________________________________________________________________
@@ -485,10 +483,10 @@ static id $BGAlert$alertDisplayViewWithSize$(SBAlert *self, SEL sel, CGSize size
 void initTaskMenuPopup()
 {
     // Override default text for cell "delete" button
-    Class $UIRemoveControlTextButton(objc_getClass("UIRemoveControlTextButton"));
-    _UIRemoveControlTextButton$initWithRemoveControl$withTarget$withLabel$ =
-        MSHookMessage($UIRemoveControlTextButton, @selector(initWithRemoveControl:withTarget:withLabel:),
-            &$UIRemoveControlTextButton$initWithRemoveControl$withTarget$withLabel$);
+    Class $UITableView(objc_getClass("UITableView"));
+    _UITableView$titleForDeleteConfirmationButton$ =
+        MSHookMessage($UITableView, @selector(titleForDeleteConfirmationButton:),
+            &$UITableView$titleForDeleteConfirmationButton$);
 
     // Create custom alert-display class
     Class $SBAlertDisplay(objc_getClass("SBAlertDisplay"));
