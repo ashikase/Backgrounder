@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-06-25 14:35:03
+ * Last-modified: 2009-08-24 23:27:16
  */
 
 /**
@@ -56,7 +56,6 @@ static BOOL animationsEnabled = NO;
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-#if 0
 static void loadPreferences()
 {
     CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("blacklistedApplications"), CFSTR(APP_ID));
@@ -66,14 +65,15 @@ static void loadPreferences()
         CFRelease(propList);
     }
 
+#if 0
     propList = CFPreferencesCopyAppValue(CFSTR("animationsEnabled"), CFSTR(APP_ID));
     if (propList) {
         if (CFGetTypeID(propList) == CFBooleanGetTypeID())
             animationsEnabled = CFBooleanGetValue(reinterpret_cast<CFBooleanRef>(propList));
         CFRelease(propList);
     }
-}
 #endif
+}
 
 //______________________________________________________________________________
 //______________________________________________________________________________
@@ -212,7 +212,7 @@ HOOK(UIApplication, _loadMainNibFile, void)
 
 void initApplicationHooks()
 {
-    //loadPreferences();
+    loadPreferences();
 
     Class $UIApplication(objc_getClass("UIApplication"));
     _UIApplication$_loadMainNibFile =

@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-24 09:39:47
+ * Last-modified: 2009-08-24 23:27:46
  */
 
 /**
@@ -104,8 +104,7 @@
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    //return 2;
-    return 1;
+    return 2;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath

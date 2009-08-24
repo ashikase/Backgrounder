@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-24 22:42:59
+ * Last-modified: 2009-08-24 23:29:06
  */
 
 /**
@@ -48,7 +48,6 @@
 
 @interface EnabledApplicationsController : UITableViewController
 {
-    //UIAlertView *busyIndicator;
     UIProgressHUD *busyIndicator;
 
     // Reference to root view controller for accessing cached info

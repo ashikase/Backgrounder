@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-24 23:20:07
+ * Last-modified: 2009-08-24 23:26:45
  */
 
 /**
@@ -119,7 +119,6 @@ static void loadPreferences()
         CFRelease(propList);
     }
 
-#if 0
     propList = CFPreferencesCopyAppValue(CFSTR("blacklistedApplications"), CFSTR(APP_ID));
     if (propList) {
         if (CFGetTypeID(propList) == CFArrayGetTypeID())
@@ -127,6 +126,7 @@ static void loadPreferences()
         CFRelease(propList);
     }
 
+#if 0
     CFPropertyListRef prefMethod = CFPreferencesCopyAppValue(CFSTR("invocationMethod"), CFSTR(APP_ID));
     if (prefMethod) {
         // NOTE: Defaults to HOME_SHORT_PRESS
