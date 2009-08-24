@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-06-24 21:53:40
+ * Last-modified: 2009-08-25 00:14:18
  */
 
 /**
@@ -70,19 +70,6 @@
         [prefs writeToDisk];
     }
 #endif
-
-    if ([prefs threeOWarning]) {
-        // Show a once-only warning regarding 3.0 support
-        NSString *title = [NSString stringWithFormat:@"IMPORTANT", @APP_TITLE];
-        NSString *message = @THREE_O_MSG;
-        UIAlertView *alert = [[[UIAlertView alloc] initWithTitle:title message:message
-                 delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil] autorelease];
-        [alert show];
-
-        // Save settings so that this warning will not be shown again
-        [prefs setThreeOWarning:NO];
-        [prefs writeToDisk];
-    }
 
     // Create our navigation controller with the initial view controller
     navController = [[UINavigationController alloc] initWithRootViewController:

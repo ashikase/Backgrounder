@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-06-24 21:40:15
+ * Last-modified: 2009-08-25 00:14:35
  */
 
 /**
@@ -53,7 +53,6 @@
     NSDictionary *onDiskValues;
 
     BOOL firstRun;
-    BOOL threeOWarning;
     BOOL persistent;
     BOOL animationsEnabled;
     BOOL badgeEnabled;
@@ -64,7 +63,6 @@
 }
 
 @property(nonatomic) BOOL firstRun;
-@property(nonatomic) BOOL threeOWarning;
 @property(nonatomic, getter=isPersistent) BOOL persistent;
 @property(nonatomic) BOOL animationsEnabled;
 @property(nonatomic) BOOL badgeEnabled;
