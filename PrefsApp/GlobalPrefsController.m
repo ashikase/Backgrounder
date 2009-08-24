@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-24 23:10:46
+ * Last-modified: 2009-08-24 23:22:52
  */
 
 /**
@@ -98,7 +98,7 @@
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
     //return (section == 0) ? 3 : 2;
-    return (section == 0) ? 1 : 2;
+    return (section == 0) ? 2 : 2;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -109,7 +109,7 @@
     UITableViewCell *cell = nil;
     if (indexPath.section == 0) {
         //static NSString *cellTitles[] = {@"Persistence", @"Animations", @"Badge"};
-        static NSString *cellTitles[] = {@"Badge"};
+        static NSString *cellTitles[] = {@"Persistence", @"Badge"};
 
         // Try to retrieve from the table view a now-unused cell with the given identifier
         cell = [tableView dequeueReusableCellWithIdentifier:reuseIdToggle];
@@ -128,10 +128,10 @@
         UISwitch *toggle = [cell accessoryView];
         switch (indexPath.row) {
             case 0:
-#if 0
                 [toggle setOn:[[Preferences sharedInstance] isPersistent]];
                 break;
             case 1:
+#if 0
                 [toggle setOn:[[Preferences sharedInstance] animationsEnabled]];
                 break;
             case 2:
@@ -160,10 +160,10 @@
     NSIndexPath *indexPath = [self.tableView indexPathForCell:[control superview]];
     switch (indexPath.row) {
         case 0:
-#if 0
             [[Preferences sharedInstance] setPersistent:[control isOn]];
             break;
         case 1:
+#if 0
             [[Preferences sharedInstance] setAnimationsEnabled:[control isOn]];
             break;
         case 2:

@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-24 22:52:09
+ * Last-modified: 2009-08-24 23:20:07
  */
 
 /**
@@ -95,7 +95,6 @@ static BOOL badgeEnabled = NO;
 
 static void loadPreferences()
 {
-#if 0
     CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("persistent"), CFSTR(APP_ID));
     if (propList) {
         // NOTE: Defaults to YES
@@ -104,6 +103,7 @@ static void loadPreferences()
         CFRelease(propList);
     }
 
+#if 0
     propList = CFPreferencesCopyAppValue(CFSTR("animationsEnabled"), CFSTR(APP_ID));
     if (propList) {
         if (CFGetTypeID(propList) == CFBooleanGetTypeID())
@@ -112,7 +112,7 @@ static void loadPreferences()
     }
 #endif
 
-    CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("badgeEnabled"), CFSTR(APP_ID));
+    propList = CFPreferencesCopyAppValue(CFSTR("badgeEnabled"), CFSTR(APP_ID));
     if (propList) {
         if (CFGetTypeID(propList) == CFBooleanGetTypeID())
             badgeEnabled = CFBooleanGetValue(reinterpret_cast<CFBooleanRef>(propList));
