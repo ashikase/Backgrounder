@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-02-21 10:28:02
+ * Last-modified: 2009-08-24 22:48:13
  */
 
 /**
@@ -156,6 +156,7 @@ static NSArray *applicationDisplayIdentifiers()
 
 - (void)dealloc
 {
+    [busyIndicator release];
     [enabledApplications release];
     [rootController release];
 
@@ -170,8 +171,9 @@ static NSArray *applicationDisplayIdentifiers()
     [self.tableView reloadData];
 
     // Remove the progress indicator
-    [busyIndicator dismiss];
+    [busyIndicator hide];
     [busyIndicator release];
+    busyIndicator = nil;
 }
 
 - (void)viewDidAppear:(BOOL)animated
@@ -180,30 +182,10 @@ static NSArray *applicationDisplayIdentifiers()
         // Application list already loaded
         return;
 
-    // Create a progress indicator
-    busyIndicator = [[UIAlertView alloc] init];
-    [busyIndicator setAlertSheetStyle:2];
-    [busyIndicator setDimsBackground:false];
-    [busyIndicator setRunsModal:false];
-
-    UIActivityIndicatorView *spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:0];
-    [spinner setCenter:CGPointMake(29, 44)];
-    [spinner startAnimating];
-    [busyIndicator addSubview:spinner];
-    [spinner release];
-
-    UILabel *label = [[UILabel alloc] init];
-    [label setFont:[UIFont boldSystemFontOfSize:20.0f]];
-    [label setText:@"Loading applications..."];
-    [label setTextColor:[UIColor whiteColor]];
-    [label setBackgroundColor:[UIColor clearColor]];
-    [label sizeToFit];
-    [label setCenter:CGPointMake(166, 44)];
-    [busyIndicator addSubview:label];
-    [label release];
-
-    // Show the indicator
-    [busyIndicator popupAlertAnimated:NO];
+    // Show a progress indicator
+    busyIndicator = [[UIProgressHUD alloc] initWithWindow:[[UIApplication sharedApplication] keyWindow]];
+    [busyIndicator setText:@"Loading applications..."];
+    [busyIndicator show:YES];
 
     // Enumerate applications
     // NOTE: Must call via performSelector, or busy indicator does not show in time

@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-06-27 01:58:27
+ * Last-modified: 2009-08-24 09:50:53
  */
 
 /**
@@ -65,7 +65,7 @@
 struct GSEvent;
 
 
-//static BOOL isPersistent = YES;
+static BOOL isPersistent = YES;
 
 #define SIMPLE_POPUP 0
 #define TASK_MENU_POPUP 1
@@ -75,7 +75,7 @@ static int feedbackType = SIMPLE_POPUP;
 #define HOME_DOUBLE_TAP 1
 static int invocationMethod = HOME_SHORT_PRESS;
 
-//static NSMutableArray *activeApps = nil;
+static NSMutableArray *activeApps = nil;
 static NSMutableArray *bgEnabledApps = nil;
 static NSArray *blacklistedApps = nil;
 
@@ -311,11 +311,9 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
     //       - xxxxx: displays being deactivated
     displayStacks = [[NSMutableArray alloc] initWithCapacity:5];
 
-#if 0
     // NOTE: The initial capacity value was chosen to hold the default active
     //       apps (MobilePhone and MobileMail) plus two others
     activeApps = [[NSMutableArray alloc] initWithCapacity:4];
-#endif
     bgEnabledApps = [[NSMutableArray alloc] initWithCapacity:2];
 
 #if 0
@@ -338,10 +336,8 @@ HOOK(SpringBoard, dealloc, void)
 {
     //[killedApp release];
     [bgEnabledApps release];
-#if 0
     [activeApps release];
     [displayStacks release];
-#endif
     CALL_ORIG(SpringBoard, dealloc);
 }
 
@@ -518,7 +514,6 @@ static void $SpringBoard$quitAppWithDisplayIdentifier$(SpringBoard *self, SEL se
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-#if 0
 HOOK(SBApplication, launchSucceeded$, void, BOOL unknownFlag)
 {
     NSString *identifier = [self displayIdentifier];
@@ -550,6 +545,7 @@ HOOK(SBApplication, launchSucceeded$, void, BOOL unknownFlag)
             [bgEnabledApps addObject:identifier];
         }
 
+#if 0
         if (badgeEnabled) {
             // Update the SpringBoard icon to indicate that the app is running
             SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
@@ -559,6 +555,7 @@ HOOK(SBApplication, launchSucceeded$, void, BOOL unknownFlag)
             [icon addSubview:badgeView];
             [badgeView release];
         }
+#endif
 
         // Track active status of application
         [activeApps addObject:identifier];
@@ -566,7 +563,6 @@ HOOK(SBApplication, launchSucceeded$, void, BOOL unknownFlag)
 
     CALL_ORIG(SBApplication, launchSucceeded$, unknownFlag);
 }
-#endif
 
 HOOK(SBApplication, exitedAbnormally, void)
 {
@@ -580,7 +576,6 @@ HOOK(SBApplication, exitedAbnormally, void)
     CALL_ORIG(SBApplication, exitedAbnormally);
 }
 
-#if 0
 HOOK(SBApplication, exitedCommon, void)
 {
     // Application has exited (either normally or abnormally);
@@ -588,6 +583,7 @@ HOOK(SBApplication, exitedCommon, void)
     NSString *identifier = [self displayIdentifier];
     [activeApps removeObject:identifier];
 
+#if 0
     // ... also remove status bar state data from states list
     [statusBarStates removeObjectForKey:identifier];
 
@@ -596,10 +592,10 @@ HOOK(SBApplication, exitedCommon, void)
         SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
         [[icon viewWithTag:1000] removeFromSuperview];
     }
+#endif
 
     CALL_ORIG(SBApplication, exitedCommon);
 }
-#endif
 
 HOOK(SBApplication, deactivate, BOOL)
 {
@@ -734,18 +730,14 @@ void initSpringBoardHooks()
 #endif
 
     Class $SBApplication(objc_getClass("SBApplication"));
-#if 0
     _SBApplication$launchSucceeded$ =
         MSHookMessage($SBApplication, @selector(launchSucceeded:), &$SBApplication$launchSucceeded$);
-#endif
     _SBApplication$deactivate =
         MSHookMessage($SBApplication, @selector(deactivate), &$SBApplication$deactivate);
     _SBApplication$exitedAbnormally =
         MSHookMessage($SBApplication, @selector(exitedAbnormally), &$SBApplication$exitedAbnormally);
-#if 0
     _SBApplication$exitedCommon =
         MSHookMessage($SBApplication, @selector(exitedCommon), &$SBApplication$exitedCommon);
-#endif
     _SBApplication$_startWatchdogTimerType$ =
         MSHookMessage($SBApplication, @selector(_startWatchdogTimerType:), &$SBApplication$_startWatchdogTimerType$);
 #if 0
