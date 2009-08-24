@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-24 23:02:41
+ * Last-modified: 2009-08-24 23:10:46
  */
 
 /**
@@ -128,12 +128,14 @@
         UISwitch *toggle = [cell accessoryView];
         switch (indexPath.row) {
             case 0:
+#if 0
                 [toggle setOn:[[Preferences sharedInstance] isPersistent]];
                 break;
             case 1:
                 [toggle setOn:[[Preferences sharedInstance] animationsEnabled]];
                 break;
             case 2:
+#endif
                 [toggle setOn:[[Preferences sharedInstance] badgeEnabled]];
                 break;
         }
@@ -158,12 +160,14 @@
     NSIndexPath *indexPath = [self.tableView indexPathForCell:[control superview]];
     switch (indexPath.row) {
         case 0:
+#if 0
             [[Preferences sharedInstance] setPersistent:[control isOn]];
             break;
         case 1:
             [[Preferences sharedInstance] setAnimationsEnabled:[control isOn]];
             break;
         case 2:
+#endif
             [[Preferences sharedInstance] setBadgeEnabled:[control isOn]];
             break;
     }
