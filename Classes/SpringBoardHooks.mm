@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-24 09:50:53
+ * Last-modified: 2009-08-24 22:52:09
  */
 
 /**
@@ -87,15 +87,15 @@ static NSString *killedApp = nil;
 
 static BOOL animateStatusBar = YES;
 static BOOL animationsEnabled = YES;
-static BOOL badgeEnabled = NO;
 #endif
+static BOOL badgeEnabled = NO;
 
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-#if 0
 static void loadPreferences()
 {
+#if 0
     CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("persistent"), CFSTR(APP_ID));
     if (propList) {
         // NOTE: Defaults to YES
@@ -110,14 +110,16 @@ static void loadPreferences()
             animationsEnabled = CFBooleanGetValue(reinterpret_cast<CFBooleanRef>(propList));
         CFRelease(propList);
     }
+#endif
 
-    propList = CFPreferencesCopyAppValue(CFSTR("badgeEnabled"), CFSTR(APP_ID));
+    CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("badgeEnabled"), CFSTR(APP_ID));
     if (propList) {
         if (CFGetTypeID(propList) == CFBooleanGetTypeID())
             badgeEnabled = CFBooleanGetValue(reinterpret_cast<CFBooleanRef>(propList));
         CFRelease(propList);
     }
 
+#if 0
     propList = CFPreferencesCopyAppValue(CFSTR("blacklistedApplications"), CFSTR(APP_ID));
     if (propList) {
         if (CFGetTypeID(propList) == CFArrayGetTypeID())
@@ -140,8 +142,8 @@ static void loadPreferences()
             feedbackType = TASK_MENU_POPUP;
         CFRelease(prefFeedback);
     }
-}
 #endif
+}
 
 //______________________________________________________________________________
 //______________________________________________________________________________
@@ -545,7 +547,6 @@ HOOK(SBApplication, launchSucceeded$, void, BOOL unknownFlag)
             [bgEnabledApps addObject:identifier];
         }
 
-#if 0
         if (badgeEnabled) {
             // Update the SpringBoard icon to indicate that the app is running
             SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
@@ -555,7 +556,6 @@ HOOK(SBApplication, launchSucceeded$, void, BOOL unknownFlag)
             [icon addSubview:badgeView];
             [badgeView release];
         }
-#endif
 
         // Track active status of application
         [activeApps addObject:identifier];
@@ -586,13 +586,13 @@ HOOK(SBApplication, exitedCommon, void)
 #if 0
     // ... also remove status bar state data from states list
     [statusBarStates removeObjectForKey:identifier];
+#endif
 
     if (badgeEnabled) {
         // Update the SpringBoard icon to indicate that the app is not running
         SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
         [[icon viewWithTag:1000] removeFromSuperview];
     }
-#endif
 
     CALL_ORIG(SBApplication, exitedCommon);
 }
@@ -675,7 +675,7 @@ HOOK(SBApplication, pathForDefaultImage$, id, char *def)
 
 void initSpringBoardHooks()
 {
-    //loadPreferences();
+    loadPreferences();
 
     Class $SBDisplayStack(objc_getClass("SBDisplayStack"));
     _SBDisplayStack$init =

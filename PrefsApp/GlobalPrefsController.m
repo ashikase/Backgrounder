@@ -3,7 +3,7 @@
  * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-05-24 14:40:31
+ * Last-modified: 2009-08-24 23:02:41
  */
 
 /**
@@ -86,7 +86,8 @@
 
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return 2;
+	//return 2;
+	return 1;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(int)section
@@ -96,7 +97,8 @@
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    return (section == 0) ? 3 : 2;
+    //return (section == 0) ? 3 : 2;
+    return (section == 0) ? 1 : 2;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -106,7 +108,8 @@
 
     UITableViewCell *cell = nil;
     if (indexPath.section == 0) {
-        static NSString *cellTitles[] = {@"Persistence", @"Animations", @"Badge"};
+        //static NSString *cellTitles[] = {@"Persistence", @"Animations", @"Badge"};
+        static NSString *cellTitles[] = {@"Badge"};
 
         // Try to retrieve from the table view a now-unused cell with the given identifier
         cell = [tableView dequeueReusableCellWithIdentifier:reuseIdToggle];
