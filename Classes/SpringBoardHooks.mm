@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-10 21:09:52
+ * Last-modified: 2009-09-10 21:13:17
  */
 
 /**
@@ -347,7 +347,7 @@ HOOK(SBApplication, launchSucceeded$, void, BOOL unknownFlag)
         if (badgeEnabled) {
             // Update the SpringBoard icon to indicate that the app is running
             SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
-            UIImageView *badgeView = [[UIImageView alloc] initWithImage:[UIImage imageWithContentsOfFile:@"/Applications/Backgrounder.app/images/badge.png"]];
+            UIImageView *badgeView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"Backgrounder_Badge.png"]];
             [badgeView setOrigin:CGPointMake(-12.0f, 39.0f)];
             [badgeView setTag:1000];
             [icon addSubview:badgeView];
