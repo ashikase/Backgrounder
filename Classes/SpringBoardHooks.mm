@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-27 22:53:57
+ * Last-modified: 2009-09-03 19:34:34
  */
 
 /**
@@ -466,34 +466,26 @@ void initSpringBoardHooks()
 {
     loadPreferences();
 
-    Class $SBDisplayStack(objc_getClass("SBDisplayStack"));
-    _SBDisplayStack$init =
-        MSHookMessage($SBDisplayStack, @selector(init), &$SBDisplayStack$init);
-    _SBDisplayStack$dealloc =
-        MSHookMessage($SBDisplayStack, @selector(dealloc), &$SBDisplayStack$dealloc);
+    Class $SBDisplayStack = objc_getClass("SBDisplayStack");
+    LOAD_HOOK($SBDisplayStack, @selector(init), SBDisplayStack$init);
+    LOAD_HOOK($SBDisplayStack, @selector(dealloc), SBDisplayStack$dealloc);
 
 #if 0
     Class $SBStatusBarController(objc_getClass("SBStatusBarController"));
-    _SBStatusBarController$setStatusBarMode$mode$orientation$duration$fenceID$animation$ =
-        MSHookMessage($SBStatusBarController, @selector(setStatusBarMode:orientation:duration:fenceID:animation:),
-            &$SBStatusBarController$setStatusBarMode$mode$orientation$duration$fenceID$animation$);
+    LOAD_HOOK($SBStatusBarController, @selector(setStatusBarMode:orientation:duration:fenceID:animation:),
+        SBStatusBarController$setStatusBarMode$mode$orientation$duration$fenceID$animation$);
 
     if (!animationsEnabled) {
         Class $SBUIController(objc_getClass("SBUIController"));
-        _SBUIController$animateLaunchApplication$ =
-            MSHookMessage($SBUIController, @selector(animateLaunchApplication:), &$SBUIController$animateLaunchApplication$);
+        LOAD_HOOK($SBUIController, @selector(animateLaunchApplication:), SBUIController$animateLaunchApplication$);
     }
 #endif
 
-    Class $SpringBoard(objc_getClass("SpringBoard"));
-    _SpringBoard$applicationDidFinishLaunching$ =
-        MSHookMessage($SpringBoard, @selector(applicationDidFinishLaunching:), &$SpringBoard$applicationDidFinishLaunching$);
-    _SpringBoard$dealloc =
-        MSHookMessage($SpringBoard, @selector(dealloc), &$SpringBoard$dealloc);
-    _SpringBoard$menuButtonDown$ =
-        MSHookMessage($SpringBoard, @selector(menuButtonDown:), &$SpringBoard$menuButtonDown$);
-    _SpringBoard$menuButtonUp$ =
-        MSHookMessage($SpringBoard, @selector(menuButtonUp:), &$SpringBoard$menuButtonUp$);
+    Class $SpringBoard = objc_getClass("SpringBoard");
+    LOAD_HOOK($SpringBoard, @selector(applicationDidFinishLaunching:), SpringBoard$applicationDidFinishLaunching$);
+    LOAD_HOOK($SpringBoard, @selector(dealloc), SpringBoard$dealloc);
+    LOAD_HOOK($SpringBoard, @selector(menuButtonDown:), SpringBoard$menuButtonDown$);
+    LOAD_HOOK($SpringBoard, @selector(menuButtonUp:), SpringBoard$menuButtonUp$);
 
     class_addMethod($SpringBoard, @selector(setBackgroundingEnabled:forDisplayIdentifier:),
         (IMP)&$SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$, "v@:c@");
@@ -504,22 +496,15 @@ void initSpringBoardHooks()
     class_addMethod($SpringBoard, @selector(quitAppWithDisplayIdentifier:), (IMP)&$SpringBoard$quitAppWithDisplayIdentifier$, "v@:@");
 #endif
 
-    Class $SBApplication(objc_getClass("SBApplication"));
-    _SBApplication$launchSucceeded$ =
-        MSHookMessage($SBApplication, @selector(launchSucceeded:), &$SBApplication$launchSucceeded$);
-    _SBApplication$deactivate =
-        MSHookMessage($SBApplication, @selector(deactivate), &$SBApplication$deactivate);
-    _SBApplication$exitedAbnormally =
-        MSHookMessage($SBApplication, @selector(exitedAbnormally), &$SBApplication$exitedAbnormally);
-    _SBApplication$exitedCommon =
-        MSHookMessage($SBApplication, @selector(exitedCommon), &$SBApplication$exitedCommon);
-    _SBApplication$_startWatchdogTimerType$ =
-        MSHookMessage($SBApplication, @selector(_startWatchdogTimerType:), &$SBApplication$_startWatchdogTimerType$);
+    Class $SBApplication = objc_getClass("SBApplication");
+    LOAD_HOOK($SBApplication, @selector(launchSucceeded:), SBApplication$launchSucceeded$);
+    LOAD_HOOK($SBApplication, @selector(deactivate), SBApplication$deactivate);
+    LOAD_HOOK($SBApplication, @selector(exitedAbnormally), SBApplication$exitedAbnormally);
+    LOAD_HOOK($SBApplication, @selector(exitedCommon), SBApplication$exitedCommon);
+    LOAD_HOOK($SBApplication, @selector(_startWatchdogTimerType:), SBApplication$_startWatchdogTimerType$);
 #if 0
-    _SBApplication$_relaunchAfterAbnormalExit$ =
-        MSHookMessage($SBApplication, @selector(_relaunchAfterAbnormalExit:), &$SBApplication$_relaunchAfterAbnormalExit$);
-    _SBApplication$pathForDefaultImage$ =
-        MSHookMessage($SBApplication, @selector(pathForDefaultImage:), &$SBApplication$pathForDefaultImage$);
+    LOAD_HOOK($SBApplication, @selector(_relaunchAfterAbnormalExit:), SBApplication$_relaunchAfterAbnormalExit$);
+    LOAD_HOOK($SBApplication, @selector(pathForDefaultImage:), SBApplication$pathForDefaultImage$);
 #endif
 }
 
