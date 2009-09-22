@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-26 00:51:05
+ * Last-modified: 2009-09-22 12:55:53
  */
 
 /**
@@ -75,7 +75,7 @@ static NSArray *allowedFeedbackTypes = nil;
     self = [super init];
     if (self) {
         allowedInvocationMethods = [[NSArray alloc] initWithObjects:
-            @"homeShortPress", @"homeDoubleTap", @"homeSingleTap", nil];
+            @"homeShortHold", @"powerShortHold", @"none", nil];
         allowedFeedbackTypes = [[NSArray alloc] initWithObjects:
             @"simplePopup", @"taskMenuPopup", nil];
 

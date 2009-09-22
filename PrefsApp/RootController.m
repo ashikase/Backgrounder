@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 13:21:08
+ * Last-modified: 2009-09-22 13:24:27
  */
 
 /**
@@ -50,6 +50,7 @@
 
 #import "AppSpecificPrefsController.h"
 #import "Constants.h"
+#import "ControlController.h"
 #import "DocumentationController.h"
 #import "GlobalPrefsController.h"
 #import "Preferences.h"
@@ -98,7 +99,7 @@
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    static int rows[] = {2, 4, 2};
+    static int rows[] = {3, 4, 2};
     return rows[section];
 }
 
@@ -186,8 +187,8 @@
         }
     } else {
         static NSString *cellTitles[][3] = {
-            { @"Global", @"Application-specific", nil },
-            { @"How to Use", @"Release Notes", @"Known Issues" }
+            {@"Global", @"Control", @"Application-specific"},
+            {@"How to Use", @"Release Notes", @"Known Issues"}
         };
 
         // Try to retrieve from the table view a now-unused cell with the given identifier
@@ -217,10 +218,21 @@
 
     if (indexPath.section == 0) {
         // Preferences
-        if (indexPath.row == 0)
-            vc = [[[GlobalPrefsController alloc] initWithStyle:1] autorelease];
-        else
-            vc = [[[AppSpecificPrefsController alloc] initWithStyle:1] autorelease];
+        switch (indexPath.row) {
+            case 0:
+                // Global
+                vc = [[[GlobalPrefsController alloc] initWithStyle:1] autorelease];
+                break;
+            case 1:
+                // Control
+                vc = [[[ControlController alloc] initWithStyle:1] autorelease];
+                break;
+            case 2:
+            default:
+                // Application-specific
+                vc = [[[AppSpecificPrefsController alloc] initWithStyle:1] autorelease];
+                break;
+        }
     } else if (indexPath.section == 1) {
         // Documentation
         static NSString *fileNames[] = { @"usage.html", @"release_notes.html", @"known_issues.html" };
