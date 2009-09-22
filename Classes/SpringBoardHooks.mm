@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 12:48:02
+ * Last-modified: 2009-09-22 15:12:39
  */
 
 /**
@@ -338,20 +338,23 @@ static void $SpringBoard$dismissBackgrounderFeedback(SpringBoard *self, SEL sel)
 
 static void $SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$(SpringBoard *self, SEL sel, BOOL enable, NSString *identifier)
 {
-    BOOL isEnabled = [bgEnabledApps containsObject:identifier];
-    if (isEnabled != enable) {
-        // Tell the application to change its backgrounding status
-        SBApplication *app = [[objc_getClass("SBApplicationController") sharedInstance]
-            applicationWithDisplayIdentifier:identifier];
-        // FIXME: If the target application does not have the Backgrounder
-        //        hooks enabled, this will cause it to exit abnormally
-        kill([app pid], SIGUSR1);
+    if (![blacklistedApps containsObject:identifier]) {
+        // Not blacklisted
+        BOOL isEnabled = [bgEnabledApps containsObject:identifier];
+        if (isEnabled != enable) {
+            // Tell the application to change its backgrounding status
+            SBApplication *app = [[objc_getClass("SBApplicationController") sharedInstance]
+                applicationWithDisplayIdentifier:identifier];
+            // FIXME: If the target application does not have the Backgrounder
+            //        hooks enabled, this will cause it to exit abnormally
+            kill([app pid], SIGUSR1);
 
-        // Store the new backgrounding status of the application
-        if (enable)
-            [bgEnabledApps addObject:identifier];
-        else
-            [bgEnabledApps removeObject:identifier];
+            // Store the new backgrounding status of the application
+            if (enable)
+                [bgEnabledApps addObject:identifier];
+            else
+                [bgEnabledApps removeObject:identifier];
+        }
     }
 }
 
