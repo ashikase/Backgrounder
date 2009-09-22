@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-26 00:51:29
+ * Last-modified: 2009-08-27 22:53:57
  */
 
 /**
@@ -60,20 +60,11 @@
 
 #import "Common.h"
 #import "SimplePopup.h"
-#import "TaskMenuPopup.h"
 
 struct GSEvent;
 
 
 static BOOL isPersistent = YES;
-
-#define SIMPLE_POPUP 0
-#define TASK_MENU_POPUP 1
-static int feedbackType = SIMPLE_POPUP;
-
-#define HOME_SHORT_PRESS 0
-#define HOME_DOUBLE_TAP 1
-static int invocationMethod = HOME_SHORT_PRESS;
 
 static NSMutableArray *activeApps = nil;
 static NSMutableArray *bgEnabledApps = nil;
@@ -82,8 +73,6 @@ static NSArray *blacklistedApps = nil;
 #if 0
 static NSMutableDictionary *statusBarStates = nil;
 static NSString *deactivatingApp = nil;
-
-static NSString *killedApp = nil;
 
 static BOOL animateStatusBar = YES;
 static BOOL animationsEnabled = YES;
@@ -125,24 +114,6 @@ static void loadPreferences()
             blacklistedApps = [[NSArray alloc] initWithArray:(NSArray *)propList];
         CFRelease(propList);
     }
-
-#if 0
-    CFPropertyListRef prefMethod = CFPreferencesCopyAppValue(CFSTR("invocationMethod"), CFSTR(APP_ID));
-    if (prefMethod) {
-        // NOTE: Defaults to HOME_SHORT_PRESS
-        if ([(NSString *)prefMethod isEqualToString:@"homeDoubleTap"])
-            invocationMethod = HOME_DOUBLE_TAP;
-        CFRelease(prefMethod);
-    }
-
-    CFPropertyListRef prefFeedback = CFPreferencesCopyAppValue(CFSTR("feedbackType"), CFSTR(APP_ID));
-    if (prefFeedback) {
-        // NOTE: Defaults to SIMPLE_POPUP
-        if ([(NSString *)prefFeedback isEqualToString:@"taskMenuPopup"])
-            feedbackType = TASK_MENU_POPUP;
-        CFRelease(prefFeedback);
-    }
-#endif
 }
 
 //______________________________________________________________________________
@@ -255,63 +226,16 @@ HOOK(SpringBoard, menuButtonUp$, void, GSEvent *event)
 {
     if (!invocationTimerDidFire)
         cancelInvocationTimer();
-    else if (feedbackType == SIMPLE_POPUP)
+    else
         [self dismissBackgrounderFeedback];
 
     CALL_ORIG(SpringBoard, menuButtonUp$, event);
 }
 
-#if 0
-// NOTE: Only hooked when invocationMethod == HOME_DOUBLE_TAP
-HOOK(SpringBoard, handleMenuDoubleTap, void)
-{
-    if (![[objc_getClass("SBAwayController") sharedAwayController] isLocked]) {
-        // Not locked
-        if (alert == nil) {
-            // Popup not active
-            if (feedbackType == TASK_MENU_POPUP ||
-                    [SBWActiveDisplayStack topApplication] != nil) {
-                // invoke and return
-                [self invokeBackgrounder];
-                return;
-            }
-        } else {
-            // Popup is active; dismiss and perform normal behaviour
-            [self dismissBackgrounderFeedback];
-        }
-    }
-
-    CALL_ORIG(SpringBoard, handleMenuDoubleTap);
-}
-
-// NOTE: Only hooked when feedbackType == TASK_MENU_POPUP
-HOOK(SpringBoard, _handleMenuButtonEvent, void)
-{
-    // Handle single tap
-    if (alert) {
-        // Task menu is visible
-        // FIXME: with short press, the task menu may have just been invoked...
-        if (invocationTimerDidFire == NO)
-            // Hide and destroy the task menu
-            [self dismissBackgrounderFeedback];
-
-        // NOTE: _handleMenuButtonEvent is responsible for resetting the home tap count
-        Ivar ivar = class_getInstanceVariable([self class], "_menuButtonClickCount");
-        unsigned int *_menuButtonClickCount = (unsigned int *)((char *)self + ivar_getOffset(ivar));
-        *_menuButtonClickCount = 0x8000;
-    } else {
-        CALL_ORIG(SpringBoard, _handleMenuButtonEvent);
-    }
-}
-#endif
-
 HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
 {
-    // NOTE: SpringBoard creates five stacks at startup:
-    //       - first: visible displays
-    //       - third: displays being activated
-    //       - xxxxx: displays being deactivated
-    displayStacks = [[NSMutableArray alloc] initWithCapacity:5];
+    // NOTE: SpringBoard creates four stacks at startup
+    displayStacks = [[NSMutableArray alloc] initWithCapacity:4];
 
     // NOTE: The initial capacity value was chosen to hold the default active
     //       apps (MobilePhone and MobileMail) plus two others
@@ -322,21 +246,16 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
     // Create a dictionary to store the statusbar state for active apps
     // FIXME: Determine a way to do this without requiring extra storage
     statusBarStates = [[NSMutableDictionary alloc] initWithCapacity:5];
-
-    if (feedbackType == TASK_MENU_POPUP)
-        // Initialize task menu popup
-        initTaskMenuPopup();
-    else
 #endif
-        // Initialize simple notification popup
-        initSimplePopup();
+
+    // Initialize simple notification popup
+    initSimplePopup();
 
     CALL_ORIG(SpringBoard, applicationDidFinishLaunching$, application);
 }
 
 HOOK(SpringBoard, dealloc, void)
 {
-    //[killedApp release];
     [bgEnabledApps release];
     [activeApps release];
     [displayStacks release];
@@ -345,46 +264,22 @@ HOOK(SpringBoard, dealloc, void)
 
 static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
 {
-    if (invocationMethod == HOME_SHORT_PRESS)
-        invocationTimerDidFire = YES;
+    invocationTimerDidFire = YES;
 
     id app = [SBWActiveDisplayStack topApplication];
     NSString *identifier = [app displayIdentifier];
-    if (feedbackType == SIMPLE_POPUP) {
-        if (app && ![blacklistedApps containsObject:identifier]) {
-            BOOL isEnabled = [bgEnabledApps containsObject:identifier];
-            [self setBackgroundingEnabled:(!isEnabled) forDisplayIdentifier:identifier];
+    if (app && ![blacklistedApps containsObject:identifier]) {
+        BOOL isEnabled = [bgEnabledApps containsObject:identifier];
+        [self setBackgroundingEnabled:(!isEnabled) forDisplayIdentifier:identifier];
 
-            // Display simple popup
-            NSString *status = [NSString stringWithFormat:@"Backgrounding %s",
-                     (isEnabled ? "Disabled" : "Enabled")];
+        // Display simple popup
+        NSString *status = [NSString stringWithFormat:@"Backgrounding %s",
+                 (isEnabled ? "Disabled" : "Enabled")];
 
-            alert = [[objc_getClass("BackgrounderAlertItem") alloc] initWithTitle:status message:nil];
+        alert = [[objc_getClass("BackgrounderAlertItem") alloc] initWithTitle:status message:nil];
 
-            SBAlertItemsController *controller = [objc_getClass("SBAlertItemsController") sharedInstance];
-            [controller activateAlertItem:alert];
-            if (invocationMethod == HOME_DOUBLE_TAP)
-                [self performSelector:@selector(dismissBackgrounderFeedback) withObject:nil afterDelay:1.0];
-        }
-#if 0
-    } else if (feedbackType == TASK_MENU_POPUP) {
-        // Display task menu popup
-        NSMutableArray *array = [NSMutableArray arrayWithArray:activeApps];
-        if (identifier) {
-            // Is an application
-        // This array will be used for "other apps", so remove the active app
-        [array removeObject:identifier];
-
-            // SpringBoard should always be first in the list of other applications
-            [array insertObject:@"com.apple.springboard" atIndex:0];
-        } else {
-            // Is SpringBoard
-            identifier = @"com.apple.springboard";
-        }
-
-        alert = [[objc_getClass("BackgrounderAlert") alloc] initWithCurrentApp:identifier otherApps:array blacklistedApps:blacklistedApps];
-        [(SBAlert *)alert activate];
-#endif
+        SBAlertItemsController *controller = [objc_getClass("SBAlertItemsController") sharedInstance];
+        [controller activateAlertItem:alert];
     }
 }
 
@@ -394,10 +289,7 @@ static void $SpringBoard$dismissBackgrounderFeedback(SpringBoard *self, SEL sel)
     //        this method will need to be updated
 
     // Hide and release alert window (may be nil)
-    if (feedbackType == TASK_MENU_POPUP)
-        [[alert display] dismiss];
-    else
-        [alert dismiss];
+    [alert dismiss];
     [alert release];
     alert = nil;
 }
@@ -420,98 +312,6 @@ static void $SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$(SpringBoa
             [bgEnabledApps removeObject:identifier];
     }
 }
-
-#if 0
-static void $SpringBoard$switchToAppWithDisplayIdentifier$(SpringBoard *self, SEL sel, NSString *identifier)
-{
-    SBApplication *currApp = [SBWActiveDisplayStack topApplication];
-    NSString *currIdent = currApp ? [currApp displayIdentifier] : @"com.apple.springboard";
-    if (![currIdent isEqualToString:identifier]) {
-        // Save the identifier for later use
-        deactivatingApp = [currIdent copy];
-
-        if ([identifier isEqualToString:@"com.apple.springboard"]) {
-            // Switching to SpringBoard
-            [[objc_getClass("SBUIController") sharedInstance] quitTopApplication:NULL];
-        } else {
-            // Switching to an application other than SpringBoard
-            SBApplication *otherApp = [[objc_getClass("SBApplicationController") sharedInstance]
-                applicationWithDisplayIdentifier:identifier];
-            if (otherApp) {
-                if (animationsEnabled) {
-                    if ([currIdent isEqualToString:@"com.apple.springboard"]) {
-                        [otherApp setActivationSetting:0x4 flag:YES]; // animated
-                    } else {
-                        [otherApp setActivationSetting:0x20 flag:YES]; // suspendOthers
-                        [otherApp setActivationSetting:0x200 flag:YES]; // animateOthersSuspension
-                        [otherApp setActivationSetting:0x20000000 flag:YES]; // appToApp
-                    }
-                } else {
-                    // NOTE: Must set animation flag for deactivation, otherwise
-                    //       application window does not disappear (reason yet unknown)
-                    [currApp setDeactivationSetting:0x2 flag:YES]; // animate
-
-                    NSArray *state = [statusBarStates objectForKey:identifier];
-                    [otherApp setDisplaySetting:0x10 value:[state objectAtIndex:0]]; // statusBarMode
-                    [otherApp setDisplaySetting:0x20 value:[state objectAtIndex:1]]; // statusBarOrienation
-
-                    // Make sure SpringBoard dock and icons are hidden
-                    [[objc_getClass("SBIconController") sharedInstance] scatter:NO startTime:CFAbsoluteTimeGetCurrent()];
-                    [[objc_getClass("SBUIController") sharedInstance] showButtonBar:NO animate:NO action:NULL delegate:nil];
-
-                    // Prevent status bar from fading in
-                    animateStatusBar = NO;
-                }
-            }
-
-            // Activate the target application
-            // FIXME: Originally was Pre or Activating (and not Active)
-            [(animationsEnabled ? SBWPreActivateDisplayStack : SBWActiveDisplayStack) pushDisplay:otherApp];
-
-            if (!animationsEnabled && currApp)
-                // Deactivate the current app
-                [SBWSuspendingDisplayStack pushDisplay:currApp];
-            else
-                // Is SpringBoard
-                [self dismissBackgrounderFeedback];
-        }
-    } else {
-        // Application to switch to is same as current
-        [self dismissBackgrounderFeedback];
-    }
-}
-
-static void $SpringBoard$quitAppWithDisplayIdentifier$(SpringBoard *self, SEL sel, NSString *identifier)
-{
-    if ([identifier isEqualToString:@"com.apple.springboard"]) {
-        // Is SpringBoard
-        [self relaunchSpringBoard];
-    } else {
-        // Is an application
-        SBApplication *app = [[objc_getClass("SBApplicationController") sharedInstance]
-            applicationWithDisplayIdentifier:identifier];
-        if (app) {
-            if ([blacklistedApps containsObject:identifier]) {
-                // Is blacklisted; should force-quit
-                killedApp = [identifier copy];
-                [app kill];
-            } else {
-                // Disable backgrounding for the application
-                [self setBackgroundingEnabled:NO forDisplayIdentifier:identifier];
-
-                // NOTE: Must set animation flag for deactivation, otherwise
-                //       application window does not disappear (reason yet unknown)
-                [app setDeactivationSetting:0x2 flag:YES]; // animate
-                if (!animationsEnabled)
-                    [app setDeactivationSetting:0x4000 value:[NSNumber numberWithDouble:0]]; // animation duration
-
-                // Deactivate the application
-                [SBWSuspendingDisplayStack pushDisplay:app];
-            }
-        }
-    }
-}
-#endif
 
 //______________________________________________________________________________
 //______________________________________________________________________________
@@ -649,17 +449,6 @@ HOOK(SBApplication, _startWatchdogTimerType$, void, int type)
 }
 
 #if 0
-HOOK(SBApplication, _relaunchAfterAbnormalExit$, void, BOOL flag)
-{
-    if ([[self displayIdentifier] isEqualToString:killedApp]) {
-        // Was killed by Backgrounder; do not allow relaunch
-        [killedApp release];
-        killedApp = nil;
-    } else {
-        CALL_ORIG(SBApplication, _relaunchAfterAbnormalExit$, flag);
-    }
-}
-
 // NOTE: Only hooked when animationsEnabled == YES
 HOOK(SBApplication, pathForDefaultImage$, id, char *def)
 {
@@ -701,24 +490,10 @@ void initSpringBoardHooks()
         MSHookMessage($SpringBoard, @selector(applicationDidFinishLaunching:), &$SpringBoard$applicationDidFinishLaunching$);
     _SpringBoard$dealloc =
         MSHookMessage($SpringBoard, @selector(dealloc), &$SpringBoard$dealloc);
-
-#if 0
-    if (invocationMethod == HOME_DOUBLE_TAP) {
-        _SpringBoard$handleMenuDoubleTap =
-            MSHookMessage($SpringBoard, @selector(handleMenuDoubleTap), &$SpringBoard$handleMenuDoubleTap);
-    } else {
-#endif
-        _SpringBoard$menuButtonDown$ =
-            MSHookMessage($SpringBoard, @selector(menuButtonDown:), &$SpringBoard$menuButtonDown$);
-        _SpringBoard$menuButtonUp$ =
-            MSHookMessage($SpringBoard, @selector(menuButtonUp:), &$SpringBoard$menuButtonUp$);
-#if 0
-    }
-
-    if (feedbackType == TASK_MENU_POPUP)
-        _SpringBoard$_handleMenuButtonEvent =
-            MSHookMessage($SpringBoard, @selector(_handleMenuButtonEvent), &$SpringBoard$_handleMenuButtonEvent);
-#endif
+    _SpringBoard$menuButtonDown$ =
+        MSHookMessage($SpringBoard, @selector(menuButtonDown:), &$SpringBoard$menuButtonDown$);
+    _SpringBoard$menuButtonUp$ =
+        MSHookMessage($SpringBoard, @selector(menuButtonUp:), &$SpringBoard$menuButtonUp$);
 
     class_addMethod($SpringBoard, @selector(setBackgroundingEnabled:forDisplayIdentifier:),
         (IMP)&$SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$, "v@:c@");
