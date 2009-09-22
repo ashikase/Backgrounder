@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-10 22:51:00
+ * Last-modified: 2009-09-22 13:21:08
  */
 
 /**
@@ -48,8 +48,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <UIKit/UIViewController-UINavigationControllerItem.h>
-
 #import "AppSpecificPrefsController.h"
 #import "Constants.h"
 #import "DocumentationController.h"
@@ -62,12 +60,13 @@
 @synthesize displayIdentifiers;
 
 
-- (id)initWithStyle:(int)style
+- (id)initWithStyle:(UITableViewStyle)style
 {
     self = [super initWithStyle:style];
     if (self) {
-        [self setTitle:@"Backgrounder"];
-        [[self navigationItem] setBackButtonTitle:@"Back"];
+        self.title = @"Backgrounder";
+        self.navigationItem.backBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Back"
+            style:UIBarButtonItemStyleBordered target:nil action:nil];
     }
     return self;
 }

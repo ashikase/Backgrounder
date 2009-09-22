@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-26 00:48:25
+ * Last-modified: 2009-09-22 13:11:50
  */
 
 /**
@@ -45,7 +45,7 @@
 
 @class NSString;
 
-@interface DocumentationController : UIViewController 
+@interface DocumentationController : UIViewController <UIWebViewDelegate>
 {
     NSString *fileName;
     UIWebView *webView;

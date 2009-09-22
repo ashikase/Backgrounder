@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-26 00:49:31
+ * Last-modified: 2009-09-22 13:12:24
  */
 
 /**
@@ -41,8 +41,6 @@
 
 
 #import "DocumentationController.h"
-
-#import <UIKit/UIViewController-UINavigationControllerItem.h>
 
 #import "Constants.h"
 
@@ -108,7 +106,7 @@
 }
 
 - (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request
-    navigationType:(int)navigationType
+    navigationType:(UIWebViewNavigationType)navigationType
 {
     BOOL ret = YES;
 

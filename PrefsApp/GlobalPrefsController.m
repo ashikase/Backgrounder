@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-28 00:01:22
+ * Last-modified: 2009-09-22 13:20:05
  */
 
 /**
@@ -48,9 +48,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <UIKit/UISwitch.h>
-#import <UIKit/UIViewController-UINavigationControllerItem.h>
-
 #import "Constants.h"
 #import "DocumentationController.h"
 #import "Preferences.h"
@@ -61,12 +58,13 @@
 @implementation GlobalPrefsController
 
 
-- (id)initWithStyle:(int)style
+- (id)initWithStyle:(UITableViewStyle)style
 {
     self = [super initWithStyle:style];
     if (self) {
-        [self setTitle:@"Global"];
-        [[self navigationItem] setBackButtonTitle:@"Back"];
+        self.title = @"Global";
+        self.navigationItem.backBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Back"
+            style:UIBarButtonItemStyleBordered target:nil action:nil];
         [[self navigationItem] setRightBarButtonItem:
              [[UIBarButtonItem alloc] initWithTitle:@"Help" style:5
                 target:self
@@ -115,7 +113,7 @@
         }
         [cell setText:cellTitles[indexPath.row]];
 
-        UISwitch *toggle = [cell accessoryView];
+        UISwitch *toggle = (UISwitch *)[cell accessoryView];
         switch (indexPath.row) {
             case 0:
                 [toggle setOn:[[Preferences sharedInstance] isPersistent]];
@@ -137,7 +135,7 @@
 
 - (void)switchToggled:(UISwitch *)control
 {
-    NSIndexPath *indexPath = [self.tableView indexPathForCell:[control superview]];
+    NSIndexPath *indexPath = [self.tableView indexPathForCell:(UITableViewCell *)[control superview]];
     switch (indexPath.row) {
         case 0:
             [[Preferences sharedInstance] setPersistent:[control isOn]];

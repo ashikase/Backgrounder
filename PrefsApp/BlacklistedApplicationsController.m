@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-26 00:49:32
+ * Last-modified: 2009-09-22 13:11:29
  */
 
 /**
@@ -51,10 +51,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import <UIKit/UIAlertView-Private.h>
-#import <UIKit/UISwitch.h>
-#import <UIKit/UIViewController-UINavigationControllerItem.h>
-
 #import "DocumentationController.h"
 #import "Preferences.h"
 #import "RootController.h"
@@ -65,6 +61,18 @@ extern NSString * SBSCopyIconImagePathForDisplayIdentifier(NSString *identifier)
 
 #define HELP_FILE "blacklisted_apps.html"
 
+
+@interface UIProgressHUD : UIView
+
+- (id)initWithWindow:(id)fp8;
+- (void)setText:(id)fp8;
+- (void)show:(BOOL)fp8;
+- (void)hide;
+
+@end
+
+//______________________________________________________________________________
+//______________________________________________________________________________
 
 static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 {
@@ -78,6 +86,9 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 
     return ret;
 }
+
+//______________________________________________________________________________
+//______________________________________________________________________________
 
 @implementation BlacklistedApplicationsController
 
@@ -126,12 +137,13 @@ static NSArray *applicationDisplayIdentifiers()
     return identifiers;
 }
 
-- (id)initWithStyle:(int)style
+- (id)initWithStyle:(UITableViewStyle)style
 {
     self = [super initWithStyle:style];
     if (self) {
-        [self setTitle:@"Blacklisted Apps"];
-        [[self navigationItem] setBackButtonTitle:@"Back"];
+        self.title = @"Blacklisted Apps";
+        self.navigationItem.backBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Back"
+            style:UIBarButtonItemStyleBordered target:nil action:nil];
         [[self navigationItem] setRightBarButtonItem:
              [[UIBarButtonItem alloc] initWithTitle:@"Help" style:5
                 target:self
@@ -148,7 +160,7 @@ static NSArray *applicationDisplayIdentifiers()
 {
     // Retain a reference to the root controller for accessing cached info
     // FIXME: Consider passing the display id array in as an init parameter
-    rootController = [[[self.parentViewController viewControllers] objectAtIndex:0] retain];
+    rootController = [[self.navigationController.viewControllers objectAtIndex:0] retain];
 
     [super loadView];
 }
@@ -241,12 +253,11 @@ static NSArray *applicationDisplayIdentifiers()
     NSString *iconPath = SBSCopyIconImagePathForDisplayIdentifier(identifier);
     if (iconPath != nil) {
         icon = [UIImage imageWithContentsOfFile:iconPath];
-        icon = [icon _imageScaledToSize:CGSizeMake(35, 36) interpolationQuality:0];
         [iconPath release];
     }
     [cell setImage:icon];
 
-    UISwitch *toggle = [cell accessoryView];
+    UISwitch *toggle = (UISwitch *)[cell accessoryView];
     [toggle setOn:[blacklistedApplications containsObject:identifier]];
 
     return cell;
@@ -256,7 +267,7 @@ static NSArray *applicationDisplayIdentifiers()
 
 - (void)switchToggled:(UISwitch *)control
 {
-    NSIndexPath *indexPath = [self.tableView indexPathForCell:[control superview]];
+    NSIndexPath *indexPath = [self.tableView indexPathForCell:(UITableViewCell *)[control superview]];
     NSString *identifier = [[rootController displayIdentifiers] objectAtIndex:indexPath.row];
     if ([control isOn])
         [blacklistedApplications addObject:identifier];
