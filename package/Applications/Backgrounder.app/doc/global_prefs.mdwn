@@ -1,0 +1,15 @@
+> # Persistence
+> ## (Default: On)
+> - - -
+> * Off:  
+>   Backgrounding must be enabled every time an application is minimized; single-tapping Home will cause the application to terminate (unless it has the "always-enabled" option turned on).
+>
+> * On:  
+>   Once backgrounding has been enabled for an application, it will remain enabled until the user manually disables it - no matter how many times the application is minimized and restored.
+> 
+> - - -
+>
+> # Badge
+> ## (Default: Off)
+> - - -
+> * When enabled, displays a badge on the SpringBoard icons of active applications.

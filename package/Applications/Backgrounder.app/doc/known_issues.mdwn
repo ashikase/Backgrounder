@@ -1,0 +1,10 @@
+> # Non-issues
+> - - -
+> * There have been several reports of applications randomly quitting while backgrounded. In most cases, this is not due to a bug in Backgrounder, but to a lack of memory resources. The iPhone OS is designed so that when resources become low, a notification is sent to inactive applications asking them to either free-up memory, or to quit. The best practice is to not run too many (memory-intensive) applications at one time.
+
+- - -
+
+> # Known issues
+> - - -
+> * See issue reports on googlecode page for latest
+> information.

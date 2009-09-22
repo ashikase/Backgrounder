@@ -1,0 +1,85 @@
+> # Version svn.r261
+> - - -
+> * Reenabled always-enabled apps option
+> * Reenabled blacklisted apps option
+> * Reenabled persistence option
+> * Reenabled badges (off by default)
+
+- - -
+
+> # Version svn.r249
+> - - -
+> * Initial support for iPhoneOS 3.0
+
+- - -
+
+> # Version svn.r230
+> - - -
+> * Added option to disable icon badge
+
+- - -
+
+> # Version svn.r227
+> - - -
+> * Added badge for SpringBoard icons to indicate running apps
+> * Added optional animations for app restore and switching.
+> * Allow normal operation of home double-tap over SpringBoard in simple mode
+> * Allow normal operation of home double-tap while locked
+> * Allow selection of Categories folders in blacklisted prefs
+
+- - -
+
+> # Version svn.r206
+> - - -
+> * Hide SpringBoard icons when restoring apps; fixes
+>     transparency issue with Categories folders
+> * Added application blacklisting
+> * Task list: Always show a status bar
+> * Task list: Show badges
+
+- - -
+
+> # Version svn.r187
+> - - -
+> * Task list: Added swipe-to-quit/force-quit/respring
+> * Task list: Don't show when locked
+> * Task list: Prevent multiple instances
+> * Various code cleanup and improvements
+
+- - -
+
+> # Version svn.r171
+> - - -
+> * Added persistence on/off option.
+> * Added option to use double-tap to invoke instead of holding Home.
+> * In prefs app, only respring if preferences have actually changed.
+> * Prefs app now also displays hidden applications (to support Categories).
+> * (BETA) Added task list mode.
+
+- - -
+
+> # Version svn.r127
+> - - -
+> * Fixed isolated issue that prevented restoration of backgrounded applications.
+
+- - -
+
+> # Version svn.r125
+> - - -
+> * Addition of a preferences application
+> * Backgrounded applications now immediately appear on the screen when reopened
+> * Various code improvements
+
+- - -
+
+> # Version svn.r25
+> - - -
+> * Fixed the 0-value badge issue
+> * Various code improvements
+> * Added API Methods for developers to keep their app resident on demand.
+
+- - -
+
+> # Version svn.r10
+> - - -
+> * Initial release

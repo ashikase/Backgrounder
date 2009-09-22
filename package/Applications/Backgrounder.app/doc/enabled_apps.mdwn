@@ -1,0 +1,3 @@
+> Normally, backgrounding must be manually enabled every time an application is initially launched. In other words, if a program is minimized without enabling backgrounding, that application will terminate.
+>
+> By marking an application as always-enabled, that application will be set to always background, so that there is no need to remember to manually enable it.

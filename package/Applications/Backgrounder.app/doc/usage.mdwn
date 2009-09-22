@@ -1,0 +1,22 @@
+> Backgrounder's purpose is to prevent applications from quitting when minimized.
+>
+> Please keep in mind that Backgrounder is a **hack**. Applications on iPhone OS are not designed to run in the background. Backgrounded applications will continue to run and use memory as if they are still in the foreground. When memory becomes too low, the OS may force applications to quit.
+
+- - -
+
+> # To enable backgrounding for an application:
+> ## (When default options are set)
+> - - -
+> 1. Launch the desired application.
+> 1. Press and hold the Home button (the black hardware button with a white square, located at the bottom of the device).
+> 1. An alert will appear, saying that backgrounding has been enabled.
+> 1. Release the Home button.
+> 1. After releasing the button, the alert will disappear and the application will minimize.
+> 1. The application should now be running in the background.
+
+- - -
+
+> # To disable backgrounding for an application:
+> ## (When default options are set)
+> - - -
+> 1. Follow the same steps as above. Note that this time the alert will say that backgrounding has been *disabled*.
