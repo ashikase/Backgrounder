@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-26 00:49:25
+ * Last-modified: 2009-09-10 22:51:00
  */
 
 /**
@@ -93,24 +93,26 @@
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(int)section
 {
-    static NSString *headers[] = {@"Documentation", @"Preferences", nil};
+    static NSString *headers[] = {nil, @"Documentation", nil, nil};
     return headers[section];
 }
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    static int rows[] = {4, 2, 1};
+    static int rows[] = {2, 4, 2};
     return rows[section];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
+    static NSString *reuseIdDonate = @"DonateCell";
     static NSString *reuseIdName = @"NameCell";
     static NSString *reuseIdSafari = @"SafariCell";
     static NSString *reuseIdSimple = @"SimpleCell";
 
     UITableViewCell *cell = nil;
-    if (indexPath.section == 0 && indexPath.row == 3) {
+
+    if (indexPath.section == 1 && indexPath.row == 3) {
         // Try to retrieve from the table view a now-unused cell with the given identifier
         cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSafari];
         if (cell == nil) {
@@ -131,38 +133,62 @@
 
         [cell setText:@"Project Homepage"];
     } else if (indexPath.section == 2) {
-        // Credits cell
-        // Try to retrieve from the table view a now-unused cell with the given identifier
-        cell = [tableView dequeueReusableCellWithIdentifier:reuseIdName];
-        if (cell == nil) {
-            // Cell does not exist, create a new one
-            cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdName] autorelease];
-            [cell setSelectionStyle:0]; // None
+        if (indexPath.row == 0) {
+            // Credits cell
+            // Try to retrieve from the table view a now-unused cell with the given identifier
+            cell = [tableView dequeueReusableCellWithIdentifier:reuseIdName];
+            if (cell == nil) {
+                // Cell does not exist, create a new one
+                cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdName] autorelease];
+                [cell setSelectionStyle:0]; // None
 
-            // Make cell background transparent
-            UIView *bgView = [[UIView alloc] initWithFrame:CGRectZero];
-            [bgView setBackgroundColor:[UIColor clearColor]];
-            [cell setBackgroundView:bgView];
-            [bgView release];
+                // Make cell background transparent
+                UIView *bgView = [[UIView alloc] initWithFrame:CGRectZero];
+                [bgView setBackgroundColor:[UIColor clearColor]];
+                [cell setBackgroundView:bgView];
+                [bgView release];
 
-            // Must create own label to allow transparency
-            UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
-            [label setText:@"by Lance Fetters (ashikase)"];
-            [label setTextColor:[UIColor colorWithRed:0.3f green:0.34f blue:0.42f alpha:1.0f]];
-            [label setShadowColor:[UIColor whiteColor]];
-            [label setShadowOffset:CGSizeMake(1, 1)];
-            [label setBackgroundColor:[UIColor clearColor]];
-            [label setFont:[UIFont systemFontOfSize:16.0f]];
-            CGSize size = [label.text sizeWithFont:label.font];
-            [label setFrame:CGRectMake((300.0f - size.width) / 2.0f, 0, size.width, size.height)];
+                // Must create own label to allow transparency
+                UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
+                [label setText:@"by Lance Fetters (ashikase)"];
+                [label setTextColor:[UIColor colorWithRed:0.3f green:0.34f blue:0.42f alpha:1.0f]];
+                [label setShadowColor:[UIColor whiteColor]];
+                [label setShadowOffset:CGSizeMake(1, 1)];
+                [label setBackgroundColor:[UIColor clearColor]];
+                [label setFont:[UIFont systemFontOfSize:16.0f]];
+                CGSize size = [label.text sizeWithFont:label.font];
+                [label setFrame:CGRectMake((300.0f - size.width) / 2.0f, 0, size.width, size.height)];
 
-            [[cell contentView] addSubview:label];
-            [label release];
+                [[cell contentView] addSubview:label];
+                [label release];
+            }
+        } else {
+            // Donation button cell
+            // Try to retrieve from the table view a now-unused cell with the given identifier
+            cell = [tableView dequeueReusableCellWithIdentifier:reuseIdDonate];
+            if (cell == nil) {
+                // Cell does not exist, create a new one
+                cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdDonate] autorelease];
+                [cell setSelectionStyle:0]; // None
+
+                // Make cell background transparent
+                UIView *bgView = [[UIView alloc] initWithFrame:CGRectZero];
+                [bgView setBackgroundColor:[UIColor clearColor]];
+                [cell setBackgroundView:bgView];
+                [bgView release];
+
+                // Add image
+                UIImageView *imageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"donate.png"]];
+                CGSize size = [imageView frame].size;
+                [imageView setFrame:CGRectMake((300.0f - size.width) / 2.0f, 0, size.width, size.height)];
+                [[cell contentView] addSubview:imageView];
+                [imageView release];
+            }
         }
     } else {
         static NSString *cellTitles[][3] = {
-            { @"How to Use", @"Release Notes", @"Known Issues" },
-            { @"Global", @"Application-specific", nil }
+            { @"Global", @"Application-specific", nil },
+            { @"How to Use", @"Release Notes", @"Known Issues" }
         };
 
         // Try to retrieve from the table view a now-unused cell with the given identifier
@@ -183,7 +209,7 @@
 
 - (float)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    return (indexPath.section == 2) ? 22.0f : 44.0f;
+    return (indexPath.section == 2 && indexPath.row == 0) ? 22.0f : 44.0f;
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
@@ -191,6 +217,12 @@
     UIViewController *vc = nil;
 
     if (indexPath.section == 0) {
+        // Preferences
+        if (indexPath.row == 0)
+            vc = [[[GlobalPrefsController alloc] initWithStyle:1] autorelease];
+        else
+            vc = [[[AppSpecificPrefsController alloc] initWithStyle:1] autorelease];
+    } else if (indexPath.section == 1) {
         // Documentation
         static NSString *fileNames[] = { @"usage.html", @"release_notes.html", @"known_issues.html" };
         static NSString *titles[] = { @"How to Use", @"Release Notes", @"Known Issues" };
@@ -202,19 +234,9 @@
             vc = [[[DocumentationController alloc]
                 initWithContentsOfFile:fileNames[indexPath.row] title:titles[indexPath.row]]
                 autorelease];
-    } else if (indexPath.section == 1) {
-        // Preferences
-        if (indexPath.row == 0)
-            vc = [[[GlobalPrefsController alloc] initWithStyle:1] autorelease];
-        else
-            vc = [[[AppSpecificPrefsController alloc] initWithStyle:1] autorelease];
-#if 0
     } else {
-        // Credits
-        NSString *link = [NSString stringWithFormat:@"mailto:%s@%s?subject=%s",
-            "gaizin", "gmail.com", "[Backgrounder]"];
-        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:link]];
-#endif
+        // Donation
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=gaizin%40gmail%2ecom&lc=US&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHostedGuest"]];
     }
 
     if (vc)
