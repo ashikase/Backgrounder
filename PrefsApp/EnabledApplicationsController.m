@@ -1,13 +1,13 @@
 /**
  * Name: Backgrounder
- * Type: iPhone OS 2.x SpringBoard extension (MobileSubstrate-based)
+ * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-24 22:48:13
+ * Last-modified: 2009-08-26 00:49:31
  */
 
 /**
- * Copyright (C) 2008  Lance Fetters (aka. ashikase)
+ * Copyright (C) 2008-2009  Lance Fetters (aka. ashikase)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
