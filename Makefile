@@ -2,7 +2,7 @@ NAME = Backgrounder
 APP_ID = jp.ashikase.backgrounder
 
 # These paths must be changed to match the compilation environment
-TOOLCHAIN = /opt/iPhone/sdk/iPhoneOS3.0.jb
+TOOLCHAIN = /opt/iPhone/sdk/3.0/dumped
 SYS_PATH = /opt/iPhone/sys
 MS_PATH = /files/Platforms/iPhone/Projects/Others/saurik/mobilesubstrate
 LDID = /opt/iPhone/ldid

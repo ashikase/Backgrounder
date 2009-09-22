@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-10 21:10:09
+ * Last-modified: 2009-09-22 12:06:53
  */
 
 /**
@@ -99,7 +99,7 @@ HOOK(UIApplication, nameOfDefaultImageToUpdateAtSuspension, NSString *)
 {
     // FIXME: Find a better solution for the Categories "transparent-window" issue
     NSString *path = CALL_ORIG(UIApplication, nameOfDefaultImageToUpdateAtSuspension);
-    return (path || [[self displayIdentifier] hasPrefix:@"com.bigboss.categories."]) ? path : @"Default";
+    return (path || [[self performSelector:@selector(displayIdentifier)] hasPrefix:@"com.bigboss.categories."]) ? path : @"Default";
 }
 
 // Prevent execution of application's on-suspend/resume methods
@@ -143,9 +143,11 @@ HOOK(UIApplication, applicationDidBecomeActive$, void, id application)
 // NOTE: Only hooked when animationsEnabled = YES
 HOOK(UIApplication, applicationWillTerminate$, void, id application)
 {
+#if 0
     if (CALL_ORIG(UIApplication, nameOfDefaultImageToUpdateAtSuspension) == nil)
         // App does not normally produce a default image; safe to delete
         [application removeDefaultImage:@"Default"];
+#endif
 
     CALL_ORIG(UIApplication, applicationWillTerminate$, application);
 }
@@ -200,9 +202,11 @@ HOOK(UIApplication, _loadMainNibFile, void)
         _UIApplication$applicationWillTerminate$ =
             MSHookMessage($AppDelegate, @selector(applicationWillTerminate:), &$UIApplication$applicationWillTerminate$);
 
+#if 0
         // Make sure that "default images" directory exists
         NSString *path = [NSString stringWithFormat:@"%@/%@", [self userLibraryDirectory], @"Caches/Snapshots"];
         [[NSFileManager defaultManager] createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:NULL];
+#endif
     }
 }
 
