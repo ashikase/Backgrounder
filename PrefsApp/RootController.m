@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 13:24:27
+ * Last-modified: 2009-09-22 13:56:18
  */
 
 /**
@@ -53,6 +53,7 @@
 #import "ControlController.h"
 #import "DocumentationController.h"
 #import "GlobalPrefsController.h"
+#import "HtmlDocController.h"
 #import "Preferences.h"
 
 
@@ -78,6 +79,36 @@
     [super dealloc];
 }
 
+- (void)viewDidLoad
+{
+    // Create and add footer view
+    UIView *view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320.0f, 188.0f)];
+
+    // Donation button
+    UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
+    [button addTarget:self action:@selector(openDonationLink) forControlEvents:UIControlEventTouchUpInside];
+    UIImage *image = [UIImage imageNamed:@"donate.png"];
+    [button setImage:image forState:UIControlStateNormal];
+    button.frame = CGRectMake((320.0f - image.size.width) / 2.0f, view.bounds.size.height - image.size.height, image.size.width, image.size.height);
+    [view addSubview:button];
+
+    // Author label
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
+    [label setText:@"by Lance Fetters (ashikase)"];
+    [label setTextColor:[UIColor colorWithRed:0.3f green:0.34f blue:0.42f alpha:1.0f]];
+    [label setShadowColor:[UIColor whiteColor]];
+    [label setShadowOffset:CGSizeMake(1, 1)];
+    [label setBackgroundColor:[UIColor clearColor]];
+    [label setFont:[UIFont systemFontOfSize:16.0f]];
+    CGSize size = [label.text sizeWithFont:label.font];
+    [label setFrame:CGRectMake((320.0f - size.width) / 2.0f, view.bounds.size.height - image.size.height - size.height - 2.0f, size.width, size.height)];
+    [view addSubview:label];
+    [label release];
+
+    self.tableView.tableFooterView = view;
+    [view release];
+}
+
 - (void)viewWillAppear:(BOOL)animated
 {
     // Reset the table by deselecting the current selection
@@ -88,118 +119,44 @@
 
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return 3;
-}
-
-- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(int)section
-{
-    static NSString *headers[] = {nil, @"Documentation", nil, nil};
-    return headers[section];
+	return 2;
 }
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    static int rows[] = {3, 4, 2};
+    static int rows[] = {3, 1};
     return rows[section];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    static NSString *reuseIdDonate = @"DonateCell";
-    static NSString *reuseIdName = @"NameCell";
-    static NSString *reuseIdSafari = @"SafariCell";
     static NSString *reuseIdSimple = @"SimpleCell";
+    static NSString *reuseIdSubtitle = @"SubtitleCell";
 
     UITableViewCell *cell = nil;
-
-    if (indexPath.section == 1 && indexPath.row == 3) {
-        // Try to retrieve from the table view a now-unused cell with the given identifier
-        cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSafari];
-        if (cell == nil) {
-            // Cell does not exist, create a new one
-            cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdSafari] autorelease];
-            [cell setSelectionStyle:2]; // Gray
-
-            UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
-            [label setText:@"(via Safari)"];
-            [label setTextColor:[UIColor colorWithRed:0.2f green:0.31f blue:0.52f alpha:1.0f]];
-            [label setFont:[UIFont systemFontOfSize:16.0f]];
-            CGSize size = [label.text sizeWithFont:label.font];
-            [label setFrame:CGRectMake(0, 0, size.width, size.height)];
-
-            [cell setAccessoryView:label];
-            [label release];
-        }
-
-        [cell setText:@"Project Homepage"];
-    } else if (indexPath.section == 2) {
-        if (indexPath.row == 0) {
-            // Credits cell
-            // Try to retrieve from the table view a now-unused cell with the given identifier
-            cell = [tableView dequeueReusableCellWithIdentifier:reuseIdName];
-            if (cell == nil) {
-                // Cell does not exist, create a new one
-                cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdName] autorelease];
-                [cell setSelectionStyle:0]; // None
-
-                // Make cell background transparent
-                UIView *bgView = [[UIView alloc] initWithFrame:CGRectZero];
-                [bgView setBackgroundColor:[UIColor clearColor]];
-                [cell setBackgroundView:bgView];
-                [bgView release];
-
-                // Must create own label to allow transparency
-                UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
-                [label setText:@"by Lance Fetters (ashikase)"];
-                [label setTextColor:[UIColor colorWithRed:0.3f green:0.34f blue:0.42f alpha:1.0f]];
-                [label setShadowColor:[UIColor whiteColor]];
-                [label setShadowOffset:CGSizeMake(1, 1)];
-                [label setBackgroundColor:[UIColor clearColor]];
-                [label setFont:[UIFont systemFontOfSize:16.0f]];
-                CGSize size = [label.text sizeWithFont:label.font];
-                [label setFrame:CGRectMake((300.0f - size.width) / 2.0f, 0, size.width, size.height)];
-
-                [[cell contentView] addSubview:label];
-                [label release];
-            }
-        } else {
-            // Donation button cell
-            // Try to retrieve from the table view a now-unused cell with the given identifier
-            cell = [tableView dequeueReusableCellWithIdentifier:reuseIdDonate];
-            if (cell == nil) {
-                // Cell does not exist, create a new one
-                cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdDonate] autorelease];
-                [cell setSelectionStyle:0]; // None
-
-                // Make cell background transparent
-                UIView *bgView = [[UIView alloc] initWithFrame:CGRectZero];
-                [bgView setBackgroundColor:[UIColor clearColor]];
-                [cell setBackgroundView:bgView];
-                [bgView release];
-
-                // Add image
-                UIImageView *imageView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"donate.png"]];
-                CGSize size = [imageView frame].size;
-                [imageView setFrame:CGRectMake((300.0f - size.width) / 2.0f, 0, size.width, size.height)];
-                [[cell contentView] addSubview:imageView];
-                [imageView release];
-            }
-        }
-    } else {
-        static NSString *cellTitles[][3] = {
-            {@"Global", @"Control", @"Application-specific"},
-            {@"How to Use", @"Release Notes", @"Known Issues"}
-        };
+    if (indexPath.section == 0) {
+        static NSString *cellTitles[] = {@"Global", @"Control", @"Application-specific"};
 
         // Try to retrieve from the table view a now-unused cell with the given identifier
         cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSimple];
         if (cell == nil) {
             // Cell does not exist, create a new one
-            cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdSimple] autorelease];
-            [cell setSelectionStyle:2]; // Gray
-            [cell setAccessoryType:1]; // Simple arrow
+            cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdSimple] autorelease];
+            cell.selectionStyle = UITableViewCellSelectionStyleGray;
+            cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
         }
-        [cell setText:cellTitles[indexPath.section][indexPath.row]];
+        cell.textLabel.text = cellTitles[indexPath.row];
+    } else {
+        // Try to retrieve from the table view a now-unused cell with the given identifier
+        cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSubtitle];
+        if (cell == nil) {
+            // Cell does not exist, create a new one
+            cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:reuseIdSubtitle] autorelease];
+            cell.selectionStyle = UITableViewCellSelectionStyleGray;
+            cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+        }
+        cell.textLabel.text = @"Documentation";
+        cell.detailTextLabel.text = @"Usage, Notes, Issues, etc.";
     }
 
     return cell;
@@ -207,17 +164,11 @@
 
 #pragma mark - UITableViewCellDelegate
 
-- (float)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    return (indexPath.section == 2 && indexPath.row == 0) ? 22.0f : 44.0f;
-}
-
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     UIViewController *vc = nil;
 
     if (indexPath.section == 0) {
-        // Preferences
         switch (indexPath.row) {
             case 0:
                 // Global
@@ -233,25 +184,20 @@
                 vc = [[[AppSpecificPrefsController alloc] initWithStyle:1] autorelease];
                 break;
         }
-    } else if (indexPath.section == 1) {
-        // Documentation
-        static NSString *fileNames[] = { @"usage.html", @"release_notes.html", @"known_issues.html" };
-        static NSString *titles[] = { @"How to Use", @"Release Notes", @"Known Issues" };
-
-        if (indexPath.row == 3)
-            // Project Homepage
-            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@DEVSITE_URL]];
-        else
-            vc = [[[DocumentationController alloc]
-                initWithContentsOfFile:fileNames[indexPath.row] title:titles[indexPath.row]]
-                autorelease];
     } else {
-        // Donation
-        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=gaizin%40gmail%2ecom&lc=US&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHostedGuest"]];
+        // Documentation
+        vc = [[[DocumentationController alloc] initWithStyle:1] autorelease];
     }
 
     if (vc)
         [[self navigationController] pushViewController:vc animated:YES];
+}
+
+#pragma mark - UIButton delegate
+
+- (void)openDonationLink
+{
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=gaizin%40gmail%2ecom&lc=US&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHostedGuest"]];
 }
 
 @end

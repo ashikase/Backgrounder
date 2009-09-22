@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 13:50:00
+ * Last-modified: 2009-09-22 13:50:04
  */
 
 /**
@@ -43,9 +43,21 @@
 #import <UIKit/UIKit.h>
 
 
-@interface DocumentationController : UITableViewController
+@class NSString;
+
+@interface HtmlDocController : UIViewController <UIWebViewDelegate>
 {
+    NSString *fileName;
+    NSString *templateFileName;
+    UIWebView *webView;
 }
+
+@property(nonatomic, copy) NSString *templateFileName;
+
+- (id)initWithContentsOfFile:(NSString *)fileName title:(NSString *)title;
+
+- (void)loadLocalFile;
+- (void)loadRemoteFile;
 
 @end
 

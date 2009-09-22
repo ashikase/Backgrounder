@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 13:12:24
+ * Last-modified: 2009-09-22 13:55:14
  */
 
 /**
@@ -42,135 +42,104 @@
 
 #import "DocumentationController.h"
 
+#include <stdlib.h>
+
+#import <CoreGraphics/CGGeometry.h>
+
+#import <Foundation/Foundation.h>
+
 #import "Constants.h"
+#import "HtmlDocController.h"
+#import "Preferences.h"
 
 
 @implementation DocumentationController
 
-- (id)initWithContentsOfFile:(NSString *)fileName_ title:(NSString *)title
+- (id)initWithStyle:(UITableViewStyle)style
 {
-    self = [super initWithNibName:nil bundle:nil];
+    self = [super initWithStyle:style];
     if (self) {
-        fileName = [fileName_ copy];
-
-        [self setTitle:title];
-#if 0
-        [[self navigationItem] setRightBarButtonItem:
-             [[UIBarButtonItem alloc] initWithTitle:@"Refresh" style:5
-                target:self
-                action:@selector(loadRemoteFile)]];
-#endif
+        self.title = @"Documentation";
+        self.navigationItem.backBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Back"
+            style:UIBarButtonItemStyleBordered target:nil action:nil];
     }
     return self;
 }
 
-- (void)loadView
-{
-    CGRect frame = [[UIScreen mainScreen] applicationFrame];
-
-    UIView *view = [[UIView alloc] initWithFrame:frame];
-    [view setBackgroundColor:[UIColor groupTableViewBackgroundColor]];
-
-    webView = [[UIWebView alloc] initWithFrame:[view bounds]];
-    [webView setAutoresizingMask:(1 << 4)]; // UIViewAutoresizingFlexibleHeight;
-    [webView setBackgroundColor:[UIColor groupTableViewBackgroundColor]];
-    [webView setDelegate:self];
-    [webView setHidden:YES];
-    [view addSubview:webView];
-
-    [self setView:view];
-    [view release];
-}
-
-- (void)dealloc
-{
-    [webView release];
-    [fileName release];
-
-    [super dealloc];
-}
-
 - (void)viewWillAppear:(BOOL)animated
 {
-    [self loadLocalFile];
+    // Reset the table by deselecting the current selection
+    [self.tableView deselectRowAtIndexPath:[self.tableView indexPathForSelectedRow] animated:YES];
 }
 
-- (void)webViewDidFinishLoad:(UIWebView *)webView_
+#pragma mark - UITableViewDataSource
+
+- (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-    [webView_ setHidden:NO];
+	return 2;
 }
 
-- (void)webView:(UIWebView *)webView_ didFailLoadWithError:(NSError *)error
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(int)section
 {
-    // FIXME: Should handle this somehow, perhaps display an error popup?
+    return nil;
 }
 
-- (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request
-    navigationType:(UIWebViewNavigationType)navigationType
+- (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    BOOL ret = YES;
-
-    NSURL *url = [request URL];
-    if (navigationType == 0 && [[url scheme] hasPrefix: @"http"])
-        // http(s) link was clicked, open with external browser
-        ret = ![[UIApplication sharedApplication] openURL:url];
-
-    return ret;
+    static int rows[] = {4, 1};
+    return rows[section];
 }
 
-#pragma mark - File loading methods
-
-static NSString * contentsOfFile(NSString *path, NSString *name)
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    NSStringEncoding encoding;
-    NSError *error = nil;
-    return [NSString stringWithContentsOfFile:
-        [NSString stringWithFormat:@"%@/%@", path, name]
-        usedEncoding:&encoding error:&error];
-}
+    static NSString *reuseIdSafari = @"SafariCell";
+    static NSString *reuseIdSimple = @"SimpleCell";
 
-- (void)loadLocalFile
-{
-    NSString *filePath = nil;
-    NSString *content = nil;
+    UITableViewCell *cell = nil;
 
-    if (fileName) {
-        // Try loading a previously-downloaded version of the file
-        filePath = @DOC_CACHE_PATH;
-        content = contentsOfFile(filePath, fileName);
-
-        if (content == nil) {
-            // Try loading the version of the file included in the install package
-            filePath = [NSString stringWithFormat:@"%@/%@",
-                     [[NSBundle mainBundle] bundlePath], @DOC_BUNDLE_PATH];
-            content = contentsOfFile(filePath, fileName);
-
-            if (content == nil)
-                // Set an error message
-                content = @"<div style=\"text-align:center;\">(404: File not found)</div>";
+    if (indexPath.section == 1) {
+        // Try to retrieve from the table view a now-unused cell with the given identifier
+        cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSafari];
+        if (cell == nil) {
+            // Cell does not exist, create a new one
+            cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:reuseIdSafari] autorelease];
+            cell.selectionStyle = UITableViewCellSelectionStyleGray;
+            cell.textLabel.text = @"Project Homepage";
+            cell.detailTextLabel.text = @"(via Safari)";
         }
+    } else {
+        static NSString *cellTitles[] = {@"How to Use", @"Release Notes", @"Todo", @"Known Issues"};
+
+        // Try to retrieve from the table view a now-unused cell with the given identifier
+        cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSimple];
+        if (cell == nil) {
+            // Cell does not exist, create a new one
+            cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdSimple] autorelease];
+            cell.selectionStyle = UITableViewCellSelectionStyleGray;
+            cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+        }
+        [cell setText:cellTitles[indexPath.row]];
     }
 
-    [webView loadHTMLString:content baseURL:[NSURL fileURLWithPath:filePath isDirectory:YES]];
+    return cell;
 }
 
-- (void)loadRemoteFile
-{
-    NSError *error = nil;
-    NSHTTPURLResponse *response = nil;
-    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:
-        [NSString stringWithFormat:@"%@/%@", @DOC_URL, fileName]]];
-    NSData *data = [NSURLConnection sendSynchronousRequest:request
-        returningResponse:&response error:&error];
-  
-    NSLog(@"Response status: %ld, %@", (long)[response statusCode],
-        [NSHTTPURLResponse localizedStringForStatusCode:[response statusCode]]);
-    if (data) {
-        // Display in webview
-        [webView loadData:data MIMEType:@"text/html" textEncodingName:@"UTF-8" baseURL:
-     [NSURL URLWithString:@DOC_URL]];
+#pragma mark - UITableViewCellDelegate
 
-        // Save to local cache
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    static NSString *fileNames[] = {@"usage.mdwn", @"release_notes.mdwn", @"todo.mdwn", @"known_issues.mdwn"};
+
+    if (indexPath.section == 1) {
+        // Project Homepage
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@DEVSITE_URL]];
+    } else {
+        UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
+        UIViewController *vc = [[[HtmlDocController alloc]
+            initWithContentsOfFile:fileNames[indexPath.row] title:cell.textLabel.text]
+            autorelease];
+        [(HtmlDocController *)vc setTemplateFileName:@"template.html"];
+        [[self navigationController] pushViewController:vc animated:YES];
     }
 }
 

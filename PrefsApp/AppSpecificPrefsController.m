@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 13:06:34
+ * Last-modified: 2009-09-22 13:53:09
  */
 
 /**
@@ -49,7 +49,7 @@
 #import <Foundation/Foundation.h>
 
 #import "Constants.h"
-#import "DocumentationController.h"
+#import "HtmlDocController.h"
 #import "BlacklistedApplicationsController.h"
 #import "EnabledApplicationsController.h"
 #import "Preferences.h"
@@ -140,7 +140,7 @@
 - (void)helpButtonTapped
 {
     // Create and show help page
-    [[self navigationController] pushViewController:[[[DocumentationController alloc]
+    [[self navigationController] pushViewController:[[[HtmlDocController alloc]
         initWithContentsOfFile:@HELP_FILE title:@"Explanation"] autorelease] animated:YES];
 }
 
