@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 13:39:33
+ * Last-modified: 2009-09-22 13:31:20
  */
 
 /**
@@ -40,46 +40,23 @@
  */
 
 
-#import "EnabledApplicationsController.h"
-
-#import "DocumentationController.h"
-#import "Preferences.h"
-
-#define HELP_FILE "enabled_apps.html"
+#import <UIKit/UIKit.h>
 
 
-@implementation EnabledApplicationsController
+@class NSMutableArray;
+@class RootController;
+@class UIProgressHUD;
 
-- (id)initWithStyle:(UITableViewStyle)style
+@interface ApplicationListController : UITableViewController
 {
-    self = [super initWithStyle:style];
-    if (self) {
-        self.title = @"Enabled Apps";
-        [[self navigationItem] setRightBarButtonItem:
-             [[UIBarButtonItem alloc] initWithTitle:@"Help" style:5
-                target:self
-                action:@selector(helpButtonTapped)]];
+    UIProgressHUD *busyIndicator;
 
-        // Get a copy of the list of currently enabled applications
-        applications = [[NSMutableArray alloc]
-            initWithArray:[[Preferences sharedInstance] enabledApplications]];
-    }
-    return self;
-}
+    // Reference to root view controller for accessing cached info
+    RootController *rootController;
 
-- (void)viewWillDisappear:(BOOL)animated
-{
-    if (isModified)
-        [[Preferences sharedInstance] setEnabledApplications:applications];
-}
-
-#pragma mark - Navigation bar delegates
-
-- (void)helpButtonTapped
-{
-    // Create and show help page
-    [[self navigationController] pushViewController:[[[DocumentationController alloc]
-        initWithContentsOfFile:@HELP_FILE title:@"Explanation"] autorelease] animated:YES];
+    // Variables to track changes made on this page
+    NSMutableArray *applications;
+    BOOL isModified;
 }
 
 @end

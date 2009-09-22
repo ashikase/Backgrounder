@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 13:11:29
+ * Last-modified: 2009-09-22 13:37:42
  */
 
 /**
@@ -42,238 +42,35 @@
 
 #import "BlacklistedApplicationsController.h"
 
-#import <objc/runtime.h>
-
-#import <CoreGraphics/CGGeometry.h>
-#import <QuartzCore/CALayer.h>
-
-#import <CoreFoundation/CFPreferences.h>
-
-#import <Foundation/Foundation.h>
-
 #import "DocumentationController.h"
 #import "Preferences.h"
-#import "RootController.h"
-
-// SpringBoardServices
-extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
-extern NSString * SBSCopyIconImagePathForDisplayIdentifier(NSString *identifier);
 
 #define HELP_FILE "blacklisted_apps.html"
 
 
-@interface UIProgressHUD : UIView
-
-- (id)initWithWindow:(id)fp8;
-- (void)setText:(id)fp8;
-- (void)show:(BOOL)fp8;
-- (void)hide;
-
-@end
-
-//______________________________________________________________________________
-//______________________________________________________________________________
-
-static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
-{
-    NSInteger ret;
-
-    NSString *name_a = SBSCopyLocalizedApplicationNameForDisplayIdentifier(a);
-    NSString *name_b = SBSCopyLocalizedApplicationNameForDisplayIdentifier(b);
-    ret = [name_a caseInsensitiveCompare:name_b];
-    [name_a release];
-    [name_b release];
-
-    return ret;
-}
-
-//______________________________________________________________________________
-//______________________________________________________________________________
-
 @implementation BlacklistedApplicationsController
-
-static NSArray *applicationDisplayIdentifiers()
-{
-    // First, get a list of all possible application paths
-    NSMutableArray *paths = [NSMutableArray array];
-
-    // ... scan /Applications (System/Jailbreak applications)
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-    for (NSString *path in [fileManager directoryContentsAtPath:@"/Applications"]) {
-        if ([path hasSuffix:@".app"] && ![path hasPrefix:@"."])
-           [paths addObject:[NSString stringWithFormat:@"/Applications/%@", path]];
-    }
-
-    // ... scan /var/mobile/Applications (AppStore applications)
-    for (NSString *path in [fileManager directoryContentsAtPath:@"/var/mobile/Applications"]) {
-        for (NSString *subpath in [fileManager directoryContentsAtPath:
-                [NSString stringWithFormat:@"/var/mobile/Applications/%@", path]]) {
-            if ([subpath hasSuffix:@".app"])
-                [paths addObject:[NSString stringWithFormat:@"/var/mobile/Applications/%@/%@", path, subpath]];
-        }
-    }
-
-    // Then, go through paths and record valid application identifiers
-    NSMutableArray *identifiers = [NSMutableArray array];
-
-    for (NSString *path in paths) {
-        NSBundle *bundle = [NSBundle bundleWithPath:path];
-        if (bundle) {
-            NSString *identifier = [bundle bundleIdentifier];
-
-            // Filter out non-applications and apps that should remain hidden
-            // FIXME: The proper fix is to only show non-hidden apps and apps
-            //        that are in Categories; unfortunately, the design of
-            //        Categories does not make it easy to determine what apps
-            //        a given folder contains.
-            if (identifier &&
-                ![identifier hasPrefix:@"jp.ashikase.springjumps."] &&
-                ![identifier isEqualToString:@"com.iptm.bigboss.sbsettings"] &&
-                ![identifier isEqualToString:@"com.apple.webapp"])
-            [identifiers addObject:identifier];
-        }
-    }
-
-    return identifiers;
-}
 
 - (id)initWithStyle:(UITableViewStyle)style
 {
     self = [super initWithStyle:style];
     if (self) {
         self.title = @"Blacklisted Apps";
-        self.navigationItem.backBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Back"
-            style:UIBarButtonItemStyleBordered target:nil action:nil];
         [[self navigationItem] setRightBarButtonItem:
              [[UIBarButtonItem alloc] initWithTitle:@"Help" style:5
                 target:self
                 action:@selector(helpButtonTapped)]];
 
-        // Get a copy of the list of currently enabled applications
-        blacklistedApplications = [[NSMutableArray alloc]
+        // Get a copy of the list of currently blacklisted applications
+        applications = [[NSMutableArray alloc]
             initWithArray:[[Preferences sharedInstance] blacklistedApplications]];
     }
     return self;
 }
 
-- (void)loadView
-{
-    // Retain a reference to the root controller for accessing cached info
-    // FIXME: Consider passing the display id array in as an init parameter
-    rootController = [[self.navigationController.viewControllers objectAtIndex:0] retain];
-
-    [super loadView];
-}
-
-- (void)dealloc
-{
-    [busyIndicator release];
-    [blacklistedApplications release];
-    [rootController release];
-
-    [super dealloc];
-}
-
-- (void)enumerateApplications
-{
-    NSArray *array = applicationDisplayIdentifiers();
-    NSArray *sortedArray = [array sortedArrayUsingFunction:compareDisplayNames context:NULL];
-    [rootController setDisplayIdentifiers:sortedArray];
-    [self.tableView reloadData];
-
-    // Remove the progress indicator
-    [busyIndicator hide];
-    [busyIndicator release];
-    busyIndicator = nil;
-}
-
-- (void)viewDidAppear:(BOOL)animated
-{
-    if ([rootController displayIdentifiers] != nil)
-        // Application list already loaded
-        return;
-
-    // Show a progress indicator
-    busyIndicator = [[UIProgressHUD alloc] initWithWindow:[[UIApplication sharedApplication] keyWindow]];
-    [busyIndicator setText:@"Loading applications..."];
-    [busyIndicator show:YES];
-
-    // Enumerate applications
-    // NOTE: Must call via performSelector, or busy indicator does not show in time
-    [self performSelector:@selector(enumerateApplications) withObject:nil afterDelay:0.1f];
-}
-
 - (void)viewWillDisappear:(BOOL)animated
 {
     if (isModified)
-        [[Preferences sharedInstance] setBlacklistedApplications:blacklistedApplications];
-}
-
-#pragma mark - UITableViewDataSource
-
-- (int)numberOfSectionsInTableView:(UITableView *)tableView
-{
-    return 1;
-}
-
-- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(int)section
-{
-    return nil;
-}
-
-- (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
-{
-    return [[rootController displayIdentifiers] count];
-}
-
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    static NSString *reuseIdentifier = @"BlacklistedAppsCell";
-
-    // Try to retrieve from the table view a now-unused cell with the given identifier
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
-    if (cell == nil) {
-        // Cell does not exist, create a new one
-        cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
-        [cell setSelectionStyle:0];
-
-        UISwitch *toggle = [[UISwitch alloc] init];
-        [toggle addTarget:self action:@selector(switchToggled:) forControlEvents:4096]; // ValueChanged
-        [cell setAccessoryView:toggle];
-        [toggle release];
-    }
-
-    NSString *identifier = [[rootController displayIdentifiers] objectAtIndex:indexPath.row];
-
-    NSString *displayName = SBSCopyLocalizedApplicationNameForDisplayIdentifier(identifier);
-    [cell setText:displayName];
-    [displayName release];
-
-    UIImage *icon = nil;
-    NSString *iconPath = SBSCopyIconImagePathForDisplayIdentifier(identifier);
-    if (iconPath != nil) {
-        icon = [UIImage imageWithContentsOfFile:iconPath];
-        [iconPath release];
-    }
-    [cell setImage:icon];
-
-    UISwitch *toggle = (UISwitch *)[cell accessoryView];
-    [toggle setOn:[blacklistedApplications containsObject:identifier]];
-
-    return cell;
-}
-
-#pragma mark - Switch delegate
-
-- (void)switchToggled:(UISwitch *)control
-{
-    NSIndexPath *indexPath = [self.tableView indexPathForCell:(UITableViewCell *)[control superview]];
-    NSString *identifier = [[rootController displayIdentifiers] objectAtIndex:indexPath.row];
-    if ([control isOn])
-        [blacklistedApplications addObject:identifier];
-    else
-        [blacklistedApplications removeObject:identifier];
-    isModified = YES;
+        [[Preferences sharedInstance] setBlacklistedApplications:applications];
 }
 
 #pragma mark - Navigation bar delegates

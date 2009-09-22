@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 13:12:49
+ * Last-modified: 2009-09-22 13:40:04
  */
 
 /**
@@ -42,21 +42,10 @@
 
 #import <UIKit/UIKit.h>
 
+#import "ApplicationListController.h"
 
-@class NSMutableArray;
-@class RootController;
-@class UIProgressHUD;
-
-@interface EnabledApplicationsController : UITableViewController
+@interface EnabledApplicationsController : ApplicationListController
 {
-    UIProgressHUD *busyIndicator;
-
-    // Reference to root view controller for accessing cached info
-    RootController *rootController;
-
-    // Variables to track changes made on this page
-    NSMutableArray *enabledApplications;
-    BOOL isModified;
 }
 
 @end
