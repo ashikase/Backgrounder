@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 13:36:49
+ * Last-modified: 2009-09-22 13:45:00
  */
 
 /**
@@ -51,6 +51,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import "ApplicationCell.h"
 #import "DocumentationController.h"
 #import "Preferences.h"
 #import "RootController.h"
@@ -217,13 +218,8 @@ static NSArray *applicationDisplayIdentifiers()
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
     if (cell == nil) {
         // Cell does not exist, create a new one
-        cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
-        [cell setSelectionStyle:0];
-
-        UISwitch *toggle = [[UISwitch alloc] init];
-        [toggle addTarget:self action:@selector(switchToggled:) forControlEvents:4096]; // ValueChanged
-        [cell setAccessoryView:toggle];
-        [toggle release];
+        cell = [[[ApplicationCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
+        cell.selectionStyle = UITableViewCellSelectionStyleGray;
     }
 
     NSString *identifier = [[rootController displayIdentifiers] objectAtIndex:indexPath.row];
@@ -240,24 +236,32 @@ static NSArray *applicationDisplayIdentifiers()
     }
     [cell setImage:icon];
 
-    UISwitch *toggle = (UISwitch *)[cell accessoryView];
-    [toggle setOn:[applications containsObject:identifier]];
+    cell.accessoryType = [applications containsObject:identifier] ? UITableViewCellAccessoryCheckmark : UITableViewCellAccessoryNone;
 
     return cell;
 }
 
-#pragma mark - Switch delegate
+#pragma mark - UITableViewCellDelegate
 
-- (void)switchToggled:(UISwitch *)control
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    NSIndexPath *indexPath = [self.tableView indexPathForCell:(UITableViewCell *)[control superview]];
     NSString *identifier = [[rootController displayIdentifiers] objectAtIndex:indexPath.row];
-    if ([control isOn])
+
+    // Update the list of applications and toggle the cell's checkmark
+    UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
+    if (cell.accessoryType == UITableViewCellAccessoryNone) {
         [applications addObject:identifier];
-    else
+        cell.accessoryType = UITableViewCellAccessoryCheckmark;
+    } else {
         [applications removeObject:identifier];
+        cell.accessoryType = UITableViewCellAccessoryNone;
+    }
     isModified = YES;
+
+    // Reset the table by deselecting the current selection
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
+
 
 @end
 
