@@ -3,7 +3,7 @@
  * Type: iPhoneOS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-26 00:44:12
+ * Last-modified: 2009-08-27 23:44:34
  */
 
 /**
@@ -51,7 +51,6 @@ extern "C" void BackgrounderInitialize()
 {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
-    // NOTE: This library should only be loaded for SpringBoard
     NSString *identifier = [[NSBundle mainBundle] bundleIdentifier];
     if ([identifier isEqualToString:@"com.apple.springboard"])
         initSpringBoardHooks();
