@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 12:12:26
+ * Last-modified: 2009-09-22 12:48:02
  */
 
 /**
@@ -76,6 +76,14 @@ static BOOL animationsEnabled = YES;
 #endif
 static BOOL badgeEnabled = NO;
 
+typedef enum {
+    BGInvocationMethodNone,
+    BGInvocationMethodMenuShortHold,
+    BGInvocationMethodLockShortHold
+} BGInvocationMethod;
+
+static BGInvocationMethod invocationMethod = BGInvocationMethodLockShortHold;
+
 //______________________________________________________________________________
 //______________________________________________________________________________
 
@@ -109,6 +117,16 @@ static void loadPreferences()
     if (propList) {
         if (CFGetTypeID(propList) == CFArrayGetTypeID())
             blacklistedApps = [[NSArray alloc] initWithArray:(NSArray *)propList];
+        CFRelease(propList);
+    }
+
+    propList = CFPreferencesCopyAppValue(CFSTR("invocationMethod"), CFSTR(APP_ID));
+    if (propList) {
+        // NOTE: Defaults to BGInvocationMethodMenuShortHold
+        if ([(NSString *)propList isEqualToString:@"powerShortHold"])
+            invocationMethod = BGInvocationMethodLockShortHold;
+        else if ([(NSString *)propList isEqualToString:@"none"])
+            invocationMethod = BGInvocationMethodNone;
         CFRelease(propList);
     }
 }
@@ -193,6 +211,16 @@ static NSTimer *invocationTimer = nil;
 static BOOL invocationTimerDidFire = NO;
 static id alert = nil;
 
+static void startInvocationTimer()
+{
+    invocationTimerDidFire = NO;
+
+    SpringBoard *springBoard = (SpringBoard *)[objc_getClass("SpringBoard") sharedApplication];
+    invocationTimer = [[NSTimer scheduledTimerWithTimeInterval:0.7f
+        target:springBoard selector:@selector(invokeBackgrounder)
+        userInfo:nil repeats:NO] retain];
+}
+
 static void cancelInvocationTimer()
 {
     // Disable and release timer (may be nil)
@@ -201,32 +229,49 @@ static void cancelInvocationTimer()
     invocationTimer = nil;
 }
 
-// NOTE: Only hooked when invocationMethod == HOME_SHORT_PRESS
+// NOTE: Only hooked when invocationMethod == BGInvocationMethodMenuShortHold
 HOOK(SpringBoard, menuButtonDown$, void, GSEvent *event)
 {
-    // FIXME: If already invoked, should not set timer... right? (needs thought)
-    if (![[objc_getClass("SBAwayController") sharedAwayController] isLocked]) {
-        // Not locked
-        if (!alert)
-            // Task menu is not visible; setup toggle-delay timer
-            invocationTimer = [[NSTimer scheduledTimerWithTimeInterval:0.7f
-                target:self selector:@selector(invokeBackgrounder)
-                userInfo:nil repeats:NO] retain];
-        invocationTimerDidFire = NO;
-    }
-
+    startInvocationTimer();
     CALL_ORIG(SpringBoard, menuButtonDown$, event);
 }
 
-// NOTE: Only hooked when invocationMethod == HOME_SHORT_PRESS
+// NOTE: Only hooked when invocationMethod == BGInvocationMethodMenuShortHold
 HOOK(SpringBoard, menuButtonUp$, void, GSEvent *event)
 {
-    if (!invocationTimerDidFire)
-        cancelInvocationTimer();
-    else
+    if (invocationTimerDidFire)
+        // Backgrounder popup is visible; hide it
         [self dismissBackgrounderFeedback];
+    else
+        cancelInvocationTimer();
 
     CALL_ORIG(SpringBoard, menuButtonUp$, event);
+}
+
+// NOTE: Only hooked when invocationMethod == BGInvocationMethodLockShortHold
+HOOK(SpringBoard, lockButtonDown$, void, GSEvent *event)
+{
+    startInvocationTimer();
+    CALL_ORIG(SpringBoard, lockButtonDown$, event);
+}
+
+// NOTE: Only hooked when invocationMethod == BGInvocationMethodLockShortHold
+HOOK(SpringBoard, lockButtonUp$, void, GSEvent *event)
+{
+    if (invocationTimerDidFire) {
+        // Reset the lock button state
+        [self _unsetLockButtonBearTrap];
+        [self _setLockButtonTimer:nil];
+
+        // Backgrounder popup is visible; hide it
+        [self dismissBackgrounderFeedback];
+
+        // Simulate menu button press to suspend current app
+        [self _handleMenuButtonEvent];
+    } else {
+        cancelInvocationTimer();
+        CALL_ORIG(SpringBoard, lockButtonUp$, event);
+    }
 }
 
 HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
@@ -485,8 +530,6 @@ void initSpringBoardHooks()
     Class $SpringBoard = objc_getClass("SpringBoard");
     LOAD_HOOK($SpringBoard, @selector(applicationDidFinishLaunching:), SpringBoard$applicationDidFinishLaunching$);
     LOAD_HOOK($SpringBoard, @selector(dealloc), SpringBoard$dealloc);
-    LOAD_HOOK($SpringBoard, @selector(menuButtonDown:), SpringBoard$menuButtonDown$);
-    LOAD_HOOK($SpringBoard, @selector(menuButtonUp:), SpringBoard$menuButtonUp$);
 
     class_addMethod($SpringBoard, @selector(setBackgroundingEnabled:forDisplayIdentifier:),
         (IMP)&$SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$, "v@:c@");
@@ -503,6 +546,20 @@ void initSpringBoardHooks()
     LOAD_HOOK($SBApplication, @selector(_relaunchAfterAbnormalExit:), SBApplication$_relaunchAfterAbnormalExit$);
     LOAD_HOOK($SBApplication, @selector(pathForDefaultImage:), SBApplication$pathForDefaultImage$);
 #endif
+
+    switch (invocationMethod) {
+        case BGInvocationMethodMenuShortHold:
+            LOAD_HOOK($SpringBoard, @selector(menuButtonDown:), SpringBoard$menuButtonDown$);
+            LOAD_HOOK($SpringBoard, @selector(menuButtonUp:), SpringBoard$menuButtonUp$);
+            break;
+        case BGInvocationMethodLockShortHold:
+            LOAD_HOOK($SpringBoard, @selector(lockButtonDown:), SpringBoard$lockButtonDown$);
+            LOAD_HOOK($SpringBoard, @selector(lockButtonUp:), SpringBoard$lockButtonUp$);
+            break;
+        case BGInvocationMethodNone:
+        default:
+            break;
+    }
 }
 
 /* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
