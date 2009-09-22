@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-04 22:46:41
+ * Last-modified: 2009-09-10 21:08:03
  */
 
 /**
@@ -58,7 +58,6 @@
 #import <SpringBoard/SBUIController.h>
 #import <SpringBoard/SpringBoard.h>
 
-#import "Common.h"
 #import "SimplePopup.h"
 
 struct GSEvent;

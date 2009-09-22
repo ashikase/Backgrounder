@@ -1,9 +1,8 @@
 /**
- * Name: Backgrounder
- * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
- * Description: allow applications to run in the background
+ * Name: Common
+ * Description: a common header for iPhone OS SpringBoard extensions (MobileSubstrate-based)
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-03 19:34:54
+ * Last-modified: 2009-09-10 21:07:37
  */
 
 /**
@@ -43,7 +42,8 @@
 #include <signal.h>
 #include <substrate.h>
 
-#define APP_ID "jp.ashikase.backgrounder"
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 #define HOOK(class, name, type, args...) \
     static type (*_ ## class ## $ ## name)(class *self, SEL sel, ## args); \
@@ -54,3 +54,5 @@
 
 #define CALL_ORIG(class, name, args...) \
     _ ## class ## $ ## name(self, sel, ## args)
+
+/* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */

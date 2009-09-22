@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-26 00:51:23
+ * Last-modified: 2009-09-10 21:07:59
  */
 
 /**
@@ -43,8 +43,6 @@
 #import <CoreFoundation/CoreFoundation.h>
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
-
-#import "Common.h"
 
 struct GSEvent;
 
