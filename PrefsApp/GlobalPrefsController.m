@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-26 00:49:30
+ * Last-modified: 2009-08-28 00:01:22
  */
 
 /**
@@ -53,8 +53,6 @@
 
 #import "Constants.h"
 #import "DocumentationController.h"
-#import "FeedbackTypeController.h"
-#import "InvocationMethodController.h"
 #import "Preferences.h"
 
 #define HELP_FILE "global_prefs.html"
@@ -77,34 +75,26 @@
     return self;
 }
 
-- (void)dealloc
-{
-    [super dealloc];
-}
-
 #pragma mark - UITableViewDataSource
 
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	//return 2;
 	return 1;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(int)section
 {
-    return (section == 0) ? @"General" : @"Operation";
+    return @"General";
 }
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    //return (section == 0) ? 3 : 2;
-    return (section == 0) ? 2 : 2;
+    return 2;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     static NSString *reuseIdToggle = @"ToggleCell";
-    static NSString *reuseIdSimple = @"SimpleCell";
 
     UITableViewCell *cell = nil;
     if (indexPath.section == 0) {
@@ -139,16 +129,6 @@
                 [toggle setOn:[[Preferences sharedInstance] badgeEnabled]];
                 break;
         }
-    } else {
-        // Try to retrieve from the table view a now-unused cell with the given identifier
-        cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSimple];
-        if (cell == nil) {
-            // Cell does not exist, create a new one
-            cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdSimple] autorelease];
-            [cell setSelectionStyle:2]; // Gray
-            [cell setAccessoryType:1]; // Simple arrow
-        }
-        [cell setText:(indexPath.row == 0) ? @"Mode" : @"Button"];
     }
     return cell;
 }
@@ -171,25 +151,6 @@
             [[Preferences sharedInstance] setBadgeEnabled:[control isOn]];
             break;
     }
-}
-
-#pragma mark - UITableViewCellDelegate
-
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    UIViewController *vc = nil;
-
-    if (indexPath.section == 1) {
-        if (indexPath.row == 0)
-            // Operating mode
-            vc = [[[FeedbackTypeController alloc] initWithStyle:1] autorelease];
-        else
-            // Invocation method
-            vc = [[[InvocationMethodController alloc] initWithStyle:1] autorelease];
-    }
-
-    if (vc)
-        [[self navigationController] pushViewController:vc animated:YES];
 }
 
 #pragma mark - Navigation bar delegates
