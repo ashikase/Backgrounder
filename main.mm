@@ -3,7 +3,7 @@
  * Type: iPhoneOS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-27 23:44:34
+ * Last-modified: 2009-09-10 21:10:46
  */
 
 /**
@@ -39,13 +39,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import <Foundation/NSAutoreleasePool.h>
-#import <Foundation/NSBundle.h>
-#import <Foundation/NSString.h>
 
 extern void initApplicationHooks();
 extern void initSpringBoardHooks();
-
 
 extern "C" void BackgrounderInitialize()
 {

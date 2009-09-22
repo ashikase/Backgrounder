@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-26 00:51:27
+ * Last-modified: 2009-09-10 21:11:11
  */
 
 /**
@@ -40,12 +40,7 @@
  */
 
 
-#import <objc/message.h>
-#include <substrate.h>
-
 #import "SimplePopup.h"
-
-#import <UIKit/UIKit.h>
 
 
 static id $BGAlertItem$initWithTitle$message$(id self, SEL sel, NSString *title, NSString *message)
