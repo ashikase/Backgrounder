@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 13:55:14
+ * Last-modified: 2009-09-22 14:57:15
  */
 
 /**
@@ -108,7 +108,7 @@
             cell.detailTextLabel.text = @"(via Safari)";
         }
     } else {
-        static NSString *cellTitles[] = {@"How to Use", @"Release Notes", @"Todo", @"Known Issues"};
+        static NSString *cellTitles[] = {@"How to Use", @"Release Notes", @"Known Issues", @"Todo"};
 
         // Try to retrieve from the table view a now-unused cell with the given identifier
         cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSimple];
@@ -128,7 +128,7 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    static NSString *fileNames[] = {@"usage.mdwn", @"release_notes.mdwn", @"todo.mdwn", @"known_issues.mdwn"};
+    static NSString *fileNames[] = {@"usage.mdwn", @"release_notes.mdwn", @"known_issues.mdwn", @"todo.mdwn"};
 
     if (indexPath.section == 1) {
         // Project Homepage

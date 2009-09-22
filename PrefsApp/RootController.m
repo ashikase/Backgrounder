@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 13:56:18
+ * Last-modified: 2009-09-22 14:55:48
  */
 
 /**
@@ -156,7 +156,7 @@
             cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
         }
         cell.textLabel.text = @"Documentation";
-        cell.detailTextLabel.text = @"Usage, Notes, Issues, etc.";
+        cell.detailTextLabel.text = @"Usage, Issues, Todo, etc.";
     }
 
     return cell;
