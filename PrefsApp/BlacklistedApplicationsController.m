@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 13:54:36
+ * Last-modified: 2009-09-22 15:27:28
  */
 
 /**
@@ -45,7 +45,7 @@
 #import "HtmlDocController.h"
 #import "Preferences.h"
 
-#define HELP_FILE "blacklisted_apps.html"
+#define HELP_FILE "blacklisted_apps.mdwn"
 
 
 @implementation BlacklistedApplicationsController
