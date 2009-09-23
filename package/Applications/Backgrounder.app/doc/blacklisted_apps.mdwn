@@ -1,9 +1,7 @@
+> Marking an application as blacklisted prevents Backgrounder
+> from attempting to background it.
+> 
 > Certain applications (such as Apple's Phone and Mail, as
 > well as mobileterminal and Categories folders) have built-in support
 > for backgrounding; Backgrounder is not needed for nor should it be
-> used with them.
-> 
-> Marking an application as blacklisted prevents Backgrounder
-> from attempting to background it. It also allows the
-> application to be closed (force-quitted) via the Backgrounder
-> task list.
+> used with these applications.
