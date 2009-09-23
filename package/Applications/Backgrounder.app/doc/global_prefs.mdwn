@@ -1,4 +1,4 @@
-> # Persistent Backgrounding
+> # Backgrounding Persists
 > ## (Default: On)
 > - - -
 > * **Off:**  
@@ -6,9 +6,9 @@
 >
 > * **On:**  
 >   Once backgrounding has been enabled for an application, it will remain enabled until the user manually disables it - no matter how many times the application is minimized and restored.
-> 
-> - - -
->
+ 
+- - -
+
 > # Badge
 > ## (Default: Off)
 > - - -
