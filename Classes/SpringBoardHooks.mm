@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 15:12:39
+ * Last-modified: 2009-09-23 00:17:27
  */
 
 /**
@@ -75,6 +75,7 @@ static BOOL animateStatusBar = YES;
 static BOOL animationsEnabled = YES;
 #endif
 static BOOL badgeEnabled = NO;
+static BOOL badgeEnabledForAll = YES;
 
 typedef enum {
     BGInvocationMethodNone,
@@ -82,7 +83,7 @@ typedef enum {
     BGInvocationMethodLockShortHold
 } BGInvocationMethod;
 
-static BGInvocationMethod invocationMethod = BGInvocationMethodLockShortHold;
+static BGInvocationMethod invocationMethod = BGInvocationMethodMenuShortHold;
 
 //______________________________________________________________________________
 //______________________________________________________________________________
@@ -113,6 +114,13 @@ static void loadPreferences()
         CFRelease(propList);
     }
 
+    propList = CFPreferencesCopyAppValue(CFSTR("badgeEnabledForAll"), CFSTR(APP_ID));
+    if (propList) {
+        if (CFGetTypeID(propList) == CFBooleanGetTypeID())
+            badgeEnabledForAll = CFBooleanGetValue(reinterpret_cast<CFBooleanRef>(propList));
+        CFRelease(propList);
+    }
+
     propList = CFPreferencesCopyAppValue(CFSTR("blacklistedApplications"), CFSTR(APP_ID));
     if (propList) {
         if (CFGetTypeID(propList) == CFArrayGetTypeID())
@@ -128,6 +136,27 @@ static void loadPreferences()
         else if ([(NSString *)propList isEqualToString:@"none"])
             invocationMethod = BGInvocationMethodNone;
         CFRelease(propList);
+    }
+}
+
+//______________________________________________________________________________
+//______________________________________________________________________________
+
+@interface UIView (Private)
+- (void)setOrigin:(CGPoint)origin;
+@end
+
+static void showBadgeForDisplayIdentifier(NSString *identifier)
+{
+    // Update the application's SpringBoard icon to indicate that it is running
+    SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
+    if (![icon viewWithTag:1000]) {
+        // Icon does not have a badge
+        UIImageView *badgeView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"Backgrounder_Badge.png"]];
+        [badgeView setOrigin:CGPointMake(-12.0f, 39.0f)];
+        [badgeView setTag:1000];
+        [icon addSubview:badgeView];
+        [badgeView release];
     }
 }
 
@@ -361,10 +390,6 @@ static void $SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$(SpringBoa
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-@interface UIView (Private)
-- (void)setOrigin:(CGPoint)origin;
-@end
-
 HOOK(SBApplication, launchSucceeded$, void, BOOL unknownFlag)
 {
     NSString *identifier = [self displayIdentifier];
@@ -396,19 +421,13 @@ HOOK(SBApplication, launchSucceeded$, void, BOOL unknownFlag)
             [bgEnabledApps addObject:identifier];
         }
 
-        if (badgeEnabled) {
-            // Update the SpringBoard icon to indicate that the app is running
-            SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
-            UIImageView *badgeView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"Backgrounder_Badge.png"]];
-            [badgeView setOrigin:CGPointMake(-12.0f, 39.0f)];
-            [badgeView setTag:1000];
-            [icon addSubview:badgeView];
-            [badgeView release];
-        }
-
         // Track active status of application
         [activeApps addObject:identifier];
     }
+
+    if (badgeEnabled && (badgeEnabledForAll || [bgEnabledApps containsObject:identifier]))
+        // NOTE: This is mainly to catch applications that start in the background
+        showBadgeForDisplayIdentifier(identifier);
 
     CALL_ORIG(SBApplication, launchSucceeded$, unknownFlag);
 }
@@ -463,7 +482,13 @@ HOOK(SBApplication, deactivate, BOOL)
     [statusBarStates setObject:[NSArray arrayWithObjects:mode, orientation, nil] forKey:identifier];
 #endif
 
-    BOOL isBackgrounded = [bgEnabledApps containsObject:[self displayIdentifier]];
+    NSString *identifier = [self displayIdentifier];
+    BOOL isBackgrounded = [bgEnabledApps containsObject:identifier];
+
+    if (badgeEnabled && (badgeEnabledForAll || isBackgrounded))
+        // In case badge has not been added yet, add now
+        showBadgeForDisplayIdentifier(identifier);
+
     BOOL flag;
     if (isBackgrounded) {
         // Temporarily enable the eventOnly flag to prevent the applications's views

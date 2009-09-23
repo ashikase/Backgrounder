@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 12:55:53
+ * Last-modified: 2009-09-22 19:38:18
  */
 
 /**
@@ -55,6 +55,7 @@ static NSArray *allowedFeedbackTypes = nil;
 @synthesize persistent;
 @synthesize animationsEnabled;
 @synthesize badgeEnabled;
+@synthesize badgeEnabledForAll;
 @synthesize invocationMethod;
 @synthesize feedbackType;
 @synthesize enabledApplications;
@@ -114,6 +115,7 @@ static NSArray *allowedFeedbackTypes = nil;
     [dict setObject:[NSNumber numberWithBool:persistent] forKey:@"persistent"];
     [dict setObject:[NSNumber numberWithBool:animationsEnabled] forKey:@"animationsEnabled"];
     [dict setObject:[NSNumber numberWithBool:badgeEnabled] forKey:@"badgeEnabled"];
+    [dict setObject:[NSNumber numberWithBool:badgeEnabledForAll] forKey:@"badgeEnabledForAll"];
 
     NSString *string = nil;
     @try {
@@ -164,6 +166,7 @@ static NSArray *allowedFeedbackTypes = nil;
     [dict setObject:[NSNumber numberWithBool:YES] forKey:@"persistent"];
     [dict setObject:[NSNumber numberWithBool:YES] forKey:@"animationsEnabled"];
     [dict setObject:[NSNumber numberWithBool:NO] forKey:@"badgeEnabled"];
+    [dict setObject:[NSNumber numberWithBool:YES] forKey:@"badgeEnabledForAll"];
     [dict setObject:@"homeShortPress" forKey:@"invocationMethod"];
     [dict setObject:@"simplePopup" forKey:@"feedbackType"];
 
@@ -186,6 +189,7 @@ static NSArray *allowedFeedbackTypes = nil;
     persistent = [defaults boolForKey:@"persistent"];
     animationsEnabled = [defaults boolForKey:@"animationsEnabled"];
     badgeEnabled = [defaults boolForKey:@"badgeEnabled"];
+    badgeEnabledForAll = [defaults boolForKey:@"badgeEnabledForAll"];
 
     NSString *string = [defaults stringForKey:@"invocationMethod"];
     unsigned int index = [allowedInvocationMethods indexOfObject:string];

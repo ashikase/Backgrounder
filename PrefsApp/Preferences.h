@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-08-26 00:48:26
+ * Last-modified: 2009-09-22 19:38:29
  */
 
 /**
@@ -56,6 +56,7 @@
     BOOL persistent;
     BOOL animationsEnabled;
     BOOL badgeEnabled;
+    BOOL badgeEnabledForAll;
     unsigned int invocationMethod;
     unsigned int feedbackType;
     NSArray *enabledApplications;
@@ -66,6 +67,7 @@
 @property(nonatomic, getter=isPersistent) BOOL persistent;
 @property(nonatomic) BOOL animationsEnabled;
 @property(nonatomic) BOOL badgeEnabled;
+@property(nonatomic) BOOL badgeEnabledForAll;
 @property(nonatomic) unsigned int invocationMethod;
 @property(nonatomic) unsigned int feedbackType;
 @property(nonatomic, retain) NSArray *enabledApplications;

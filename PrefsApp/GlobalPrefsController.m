@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 19:01:03
+ * Last-modified: 2009-09-23 20:58:20
  */
 
 /**
@@ -88,7 +88,12 @@
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    return 1;
+    int rows = 0;
+    if (section == 0)
+        rows = 1;
+    else
+        rows = [[Preferences sharedInstance] badgeEnabled] ? 2 : 1;
+    return rows;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -96,8 +101,14 @@
     static NSString *reuseIdToggle = @"ToggleCell";
 
     //static NSString *cellTitles[] = {@"Persistence", @"Animations", @"Badge"};
-    static NSString *cellTitles[] = {@"Persist Backgrounding", @"Badge"};
-    static NSString *cellSubtitles[] = {@"Don't disable upon restore", @"Mark icons of running apps"};
+    static NSString *cellTitles[][2] = {
+        {@"Backgrounding Persists", nil},
+        {@"Badge", @"... include Mail, iPod, etc."}
+    };
+    static NSString *cellSubtitles[][2] = {
+        {@"Must manually disable", nil},
+        {@"Mark icons of running apps", @"Apps with built-in backgrounding"}
+    };
 
     // Try to retrieve from the table view a now-unused cell with the given identifier
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdToggle];
@@ -120,8 +131,8 @@
         [button addTarget:self action:@selector(buttonToggled:) forControlEvents:UIControlEventTouchUpInside];
         [cell setAccessoryView:button];
     }
-    cell.textLabel.text = cellTitles[indexPath.section];
-    cell.detailTextLabel.text = cellSubtitles[indexPath.section];
+    cell.textLabel.text = cellTitles[indexPath.section][indexPath.row];
+    cell.detailTextLabel.text = cellSubtitles[indexPath.section][indexPath.row];
 
     UIButton *button = (UIButton *)[cell accessoryView];
     switch (indexPath.section) {
@@ -135,8 +146,18 @@
             break;
         case 2:
 #endif
-            button.selected = [[Preferences sharedInstance] badgeEnabled];
-            cell.imageView.image = [UIImage imageNamed:@"badge.png"];
+            switch (indexPath.row) {
+                case 0:
+                    button.selected = [[Preferences sharedInstance] badgeEnabled];
+                    cell.imageView.image = [UIImage imageNamed:@"badge.png"];
+                    break;
+                case 1:
+                    button.selected = [[Preferences sharedInstance] badgeEnabledForAll];
+                    break;
+                default:
+                    break;
+            }
+        default:
             break;
     }
     return cell;
@@ -160,7 +181,23 @@
             break;
         case 2:
 #endif
-            [[Preferences sharedInstance] setBadgeEnabled:button.selected];
+            switch (indexPath.row) {
+                case 0:
+                    [[Preferences sharedInstance] setBadgeEnabled:button.selected];
+
+                    // Animate showing/hiding of suboption
+                    NSArray *indexPaths = [NSArray arrayWithObjects:[NSIndexPath indexPathForRow:1 inSection:1], nil];
+                    if (button.selected)
+                        [self.tableView insertRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationTop];
+                    else
+                        [self.tableView deleteRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationTop];
+                    break;
+                case 1:
+                    [[Preferences sharedInstance] setBadgeEnabledForAll:button.selected];
+                    break;
+                default:
+                    break;
+            }
             break;
     }
 }
