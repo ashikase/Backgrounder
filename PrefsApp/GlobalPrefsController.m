@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 18:29:08
+ * Last-modified: 2009-09-22 18:41:20
  */
 
 /**
@@ -96,7 +96,7 @@
     static NSString *reuseIdToggle = @"ToggleCell";
 
     //static NSString *cellTitles[] = {@"Persistence", @"Animations", @"Badge"};
-    static NSString *cellTitles[] = {@"Persistence", @"Badge"};
+    static NSString *cellTitles[] = {@"Persist Backgrounding", @"Badge"};
     static NSString *cellSubtitles[] = {@"Don't disable upon restore", @"Mark icons of running apps"};
 
     // Try to retrieve from the table view a now-unused cell with the given identifier
@@ -136,7 +136,7 @@
         case 2:
 #endif
             button.selected = [[Preferences sharedInstance] badgeEnabled];
-            cell.imageView.image = [UIImage imageNamed:@"baddge.png"];
+            cell.imageView.image = [UIImage imageNamed:@"badge.png"];
             break;
     }
     return cell;
