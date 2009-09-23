@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 12:06:53
+ * Last-modified: 2009-09-23 21:09:56
  */
 
 /**
@@ -176,31 +176,24 @@ HOOK(UIApplication, _loadMainNibFile, void)
 
     if (!isBlacklisted) {
         Class $UIApplication([self class]);
-        _UIApplication$applicationSuspend$ =
-            MSHookMessage($UIApplication, @selector(applicationSuspend:), &$UIApplication$applicationSuspend$);
-        _UIApplication$applicationWillSuspend =
-            MSHookMessage($UIApplication, @selector(applicationWillSuspend), &$UIApplication$applicationWillSuspend);
-        _UIApplication$applicationDidResume =
-            MSHookMessage($UIApplication, @selector(applicationDidResume), &$UIApplication$applicationDidResume);
+        LOAD_HOOK($UIApplication, @selector(applicationSuspend:), UIApplication$applicationSuspend$);
+        LOAD_HOOK($UIApplication, @selector(applicationWillSuspend), UIApplication$applicationWillSuspend);
+        LOAD_HOOK($UIApplication, @selector(applicationDidResume), UIApplication$applicationDidResume);
 
         id delegate = [self delegate];
         Class $AppDelegate(delegate ? [delegate class] : [self class]);
-        _UIApplication$applicationWillResignActive$ =
-            MSHookMessage($AppDelegate, @selector(applicationWillResignActive:), &$UIApplication$applicationWillResignActive$);
-        _UIApplication$applicationDidBecomeActive$ =
-            MSHookMessage($AppDelegate, @selector(applicationDidBecomeActive:), &$UIApplication$applicationDidBecomeActive$);
+        LOAD_HOOK($AppDelegate, @selector(applicationWillResignActive:), UIApplication$applicationWillResignActive$);
+        LOAD_HOOK($AppDelegate, @selector(applicationDidBecomeActive:), UIApplication$applicationDidBecomeActive$);
     }
 
     if (animationsEnabled) {
         Class $UIApplication([self class]);
-        _UIApplication$nameOfDefaultImageToUpdateAtSuspension =
-            MSHookMessage($UIApplication, @selector(nameOfDefaultImageToUpdateAtSuspension),
-                &$UIApplication$nameOfDefaultImageToUpdateAtSuspension);
+        LOAD_HOOK($UIApplication, @selector(nameOfDefaultImageToUpdateAtSuspension),
+                UIApplication$nameOfDefaultImageToUpdateAtSuspension);
 
         id delegate = [self delegate];
         Class $AppDelegate(delegate ? [delegate class] : [self class]);
-        _UIApplication$applicationWillTerminate$ =
-            MSHookMessage($AppDelegate, @selector(applicationWillTerminate:), &$UIApplication$applicationWillTerminate$);
+        LOAD_HOOK($AppDelegate, @selector(applicationWillTerminate:), UIApplication$applicationWillTerminate$);
 
 #if 0
         // Make sure that "default images" directory exists
@@ -215,8 +208,7 @@ void initApplicationHooks()
     loadPreferences();
 
     Class $UIApplication(objc_getClass("UIApplication"));
-    _UIApplication$_loadMainNibFile =
-        MSHookMessage($UIApplication, @selector(_loadMainNibFile), &$UIApplication$_loadMainNibFile);
+    LOAD_HOOK($UIApplication, @selector(_loadMainNibFile), UIApplication$_loadMainNibFile);
 
     if (!isBlacklisted) {
         class_addMethod($UIApplication, @selector(isBackgroundingEnabled), (IMP)&$UIApplication$isBackgroundingEnabled, "c@:");
