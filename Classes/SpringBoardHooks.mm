@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-23 00:17:27
+ * Last-modified: 2009-09-23 21:03:34
  */
 
 /**
@@ -465,7 +465,7 @@ HOOK(SBApplication, exitedCommon, void)
     CALL_ORIG(SBApplication, exitedCommon);
 }
 
-HOOK(SBApplication, deactivate, BOOL)
+HOOK(SBApplication, deactivate, void)
 {
 #if 0
     NSString *identifier = [self displayIdentifier];
@@ -499,7 +499,7 @@ HOOK(SBApplication, deactivate, BOOL)
         [self setDeactivationSetting:0x1 flag:YES];
     }
 
-    BOOL result = CALL_ORIG(SBApplication, deactivate);
+    CALL_ORIG(SBApplication, deactivate);
 
     if (isBackgrounded)
         // Must disable the eventOnly flag before returning, or else the application
@@ -507,8 +507,6 @@ HOOK(SBApplication, deactivate, BOOL)
         // operating properly.
         // NOTE: This is the continuation of phoenix3200's fix
         [self setDeactivationSetting:0x1 flag:flag];
-
-    return result;
 }
 
 // NOTE: Observed types:
