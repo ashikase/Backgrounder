@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 13:56:41
+ * Last-modified: 2009-09-22 18:29:08
  */
 
 /**
@@ -77,76 +77,90 @@
 
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return 1;
+	return 2;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(int)section
 {
-    return @"General";
+    static NSString *titles[] = {nil, @"Indicate backgrounding status via..."};
+    return titles[section];
 }
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    return 2;
+    return 1;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     static NSString *reuseIdToggle = @"ToggleCell";
 
-    UITableViewCell *cell = nil;
-    if (indexPath.section == 0) {
-        //static NSString *cellTitles[] = {@"Persistence", @"Animations", @"Badge"};
-        static NSString *cellTitles[] = {@"Persistence", @"Badge"};
+    //static NSString *cellTitles[] = {@"Persistence", @"Animations", @"Badge"};
+    static NSString *cellTitles[] = {@"Persistence", @"Badge"};
+    static NSString *cellSubtitles[] = {@"Don't disable upon restore", @"Mark icons of running apps"};
 
-        // Try to retrieve from the table view a now-unused cell with the given identifier
-        cell = [tableView dequeueReusableCellWithIdentifier:reuseIdToggle];
-        if (cell == nil) {
-            // Cell does not exist, create a new one
-            cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdToggle] autorelease];
-            [cell setSelectionStyle:0];
+    // Try to retrieve from the table view a now-unused cell with the given identifier
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdToggle];
+    if (cell == nil) {
+        // Cell does not exist, create a new one
+        cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:reuseIdToggle] autorelease];
+        [cell setSelectionStyle:0];
 
-            UISwitch *toggle = [[UISwitch alloc] init];
-            [toggle addTarget:self action:@selector(switchToggled:) forControlEvents:4096]; // ValueChanged
-            [cell setAccessoryView:toggle];
-            [toggle release];
-        }
-        [cell setText:cellTitles[indexPath.row]];
+        UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
+        button.frame = CGRectMake(0, 0, 54.0f, 27.0f);
+        button.titleLabel.font = [UIFont boldSystemFontOfSize:17.0f];
+        [button setBackgroundImage:[[UIImage imageNamed:@"toggle_off.png"]
+            stretchableImageWithLeftCapWidth:5.0f topCapHeight:0] forState:UIControlStateNormal];
+        [button setBackgroundImage:[[UIImage imageNamed:@"toggle_on.png"]
+            stretchableImageWithLeftCapWidth:5.0f topCapHeight:0] forState:UIControlStateSelected];
+        [button setTitle:@"OFF" forState:UIControlStateNormal];
+        [button setTitle:@"ON" forState:UIControlStateSelected];
+        [button setTitleColor:[UIColor colorWithWhite:0.5f alpha:1.0f] forState:UIControlStateNormal];
+        [button setTitleColor:[UIColor whiteColor] forState:UIControlStateSelected];
+        [button addTarget:self action:@selector(buttonToggled:) forControlEvents:UIControlEventTouchUpInside];
+        [cell setAccessoryView:button];
+    }
+    cell.textLabel.text = cellTitles[indexPath.section];
+    cell.detailTextLabel.text = cellSubtitles[indexPath.section];
 
-        UISwitch *toggle = (UISwitch *)[cell accessoryView];
-        switch (indexPath.row) {
-            case 0:
-                [toggle setOn:[[Preferences sharedInstance] isPersistent]];
-                break;
-            case 1:
+    UIButton *button = (UIButton *)[cell accessoryView];
+    switch (indexPath.section) {
+        case 0:
+            button.selected = [[Preferences sharedInstance] isPersistent];
+            cell.imageView.image = nil;
+            break;
+        case 1:
 #if 0
-                [toggle setOn:[[Preferences sharedInstance] animationsEnabled]];
-                break;
-            case 2:
+            button.selected = [[Preferences sharedInstance] animationsEnabled];
+            break;
+        case 2:
 #endif
-                [toggle setOn:[[Preferences sharedInstance] badgeEnabled]];
-                break;
-        }
+            button.selected = [[Preferences sharedInstance] badgeEnabled];
+            cell.imageView.image = [UIImage imageNamed:@"baddge.png"];
+            break;
     }
     return cell;
 }
 
-#pragma mark - Switch delegate
+#pragma mark - UIButton delegate
 
-- (void)switchToggled:(UISwitch *)control
+- (void)buttonToggled:(UIButton *)button
 {
-    NSIndexPath *indexPath = [self.tableView indexPathForCell:(UITableViewCell *)[control superview]];
-    switch (indexPath.row) {
+    // Update selected state of button
+    button.selected = !button.selected;
+
+    NSIndexPath *indexPath = [self.tableView indexPathForCell:(UITableViewCell *)[button superview]];
+    switch (indexPath.section) {
         case 0:
-            [[Preferences sharedInstance] setPersistent:[control isOn]];
+            [[Preferences sharedInstance] setPersistent:button.selected];
             break;
         case 1:
 #if 0
-            [[Preferences sharedInstance] setAnimationsEnabled:[control isOn]];
+            [[Preferences sharedInstance] setAnimationsEnabled:button.selected];
             break;
         case 2:
 #endif
-            [[Preferences sharedInstance] setBadgeEnabled:[control isOn]];
+            [[Preferences sharedInstance] setBadgeEnabled:button.selected];
             break;
     }
 }
