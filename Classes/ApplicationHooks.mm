@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-23 21:09:56
+ * Last-modified: 2009-09-27 00:22:49
  */
 
 /**
@@ -128,18 +128,6 @@ HOOK(UIApplication, applicationDidResume, void)
         CALL_ORIG(UIApplication, applicationDidResume);
 }
 
-HOOK(UIApplication, applicationWillResignActive$, void, id application)
-{
-    if (!backgroundingEnabled)
-        CALL_ORIG(UIApplication, applicationWillResignActive$, application);
-}
-
-HOOK(UIApplication, applicationDidBecomeActive$, void, id application)
-{
-    if (!backgroundingEnabled)
-        CALL_ORIG(UIApplication, applicationDidBecomeActive$, application);
-}
-
 // NOTE: Only hooked when animationsEnabled = YES
 HOOK(UIApplication, applicationWillTerminate$, void, id application)
 {
@@ -179,11 +167,6 @@ HOOK(UIApplication, _loadMainNibFile, void)
         LOAD_HOOK($UIApplication, @selector(applicationSuspend:), UIApplication$applicationSuspend$);
         LOAD_HOOK($UIApplication, @selector(applicationWillSuspend), UIApplication$applicationWillSuspend);
         LOAD_HOOK($UIApplication, @selector(applicationDidResume), UIApplication$applicationDidResume);
-
-        id delegate = [self delegate];
-        Class $AppDelegate(delegate ? [delegate class] : [self class]);
-        LOAD_HOOK($AppDelegate, @selector(applicationWillResignActive:), UIApplication$applicationWillResignActive$);
-        LOAD_HOOK($AppDelegate, @selector(applicationDidBecomeActive:), UIApplication$applicationDidBecomeActive$);
     }
 
     if (animationsEnabled) {
