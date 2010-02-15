@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-27 00:32:50
+ * Last-modified: 2009-09-27 00:55:51
  */
 
 /**
@@ -125,19 +125,19 @@ static void $UIApplication$_setSuspended$(UIApplication *self, SEL sel, BOOL val
 }
 #endif
 
-HOOK(UIApplication, _loadMainNibFile, void)
+HOOK(UIApplication, init, id)
 {
-    // NOTE: This method always gets called, even if no NIB files are used.
-    //       Also note that if an application overrides this method (unlikely,
-    //       but possible), this extension's hooks will not be installed.
-    CALL_ORIG(UIApplication, _loadMainNibFile);
+    self = CALL_ORIG(UIApplication, init);
 
     if (!isBlacklisted) {
-        Class $UIApplication([self class]);
+        // NOTE: May be a subclass of UIApplication
+        Class $UIApplication = [self class];
         LOAD_HOOK($UIApplication, @selector(applicationSuspend:), UIApplication$applicationSuspend$);
         LOAD_HOOK($UIApplication, @selector(applicationWillSuspend), UIApplication$applicationWillSuspend);
         LOAD_HOOK($UIApplication, @selector(applicationDidResume), UIApplication$applicationDidResume);
     }
+
+    return self;
 }
 
 void initApplicationHooks()
@@ -145,7 +145,7 @@ void initApplicationHooks()
     loadPreferences();
 
     Class $UIApplication(objc_getClass("UIApplication"));
-    LOAD_HOOK($UIApplication, @selector(_loadMainNibFile), UIApplication$_loadMainNibFile);
+    LOAD_HOOK($UIApplication, @selector(init), UIApplication$init);
 
     if (!isBlacklisted) {
         class_addMethod($UIApplication, @selector(isBackgroundingEnabled), (IMP)&$UIApplication$isBackgroundingEnabled, "c@:");
