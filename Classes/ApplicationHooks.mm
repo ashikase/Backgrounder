@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-27 00:22:49
+ * Last-modified: 2009-09-27 00:32:50
  */
 
 /**
@@ -47,7 +47,6 @@ struct GSEvent;
 
 static BOOL backgroundingEnabled = NO;
 static BOOL isBlacklisted = NO;
-static BOOL animationsEnabled = NO;
 
 //______________________________________________________________________________
 //______________________________________________________________________________
@@ -60,15 +59,6 @@ static void loadPreferences()
             isBlacklisted = [(NSArray *)propList containsObject:[[NSBundle mainBundle] bundleIdentifier]];
         CFRelease(propList);
     }
-
-#if 0
-    propList = CFPreferencesCopyAppValue(CFSTR("animationsEnabled"), CFSTR(APP_ID));
-    if (propList) {
-        if (CFGetTypeID(propList) == CFBooleanGetTypeID())
-            animationsEnabled = CFBooleanGetValue(reinterpret_cast<CFBooleanRef>(propList));
-        CFRelease(propList);
-    }
-#endif
 }
 
 //______________________________________________________________________________
@@ -94,14 +84,6 @@ static void $UIApplication$setBackgroundingEnabled$(id self, SEL sel, BOOL enabl
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-// NOTE: Only hooked when animationsEnabled = YES
-HOOK(UIApplication, nameOfDefaultImageToUpdateAtSuspension, NSString *)
-{
-    // FIXME: Find a better solution for the Categories "transparent-window" issue
-    NSString *path = CALL_ORIG(UIApplication, nameOfDefaultImageToUpdateAtSuspension);
-    return (path || [[self performSelector:@selector(displayIdentifier)] hasPrefix:@"com.bigboss.categories."]) ? path : @"Default";
-}
-
 // Prevent execution of application's on-suspend/resume methods
 HOOK(UIApplication, applicationWillSuspend, void)
 {
@@ -126,18 +108,6 @@ HOOK(UIApplication, applicationDidResume, void)
 
     if (!backgroundingEnabled)
         CALL_ORIG(UIApplication, applicationDidResume);
-}
-
-// NOTE: Only hooked when animationsEnabled = YES
-HOOK(UIApplication, applicationWillTerminate$, void, id application)
-{
-#if 0
-    if (CALL_ORIG(UIApplication, nameOfDefaultImageToUpdateAtSuspension) == nil)
-        // App does not normally produce a default image; safe to delete
-        [application removeDefaultImage:@"Default"];
-#endif
-
-    CALL_ORIG(UIApplication, applicationWillTerminate$, application);
 }
 
 // Overriding this method prevents the application from quitting on suspend
@@ -167,22 +137,6 @@ HOOK(UIApplication, _loadMainNibFile, void)
         LOAD_HOOK($UIApplication, @selector(applicationSuspend:), UIApplication$applicationSuspend$);
         LOAD_HOOK($UIApplication, @selector(applicationWillSuspend), UIApplication$applicationWillSuspend);
         LOAD_HOOK($UIApplication, @selector(applicationDidResume), UIApplication$applicationDidResume);
-    }
-
-    if (animationsEnabled) {
-        Class $UIApplication([self class]);
-        LOAD_HOOK($UIApplication, @selector(nameOfDefaultImageToUpdateAtSuspension),
-                UIApplication$nameOfDefaultImageToUpdateAtSuspension);
-
-        id delegate = [self delegate];
-        Class $AppDelegate(delegate ? [delegate class] : [self class]);
-        LOAD_HOOK($AppDelegate, @selector(applicationWillTerminate:), UIApplication$applicationWillTerminate$);
-
-#if 0
-        // Make sure that "default images" directory exists
-        NSString *path = [NSString stringWithFormat:@"%@/%@", [self userLibraryDirectory], @"Caches/Snapshots"];
-        [[NSFileManager defaultManager] createDirectoryAtPath:path withIntermediateDirectories:YES attributes:nil error:NULL];
-#endif
     }
 }
 
