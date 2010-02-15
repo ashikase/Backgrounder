@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-24 23:30:16
+ * Last-modified: 2009-09-28 14:51:13
  */
 
 /**
@@ -72,8 +72,8 @@ static NSMutableDictionary *statusBarStates = nil;
 static NSString *deactivatingApp = nil;
 
 static BOOL animateStatusBar = YES;
-static BOOL animationsEnabled = YES;
 #endif
+
 static BOOL badgeEnabled = NO;
 static BOOL badgeEnabledForAll = YES;
 
@@ -97,15 +97,6 @@ static void loadPreferences()
             isPersistent = CFBooleanGetValue(reinterpret_cast<CFBooleanRef>(propList));
         CFRelease(propList);
     }
-
-#if 0
-    propList = CFPreferencesCopyAppValue(CFSTR("animationsEnabled"), CFSTR(APP_ID));
-    if (propList) {
-        if (CFGetTypeID(propList) == CFBooleanGetTypeID())
-            animationsEnabled = CFBooleanGetValue(reinterpret_cast<CFBooleanRef>(propList));
-        CFRelease(propList);
-    }
-#endif
 
     propList = CFPreferencesCopyAppValue(CFSTR("badgeEnabled"), CFSTR(APP_ID));
     if (propList) {
@@ -199,38 +190,6 @@ HOOK(SBStatusBarController, setStatusBarMode$mode$orientation$duration$fenceID$a
     CALL_ORIG(SBStatusBarController, setStatusBarMode$mode$orientation$duration$fenceID$animation$,
             mode, orientation, duration, fenceID, animation);
 }
-
-//______________________________________________________________________________
-//______________________________________________________________________________
-
-// NOTE: Only hooked when animationsEnabled == NO
-HOOK(SBUIController, animateLaunchApplication$, void, id app)
-{
-    if ([app pid] != -1) {
-        // Application is backgrounded
-
-        // FIXME: Find a better solution for the Categories "transparent-window" issue
-        if ([[app displayIdentifier] hasPrefix:@"com.bigboss.categories."]) {
-            // Make sure SpringBoard dock and icons are hidden
-            [[objc_getClass("SBIconController") sharedInstance] scatter:NO startTime:CFAbsoluteTimeGetCurrent()];
-            [self showButtonBar:NO animate:NO action:NULL delegate:nil];
-        }
-
-        // Prevent status bar from fading in
-        animateStatusBar = NO;
-
-        // Launch without animation
-        NSArray *state = [statusBarStates objectForKey:[app displayIdentifier]];
-        [app setDisplaySetting:0x10 value:[state objectAtIndex:0]]; // statusBarMode
-        [app setDisplaySetting:0x20 value:[state objectAtIndex:1]]; // statusBarOrienation
-        // FIXME: Originally Activating (and not Active)
-        [SBWActiveDisplayStack pushDisplay:app];
-    } else {
-        // Normal launch
-        CALL_ORIG(SBUIController, animateLaunchApplication$, app);
-    }
-}
-#endif
 
 //______________________________________________________________________________
 //______________________________________________________________________________
@@ -364,9 +323,6 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
 
 static void $SpringBoard$dismissBackgrounderFeedback(SpringBoard *self, SEL sel)
 {
-    // FIXME: If feedback types other than simple and task-menu are added,
-    //        this method will need to be updated
-
     // Hide and release alert window (may be nil)
     [alert dismiss];
     [alert release];
@@ -443,12 +399,6 @@ HOOK(SBApplication, launchSucceeded$, void, BOOL unknownFlag)
 HOOK(SBApplication, exitedAbnormally, void)
 {
     [bgEnabledApps removeObject:[self displayIdentifier]];
-
-#if 0
-    if (animationsEnabled && ![self isSystemApplication])
-        [[NSFileManager defaultManager] removeItemAtPath:[self defaultImage:"Default"] error:nil];
-#endif
-
     CALL_ORIG(SBApplication, exitedAbnormally);
 }
 
@@ -528,17 +478,6 @@ HOOK(SBApplication, _startWatchdogTimerType$, void, int type)
         CALL_ORIG(SBApplication, _startWatchdogTimerType$, type);
 }
 
-#if 0
-// NOTE: Only hooked when animationsEnabled == YES
-HOOK(SBApplication, pathForDefaultImage$, id, char *def)
-{
-    return ([self isSystemApplication] || ![activeApps containsObject:[self displayIdentifier]]) ?
-        CALL_ORIG(SBApplication, pathForDefaultImage$, def) :
-        [NSString stringWithFormat:@"%@/Library/Caches/Snapshots/%@-Default.jpg",
-            [[self seatbeltProfilePath] stringByDeletingPathExtension], [self bundleIdentifier]];
-}
-#endif
-
 //______________________________________________________________________________
 //______________________________________________________________________________
 
@@ -554,11 +493,6 @@ void initSpringBoardHooks()
     Class $SBStatusBarController(objc_getClass("SBStatusBarController"));
     LOAD_HOOK($SBStatusBarController, @selector(setStatusBarMode:orientation:duration:fenceID:animation:),
         SBStatusBarController$setStatusBarMode$mode$orientation$duration$fenceID$animation$);
-
-    if (!animationsEnabled) {
-        Class $SBUIController(objc_getClass("SBUIController"));
-        LOAD_HOOK($SBUIController, @selector(animateLaunchApplication:), SBUIController$animateLaunchApplication$);
-    }
 #endif
 
     Class $SpringBoard = objc_getClass("SpringBoard");
