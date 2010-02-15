@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-23 21:03:34
+ * Last-modified: 2009-09-24 23:30:16
  */
 
 /**
@@ -242,8 +242,6 @@ static id alert = nil;
 
 static void startInvocationTimer()
 {
-    invocationTimerDidFire = NO;
-
     SpringBoard *springBoard = (SpringBoard *)[objc_getClass("SpringBoard") sharedApplication];
     invocationTimer = [[NSTimer scheduledTimerWithTimeInterval:0.7f
         target:springBoard selector:@selector(invokeBackgrounder)
@@ -261,7 +259,12 @@ static void cancelInvocationTimer()
 // NOTE: Only hooked when invocationMethod == BGInvocationMethodMenuShortHold
 HOOK(SpringBoard, menuButtonDown$, void, GSEvent *event)
 {
-    startInvocationTimer();
+    invocationTimerDidFire = NO;
+
+    if ([SBWActiveDisplayStack topApplication] != nil)
+        // Not SpringBoard, start hold timer
+        startInvocationTimer();
+
     CALL_ORIG(SpringBoard, menuButtonDown$, event);
 }
 
@@ -280,7 +283,12 @@ HOOK(SpringBoard, menuButtonUp$, void, GSEvent *event)
 // NOTE: Only hooked when invocationMethod == BGInvocationMethodLockShortHold
 HOOK(SpringBoard, lockButtonDown$, void, GSEvent *event)
 {
-    startInvocationTimer();
+    invocationTimerDidFire = NO;
+
+    if ([SBWActiveDisplayStack topApplication] != nil)
+        // Not SpringBoard, start hold timer
+        startInvocationTimer();
+
     CALL_ORIG(SpringBoard, lockButtonDown$, event);
 }
 
