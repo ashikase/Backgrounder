@@ -6,7 +6,7 @@
 	<string>English</string>
 
 	<key>CFBundleExecutable</key>
-	<string>BackgrounderPrefs</string>
+	<string>Preferences</string>
 
 	<key>CFBundleIdentifier</key>
 	<string>jp.ashikase.backgrounder</string>
