@@ -1,6 +1,6 @@
 Package: backgrounder
 Name: Backgrounder
-Version: svn.r261
+Version: svn.r295
 Architecture: iphoneos-arm
 Description: Run applications in the background
 Homepage: http://iphone-backgrounder.googlecode.com/

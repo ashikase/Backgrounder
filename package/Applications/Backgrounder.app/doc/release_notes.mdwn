@@ -1,3 +1,12 @@
+> # Version svn.r295
+> - - -
+> * Two new invocation methods: hold power button, and none (for Kirikae, etc.)
+> * Added option to not show badges on apps not backgrounded by Backgrounder.
+> * Fixed bug that caused blacklist to be ignored when called externally (e.g. via Kirikae).
+> * Note: location of image used for badge has changed
+
+- - -
+
 > # Version svn.r261
 > - - -
 > * Reenabled always-enabled apps option
