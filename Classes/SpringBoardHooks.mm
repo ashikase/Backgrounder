@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-28 14:51:13
+ * Last-modified: 2009-11-30 02:28:27
  */
 
 /**
@@ -190,6 +190,7 @@ HOOK(SBStatusBarController, setStatusBarMode$mode$orientation$duration$fenceID$a
     CALL_ORIG(SBStatusBarController, setStatusBarMode$mode$orientation$duration$fenceID$animation$,
             mode, orientation, duration, fenceID, animation);
 }
+#endif
 
 //______________________________________________________________________________
 //______________________________________________________________________________
