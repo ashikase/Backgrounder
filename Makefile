@@ -17,9 +17,9 @@ LDFLAGS = -march=armv6 \
 		  -framework CoreFoundation \
 		  -framework Foundation \
 		  -framework UIKit \
-		  -framework GraphicsServices \
 		  -framework CoreGraphics \
 		  -F$(SYS_PATH)/System/Library/PrivateFrameworks \
+		  -framework GraphicsServices \
 		  -L$(MS_PATH) -lsubstrate \
 		  -lobjc
 
@@ -35,18 +35,18 @@ SRCS       := $(foreach dir,$(DIRLIST), $(wildcard $(dir)/*.mm))
 HDRS       := $(foreach dir,$(DIRLIST), $(wildcard $(dir)/*.h))
 OBJS       := $(SRCS:.mm=.o)
 
-all: config $(NAME).dylib
+all: $(NAME).dylib
 
 config:
 	ln -snf $(TOOLCHAIN) $(SYS_PATH)
 
 # Replace 'iphone' with the IP or hostname of your device
-install: config $(NAME).dylib
+install: $(NAME).dylib
 	ssh root@iphone rm -f /Library/MobileSubstrate/DynamicLibraries/$(NAME).dylib
 	scp $(NAME).dylib root@iphone:/Library/MobileSubstrate/DynamicLibraries/
 	ssh root@iphone restart
 
-$(NAME).dylib: $(OBJS) $(HDRS)
+$(NAME).dylib: config $(OBJS) $(HDRS)
 	$(LD) -dynamiclib $(LDFLAGS) $(OBJS) -init _$(NAME)Initialize -o $@
 	$(LDID) -S $@
 
