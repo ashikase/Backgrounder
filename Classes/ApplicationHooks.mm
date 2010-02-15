@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-27 00:55:51
+ * Last-modified: 2009-09-27 01:20:00
  */
 
 /**
@@ -38,11 +38,6 @@
  * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
-
-#import <CoreFoundation/CoreFoundation.h>
-
-struct GSEvent;
 
 
 static BOOL backgroundingEnabled = NO;
@@ -84,7 +79,8 @@ static void $UIApplication$setBackgroundingEnabled$(id self, SEL sel, BOOL enabl
 //______________________________________________________________________________
 //______________________________________________________________________________
 
-// Prevent execution of application's on-suspend/resume methods
+// Prevent execution of application's on-suspend method
+// NOTE: Normally this method does nothing; only system apps can overrride
 HOOK(UIApplication, applicationWillSuspend, void)
 {
 #if 0
@@ -96,6 +92,8 @@ HOOK(UIApplication, applicationWillSuspend, void)
         CALL_ORIG(UIApplication, applicationWillSuspend);
 }
 
+// Prevent execution of application's on-resume methods
+// NOTE: Normally this method does nothing; only system apps can overrride
 HOOK(UIApplication, applicationDidResume, void)
 {
 #if 0
@@ -111,32 +109,22 @@ HOOK(UIApplication, applicationDidResume, void)
 }
 
 // Overriding this method prevents the application from quitting on suspend
-HOOK(UIApplication, applicationSuspend$, void, GSEvent *event)
+HOOK(UIApplication, applicationSuspend$, void, struct __GSEvent *event)
 {
     if (!backgroundingEnabled)
         CALL_ORIG(UIApplication, applicationSuspend$, event);
 }
 
-// FIXME: Tests make this appear unneeded... confirm
-#if 0
-static void $UIApplication$_setSuspended$(UIApplication *self, SEL sel, BOOL val)
-{
-    //[self bg__setSuspended:val];
-}
-#endif
-
 HOOK(UIApplication, init, id)
 {
     self = CALL_ORIG(UIApplication, init);
-
-    if (!isBlacklisted) {
+    if (self) {
         // NOTE: May be a subclass of UIApplication
         Class $UIApplication = [self class];
         LOAD_HOOK($UIApplication, @selector(applicationSuspend:), UIApplication$applicationSuspend$);
         LOAD_HOOK($UIApplication, @selector(applicationWillSuspend), UIApplication$applicationWillSuspend);
         LOAD_HOOK($UIApplication, @selector(applicationDidResume), UIApplication$applicationDidResume);
     }
-
     return self;
 }
 
@@ -144,10 +132,9 @@ void initApplicationHooks()
 {
     loadPreferences();
 
-    Class $UIApplication(objc_getClass("UIApplication"));
-    LOAD_HOOK($UIApplication, @selector(init), UIApplication$init);
-
     if (!isBlacklisted) {
+        Class $UIApplication(objc_getClass("UIApplication"));
+        LOAD_HOOK($UIApplication, @selector(init), UIApplication$init);
         class_addMethod($UIApplication, @selector(isBackgroundingEnabled), (IMP)&$UIApplication$isBackgroundingEnabled, "c@:");
         class_addMethod($UIApplication, @selector(setBackgroundingEnabled:), (IMP)&$UIApplication$setBackgroundingEnabled$, "v@:c");
     }
