@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 14:55:48
+ * Last-modified: 2010-02-16 17:54:39
  */
 
 /**
@@ -44,8 +44,9 @@
 
 #include <stdlib.h>
 
-#import <CoreGraphics/CGGeometry.h>
+#import <libactivator/libactivator.h>
 
+#import <CoreGraphics/CGGeometry.h>
 #import <Foundation/Foundation.h>
 
 #import "AppSpecificPrefsController.h"
@@ -131,21 +132,35 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     static NSString *reuseIdSimple = @"SimpleCell";
+    static NSString *reuseIdRightValue = @"RightValueCell";
     static NSString *reuseIdSubtitle = @"SubtitleCell";
 
     UITableViewCell *cell = nil;
     if (indexPath.section == 0) {
-        static NSString *cellTitles[] = {@"Global", @"Control", @"Application-specific"};
+        if (indexPath.row == 1) {
+            // Try to retrieve from the table view a now-unused cell with the given identifier
+            cell = [tableView dequeueReusableCellWithIdentifier:reuseIdRightValue];
+            if (cell == nil) {
+                // Cell does not exist, create a new one
+                cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:reuseIdRightValue] autorelease];
+                cell.selectionStyle = UITableViewCellSelectionStyleGray;
+                cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+            }
+            cell.textLabel.text = @"Control";
+            cell.detailTextLabel.text = @"(via libactivator)";
+        } else {
+            static NSString *cellTitles[] = {@"Global", nil, @"Application-specific"};
 
-        // Try to retrieve from the table view a now-unused cell with the given identifier
-        cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSimple];
-        if (cell == nil) {
-            // Cell does not exist, create a new one
-            cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdSimple] autorelease];
-            cell.selectionStyle = UITableViewCellSelectionStyleGray;
-            cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+            // Try to retrieve from the table view a now-unused cell with the given identifier
+            cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSimple];
+            if (cell == nil) {
+                // Cell does not exist, create a new one
+                cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdSimple] autorelease];
+                cell.selectionStyle = UITableViewCellSelectionStyleGray;
+                cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+            }
+            cell.textLabel.text = cellTitles[indexPath.row];
         }
-        cell.textLabel.text = cellTitles[indexPath.row];
     } else {
         // Try to retrieve from the table view a now-unused cell with the given identifier
         cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSubtitle];
@@ -176,7 +191,8 @@
                 break;
             case 1:
                 // Control
-                vc = [[[ControlController alloc] initWithStyle:1] autorelease];
+                vc = [[[LAListenerSettingsViewController alloc] init] autorelease];
+                [(LAListenerSettingsViewController *)vc setListenerName:@APP_ID];
                 break;
             case 2:
             default:
