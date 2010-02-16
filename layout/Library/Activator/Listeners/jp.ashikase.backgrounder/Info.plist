@@ -1,0 +1,5 @@
+{
+	title = "Backgrounder";
+	description = "Run applications in the background";
+	"compatible-modes" = ("application");
+}
