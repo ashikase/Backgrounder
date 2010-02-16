@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-02-15 20:53:28
+ * Last-modified: 2010-02-16 14:11:25
  */
 
 /**
@@ -156,10 +156,13 @@ static void toggleBackgrounding(int signal)
     self = %orig;
     if (self) {
         // NOTE: May be a subclass of UIApplication
-        Class $UIApplication = [self class];
-        LOAD_HOOK($UIApplication, @selector(applicationSuspend:), GApplication$UIApplication$applicationSuspend$);
-        LOAD_HOOK($UIApplication, @selector(applicationWillSuspend), GApplication$UIApplication$applicationWillSuspend);
-        LOAD_HOOK($UIApplication, @selector(applicationDidResume), GApplication$UIApplication$applicationDidResume);
+        Class $$UIApplication = [self class];
+        MSHookMessageEx($$UIApplication, @selector(applicationSuspend:),
+                (IMP)&$GApplication$UIApplication$applicationSuspend$, (IMP*)&_GApplication$UIApplication$applicationSuspend$);
+        MSHookMessageEx($$UIApplication, @selector(applicationWillSuspend),
+                (IMP)&$GApplication$UIApplication$applicationWillSuspend, (IMP*)&_GApplication$UIApplication$applicationWillSuspend);
+        MSHookMessageEx($$UIApplication, @selector(applicationDidResume),
+                (IMP)&$GApplication$UIApplication$applicationDidResume, (IMP*)&_GApplication$UIApplication$applicationDidResume);
         if (NO)
             %init(GApplication);
     }

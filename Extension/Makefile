@@ -5,7 +5,7 @@ Backgrounder_OBJCC_FILES = main.mm \
 						   ApplicationHooks.mm \
 						   SpringBoardHooks.mm \
 						   SimplePopup.mm
-Backgrounder_CFLAGS = -F$(SYSROOT)/System/Library/CoreServices -include common.h -DAPP_ID=\"$(APP_ID)\"
+Backgrounder_CFLAGS = -F$(SYSROOT)/System/Library/CoreServices -DAPP_ID=\"$(APP_ID)\"
 Backgrounder_FRAMEWORKS = UIKit CoreGraphics
 
 include ../framework/makefiles/common.mk
