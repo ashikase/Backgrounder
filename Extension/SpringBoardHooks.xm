@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-02-16 14:12:22
+ * Last-modified: 2010-02-16 17:16:21
  */
 
 /**
@@ -58,6 +58,7 @@
 
 #import <substrate.h>
 
+#import "BackgrounderActivator.h"
 #import "SimplePopup.h"
 
 struct GSEvent;
@@ -78,14 +79,6 @@ static BOOL animateStatusBar = YES;
 
 static BOOL badgeEnabled = NO;
 static BOOL badgeEnabledForAll = YES;
-
-typedef enum {
-    BGInvocationMethodNone,
-    BGInvocationMethodMenuShortHold,
-    BGInvocationMethodLockShortHold
-} BGInvocationMethod;
-
-static BGInvocationMethod invocationMethod = BGInvocationMethodMenuShortHold;
 
 //==============================================================================
 
@@ -120,14 +113,23 @@ static void loadPreferences()
         CFRelease(propList);
     }
 
+    // Invocation type
+    // NOTE: This setting is from pre-libactivator; convert and remove
     propList = CFPreferencesCopyAppValue(CFSTR("invocationMethod"), CFSTR(APP_ID));
     if (propList) {
-        // NOTE: Defaults to BGInvocationMethodMenuShortHold
-        if ([(NSString *)propList isEqualToString:@"powerShortHold"])
-            invocationMethod = BGInvocationMethodLockShortHold;
-        else if ([(NSString *)propList isEqualToString:@"none"])
-            invocationMethod = BGInvocationMethodNone;
+        NSString *eventName = nil;
+        if ([(NSString *)propList isEqualToString:@"homeShortHold"])
+            eventName = LAEventNameMenuHoldShort;
+        else if ([(NSString *)propList isEqualToString:@"powerShortHold"])
+            eventName = LAEventNameLockHoldShort;
         CFRelease(propList);
+
+        // Register the event type with libactivator
+        [[LAActivator sharedInstance] assignEvent:[LAEvent eventWithName:eventName] toListenerWithName:@APP_ID];
+
+        // Remove the preference, as it is no longer used
+        CFPreferencesSetAppValue(CFSTR("invocationMethod"), NULL, CFSTR(APP_ID));
+        CFPreferencesAppSynchronize(CFSTR(APP_ID));
     }
 }
 
@@ -197,25 +199,7 @@ HOOK(SBStatusBarController, setStatusBarMode$mode$orientation$duration$fenceID$a
 //==============================================================================
 
 // The alert window displays instructions when the home button is held down
-static NSTimer *invocationTimer = nil;
-static BOOL invocationTimerDidFire = NO;
 static id alert = nil;
-
-static void startInvocationTimer()
-{
-    SpringBoard *springBoard = (SpringBoard *)[objc_getClass("SpringBoard") sharedApplication];
-    invocationTimer = [[NSTimer scheduledTimerWithTimeInterval:0.7f
-        target:springBoard selector:@selector(invokeBackgrounder)
-        userInfo:nil repeats:NO] retain];
-}
-
-static void cancelInvocationTimer()
-{
-    // Disable and release timer (may be nil)
-    [invocationTimer invalidate];
-    [invocationTimer release];
-    invocationTimer = nil;
-}
 
 //==============================================================================
 
@@ -254,8 +238,6 @@ static void cancelInvocationTimer()
 %new(v@:)
 - (void)invokeBackgrounder
 {
-    invocationTimerDidFire = YES;
-
     id app = [SBWActiveDisplayStack topApplication];
     NSString *identifier = [app displayIdentifier];
     if (app && ![blacklistedApps containsObject:identifier]) {
@@ -306,81 +288,6 @@ static void cancelInvocationTimer()
 }
 
 %end
-
-//==============================================================================
-
-%group GHomeHold
-// NOTE: Only hooked when invocationMethod == BGInvocationMethodMenuShortHold
-
-%hook SpringBoard
-
-- (void)menuButtonDown:(GSEventRef)event
-{
-    invocationTimerDidFire = NO;
-
-    if ([SBWActiveDisplayStack topApplication] != nil)
-        // Not SpringBoard, start hold timer
-        startInvocationTimer();
-
-    %orig;
-}
-
-- (void)menuButtonUp:(GSEventRef)event
-{
-    if (invocationTimerDidFire)
-        // Backgrounder popup is visible; hide it
-        [self dismissBackgrounderFeedback];
-    else
-        cancelInvocationTimer();
-
-    %orig;
-}
-
-%end
-
-%end // GHomeHold
-
-//==============================================================================
-
-%group GLockHold
-// NOTE: Only hooked when invocationMethod == BGInvocationMethodLockShortHold
-
-%hook SpringBoard
-
-- (void)lockButtonDown:(GSEventRef)event
-{
-    NSLog(@"=== BG: LOCK DOWN");
-    invocationTimerDidFire = NO;
-
-    if ([SBWActiveDisplayStack topApplication] != nil)
-        // Not SpringBoard, start hold timer
-        startInvocationTimer();
-
-    %orig;
-}
-
-- (void)lockButtonUp:(GSEventRef)event
-{
-    NSLog(@"=== BG: LOCK UP");
-    if (invocationTimerDidFire) {
-        // Reset the lock button state
-        [self _unsetLockButtonBearTrap];
-        [self _setLockButtonTimer:nil];
-
-        // Backgrounder popup is visible; hide it
-        [self dismissBackgrounderFeedback];
-
-        // Simulate menu button press to suspend current app
-        [self _handleMenuButtonEvent];
-    } else {
-        cancelInvocationTimer();
-        %orig;
-    }
-}
-
-%end
-
-%end // GLockHold
 
 //==============================================================================
 
@@ -518,6 +425,9 @@ void initSpringBoardHooks()
 {
     loadPreferences();
 
+    // Create the libactivator event listener
+    [BackgrounderActivator load];
+
 #if 0
     Class $SBStatusBarController(objc_getClass("SBStatusBarController"));
     LOAD_HOOK($SBStatusBarController, @selector(setStatusBarMode:orientation:duration:fenceID:animation:),
@@ -530,14 +440,6 @@ void initSpringBoardHooks()
     LOAD_HOOK($SBApplication, @selector(_relaunchAfterAbnormalExit:), SBApplication$_relaunchAfterAbnormalExit$);
     LOAD_HOOK($SBApplication, @selector(pathForDefaultImage:), SBApplication$pathForDefaultImage$);
 #endif
-
-    NSLog(@"=== BG: 01");
-    if (invocationMethod == BGInvocationMethodMenuShortHold)
-        %init(GHomeHold);
-    else if (invocationMethod == BGInvocationMethodLockShortHold) {
-        NSLog(@"=== BG: 02");
-        %init(GLockHold);
-        }
 }
 
 /* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
