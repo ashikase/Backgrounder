@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-27 01:20:00
+ * Last-modified: 2010-02-15 20:53:28
  */
 
 /**
@@ -43,8 +43,9 @@
 static BOOL backgroundingEnabled = NO;
 static BOOL isBlacklisted = NO;
 
-//______________________________________________________________________________
-//______________________________________________________________________________
+#define GSEventRef void *
+
+//==============================================================================
 
 static void loadPreferences()
 {
@@ -56,8 +57,7 @@ static void loadPreferences()
     }
 }
 
-//______________________________________________________________________________
-//______________________________________________________________________________
+//==============================================================================
 
 // Callback
 static void toggleBackgrounding(int signal)
@@ -65,23 +65,15 @@ static void toggleBackgrounding(int signal)
     backgroundingEnabled = !backgroundingEnabled;
 }
 
-// Class methods
-static BOOL $UIApplication$isBackgroundingEnabled(id self, SEL sel)
-{
-    return backgroundingEnabled;
-}
+//==============================================================================
 
-static void $UIApplication$setBackgroundingEnabled$(id self, SEL sel, BOOL enable)
-{
-    backgroundingEnabled = enable;
-}
+%group GApplication
 
-//______________________________________________________________________________
-//______________________________________________________________________________
+%hook UIApplication
 
 // Prevent execution of application's on-suspend method
 // NOTE: Normally this method does nothing; only system apps can overrride
-HOOK(UIApplication, applicationWillSuspend, void)
+- (void)applicationWillSuspend
 {
 #if 0
     [self removeStatusBarImageNamed:
@@ -89,12 +81,12 @@ HOOK(UIApplication, applicationWillSuspend, void)
 #endif
 
     if (!backgroundingEnabled)
-        CALL_ORIG(UIApplication, applicationWillSuspend);
+        %orig;
 }
 
 // Prevent execution of application's on-resume methods
 // NOTE: Normally this method does nothing; only system apps can overrride
-HOOK(UIApplication, applicationDidResume, void)
+- (void)applicationDidResume
 {
 #if 0
     NSString *name = [NSString stringWithFormat:@"Backgrounder"];
@@ -105,39 +97,97 @@ HOOK(UIApplication, applicationDidResume, void)
 #endif
 
     if (!backgroundingEnabled)
-        CALL_ORIG(UIApplication, applicationDidResume);
+        %orig;
 }
 
 // Overriding this method prevents the application from quitting on suspend
-HOOK(UIApplication, applicationSuspend$, void, struct __GSEvent *event)
+- (void)applicationSuspend:(GSEventRef)event
 {
     if (!backgroundingEnabled)
-        CALL_ORIG(UIApplication, applicationSuspend$, event);
+        %orig;
 }
 
-HOOK(UIApplication, init, id)
+%end
+
+%end // GApplication
+
+//==============================================================================
+
+%hook UIApplication
+
+// Prevent execution of application's on-suspend method
+// NOTE: Normally this method does nothing; only system apps can overrride
+- (void)applicationWillSuspend
 {
-    self = CALL_ORIG(UIApplication, init);
+#if 0
+    [self removeStatusBarImageNamed:
+        [NSString stringWithFormat:@"Backgrounder"]];
+#endif
+
+    if (!backgroundingEnabled)
+        %orig;
+}
+
+// Prevent execution of application's on-resume methods
+// NOTE: Normally this method does nothing; only system apps can overrride
+- (void)applicationDidResume
+{
+#if 0
+    NSString *name = [NSString stringWithFormat:@"Backgrounder"];
+    if ([self respondsToSelector:@selector(addStatusBarImageNamed:removeOnExit:)])
+        [self addStatusBarImageNamed:name removeOnExit:YES];
+    else
+        [self addStatusBarImageNamed:name removeOnAbnormalExit:YES];
+#endif
+
+    if (!backgroundingEnabled)
+        %orig;
+}
+
+// Overriding this method prevents the application from quitting on suspend
+- (void)applicationSuspend:(GSEventRef)event
+{
+    if (!backgroundingEnabled)
+        %orig;
+}
+
+- (id)init
+{
+    self = %orig;
     if (self) {
         // NOTE: May be a subclass of UIApplication
         Class $UIApplication = [self class];
-        LOAD_HOOK($UIApplication, @selector(applicationSuspend:), UIApplication$applicationSuspend$);
-        LOAD_HOOK($UIApplication, @selector(applicationWillSuspend), UIApplication$applicationWillSuspend);
-        LOAD_HOOK($UIApplication, @selector(applicationDidResume), UIApplication$applicationDidResume);
+        LOAD_HOOK($UIApplication, @selector(applicationSuspend:), GApplication$UIApplication$applicationSuspend$);
+        LOAD_HOOK($UIApplication, @selector(applicationWillSuspend), GApplication$UIApplication$applicationWillSuspend);
+        LOAD_HOOK($UIApplication, @selector(applicationDidResume), GApplication$UIApplication$applicationDidResume);
+        if (NO)
+            %init(GApplication);
     }
     return self;
 }
+
+%new(c@:)
+- (BOOL)isBackgroundingEnabled
+{
+    return backgroundingEnabled;
+}
+
+%new(v@:c)
+- (void)setBackgroundingEnabled:(BOOL)enable
+{
+    backgroundingEnabled = enable;
+}
+
+%end
+
+//==============================================================================
 
 void initApplicationHooks()
 {
     loadPreferences();
 
-    if (!isBlacklisted) {
-        Class $UIApplication(objc_getClass("UIApplication"));
-        LOAD_HOOK($UIApplication, @selector(init), UIApplication$init);
-        class_addMethod($UIApplication, @selector(isBackgroundingEnabled), (IMP)&$UIApplication$isBackgroundingEnabled, "c@:");
-        class_addMethod($UIApplication, @selector(setBackgroundingEnabled:), (IMP)&$UIApplication$setBackgroundingEnabled$, "v@:c");
-    }
+    if (!isBlacklisted)
+        %init;
 
     // Setup action to take upon receiving toggle signal from SpringBoard
     // NOTE: Done this way as the application hooks *must* be installed in

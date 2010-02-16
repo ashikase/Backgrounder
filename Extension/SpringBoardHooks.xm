@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-11-30 02:28:27
+ * Last-modified: 2010-02-16 13:42:20
  */
 
 /**
@@ -85,8 +85,7 @@ typedef enum {
 
 static BGInvocationMethod invocationMethod = BGInvocationMethodMenuShortHold;
 
-//______________________________________________________________________________
-//______________________________________________________________________________
+//==============================================================================
 
 static void loadPreferences()
 {
@@ -130,8 +129,7 @@ static void loadPreferences()
     }
 }
 
-//______________________________________________________________________________
-//______________________________________________________________________________
+//==============================================================================
 
 @interface UIView (Private)
 - (void)setOrigin:(CGPoint)origin;
@@ -151,8 +149,7 @@ static void showBadgeForDisplayIdentifier(NSString *identifier)
     }
 }
 
-//______________________________________________________________________________
-//______________________________________________________________________________
+//==============================================================================
 
 NSMutableArray *displayStacks = nil;
 
@@ -162,21 +159,24 @@ NSMutableArray *displayStacks = nil;
 #define SBWSuspendingDisplayStack         [displayStacks objectAtIndex:2]
 #define SBWSuspendedEventOnlyDisplayStack [displayStacks objectAtIndex:3]
 
-HOOK(SBDisplayStack, init, id)
+%hook SBDisplayStack
+
+- (id)init
 {
-    id stack = CALL_ORIG(SBDisplayStack, init);
+    id stack = %orig;
     [displayStacks addObject:stack];
     return stack;
 }
 
-HOOK(SBDisplayStack, dealloc, void)
+- (void)dealloc
 {
     [displayStacks removeObject:self];
-    CALL_ORIG(SBDisplayStack, dealloc);
+    %orig;
 }
 
-//______________________________________________________________________________
-//______________________________________________________________________________
+%end
+
+//==============================================================================
 
 #if 0
 HOOK(SBStatusBarController, setStatusBarMode$mode$orientation$duration$fenceID$animation$,
@@ -192,8 +192,7 @@ HOOK(SBStatusBarController, setStatusBarMode$mode$orientation$duration$fenceID$a
 }
 #endif
 
-//______________________________________________________________________________
-//______________________________________________________________________________
+//==============================================================================
 
 // The alert window displays instructions when the home button is held down
 static NSTimer *invocationTimer = nil;
@@ -216,62 +215,11 @@ static void cancelInvocationTimer()
     invocationTimer = nil;
 }
 
-// NOTE: Only hooked when invocationMethod == BGInvocationMethodMenuShortHold
-HOOK(SpringBoard, menuButtonDown$, void, GSEvent *event)
-{
-    invocationTimerDidFire = NO;
+//==============================================================================
 
-    if ([SBWActiveDisplayStack topApplication] != nil)
-        // Not SpringBoard, start hold timer
-        startInvocationTimer();
+%hook SpringBoard
 
-    CALL_ORIG(SpringBoard, menuButtonDown$, event);
-}
-
-// NOTE: Only hooked when invocationMethod == BGInvocationMethodMenuShortHold
-HOOK(SpringBoard, menuButtonUp$, void, GSEvent *event)
-{
-    if (invocationTimerDidFire)
-        // Backgrounder popup is visible; hide it
-        [self dismissBackgrounderFeedback];
-    else
-        cancelInvocationTimer();
-
-    CALL_ORIG(SpringBoard, menuButtonUp$, event);
-}
-
-// NOTE: Only hooked when invocationMethod == BGInvocationMethodLockShortHold
-HOOK(SpringBoard, lockButtonDown$, void, GSEvent *event)
-{
-    invocationTimerDidFire = NO;
-
-    if ([SBWActiveDisplayStack topApplication] != nil)
-        // Not SpringBoard, start hold timer
-        startInvocationTimer();
-
-    CALL_ORIG(SpringBoard, lockButtonDown$, event);
-}
-
-// NOTE: Only hooked when invocationMethod == BGInvocationMethodLockShortHold
-HOOK(SpringBoard, lockButtonUp$, void, GSEvent *event)
-{
-    if (invocationTimerDidFire) {
-        // Reset the lock button state
-        [self _unsetLockButtonBearTrap];
-        [self _setLockButtonTimer:nil];
-
-        // Backgrounder popup is visible; hide it
-        [self dismissBackgrounderFeedback];
-
-        // Simulate menu button press to suspend current app
-        [self _handleMenuButtonEvent];
-    } else {
-        cancelInvocationTimer();
-        CALL_ORIG(SpringBoard, lockButtonUp$, event);
-    }
-}
-
-HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
+- (void)applicationDidFinishLaunching:(id)application
 {
     // NOTE: SpringBoard creates four stacks at startup
     displayStacks = [[NSMutableArray alloc] initWithCapacity:4];
@@ -290,18 +238,19 @@ HOOK(SpringBoard, applicationDidFinishLaunching$, void, id application)
     // Initialize simple notification popup
     initSimplePopup();
 
-    CALL_ORIG(SpringBoard, applicationDidFinishLaunching$, application);
+    %orig;
 }
 
-HOOK(SpringBoard, dealloc, void)
+- (void)dealloc
 {
     [bgEnabledApps release];
     [activeApps release];
     [displayStacks release];
-    CALL_ORIG(SpringBoard, dealloc);
+    %orig;
 }
 
-static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
+%new(v@:)
+- (void)invokeBackgrounder
 {
     invocationTimerDidFire = YES;
 
@@ -322,7 +271,8 @@ static void $SpringBoard$invokeBackgrounder(SpringBoard *self, SEL sel)
     }
 }
 
-static void $SpringBoard$dismissBackgrounderFeedback(SpringBoard *self, SEL sel)
+%new(v@:)
+- (void)dismissBackgrounderFeedback
 {
     // Hide and release alert window (may be nil)
     [alert dismiss];
@@ -330,7 +280,8 @@ static void $SpringBoard$dismissBackgrounderFeedback(SpringBoard *self, SEL sel)
     alert = nil;
 }
 
-static void $SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$(SpringBoard *self, SEL sel, BOOL enable, NSString *identifier)
+%new(v@:c@)
+- (void)setBackgroundingEnabled:(BOOL)enable forDisplayIdentifier:(NSString *)identifier
 {
     if (![blacklistedApps containsObject:identifier]) {
         // Not blacklisted
@@ -352,10 +303,88 @@ static void $SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$(SpringBoa
     }
 }
 
-//______________________________________________________________________________
-//______________________________________________________________________________
+%end
 
-HOOK(SBApplication, launchSucceeded$, void, BOOL unknownFlag)
+//==============================================================================
+
+%group GHomeHold
+// NOTE: Only hooked when invocationMethod == BGInvocationMethodMenuShortHold
+
+%hook SpringBoard
+
+- (void)menuButtonDown:(GSEventRef)event
+{
+    invocationTimerDidFire = NO;
+
+    if ([SBWActiveDisplayStack topApplication] != nil)
+        // Not SpringBoard, start hold timer
+        startInvocationTimer();
+
+    %orig;
+}
+
+- (void)menuButtonUp:(GSEventRef)event
+{
+    if (invocationTimerDidFire)
+        // Backgrounder popup is visible; hide it
+        [self dismissBackgrounderFeedback];
+    else
+        cancelInvocationTimer();
+
+    %orig;
+}
+
+%end
+
+%end // GHomeHold
+
+//==============================================================================
+
+%group GLockHold
+// NOTE: Only hooked when invocationMethod == BGInvocationMethodLockShortHold
+
+%hook SpringBoard
+
+- (void)lockButtonDown:(GSEventRef)event
+{
+    NSLog(@"=== BG: LOCK DOWN");
+    invocationTimerDidFire = NO;
+
+    if ([SBWActiveDisplayStack topApplication] != nil)
+        // Not SpringBoard, start hold timer
+        startInvocationTimer();
+
+    %orig;
+}
+
+- (void)lockButtonUp:(GSEventRef)event
+{
+    NSLog(@"=== BG: LOCK UP");
+    if (invocationTimerDidFire) {
+        // Reset the lock button state
+        [self _unsetLockButtonBearTrap];
+        [self _setLockButtonTimer:nil];
+
+        // Backgrounder popup is visible; hide it
+        [self dismissBackgrounderFeedback];
+
+        // Simulate menu button press to suspend current app
+        [self _handleMenuButtonEvent];
+    } else {
+        cancelInvocationTimer();
+        %orig;
+    }
+}
+
+%end
+
+%end // GLockHold
+
+//==============================================================================
+
+%hook SBApplication
+
+- (void)launchSucceeded:(BOOL)unknownFlag
 {
     NSString *identifier = [self displayIdentifier];
 
@@ -394,16 +423,16 @@ HOOK(SBApplication, launchSucceeded$, void, BOOL unknownFlag)
         // NOTE: This is mainly to catch applications that start in the background
         showBadgeForDisplayIdentifier(identifier);
 
-    CALL_ORIG(SBApplication, launchSucceeded$, unknownFlag);
+    %orig;
 }
 
-HOOK(SBApplication, exitedAbnormally, void)
+- (void)exitedAbnormally
 {
     [bgEnabledApps removeObject:[self displayIdentifier]];
-    CALL_ORIG(SBApplication, exitedAbnormally);
+    %orig;
 }
 
-HOOK(SBApplication, exitedCommon, void)
+- (void)exitedCommon
 {
     // Application has exited (either normally or abnormally);
     // remove from active applications list
@@ -421,10 +450,10 @@ HOOK(SBApplication, exitedCommon, void)
         [[icon viewWithTag:1000] removeFromSuperview];
     }
 
-    CALL_ORIG(SBApplication, exitedCommon);
+    %orig;
 }
 
-HOOK(SBApplication, deactivate, void)
+- (void)deactivate
 {
 #if 0
     NSString *identifier = [self displayIdentifier];
@@ -458,7 +487,7 @@ HOOK(SBApplication, deactivate, void)
         [self setDeactivationSetting:0x1 flag:YES];
     }
 
-    CALL_ORIG(SBApplication, deactivate);
+    %orig;
 
     if (isBackgrounded)
         // Must disable the eventOnly flag before returning, or else the application
@@ -473,22 +502,19 @@ HOOK(SBApplication, deactivate, void)
 //         1: Resume
 //         2: Deactivation
 //         3: Termination
-HOOK(SBApplication, _startWatchdogTimerType$, void, int type)
+- (void)_startWatchdogTimerType:(int)type
 {
     if (type != 3 || ![bgEnabledApps containsObject:[self displayIdentifier]])
-        CALL_ORIG(SBApplication, _startWatchdogTimerType$, type);
+        %orig;
 }
 
-//______________________________________________________________________________
-//______________________________________________________________________________
+%end
+
+//==============================================================================
 
 void initSpringBoardHooks()
 {
     loadPreferences();
-
-    Class $SBDisplayStack = objc_getClass("SBDisplayStack");
-    LOAD_HOOK($SBDisplayStack, @selector(init), SBDisplayStack$init);
-    LOAD_HOOK($SBDisplayStack, @selector(dealloc), SBDisplayStack$dealloc);
 
 #if 0
     Class $SBStatusBarController(objc_getClass("SBStatusBarController"));
@@ -496,39 +522,20 @@ void initSpringBoardHooks()
         SBStatusBarController$setStatusBarMode$mode$orientation$duration$fenceID$animation$);
 #endif
 
-    Class $SpringBoard = objc_getClass("SpringBoard");
-    LOAD_HOOK($SpringBoard, @selector(applicationDidFinishLaunching:), SpringBoard$applicationDidFinishLaunching$);
-    LOAD_HOOK($SpringBoard, @selector(dealloc), SpringBoard$dealloc);
+    %init;
 
-    class_addMethod($SpringBoard, @selector(setBackgroundingEnabled:forDisplayIdentifier:),
-        (IMP)&$SpringBoard$setBackgroundingEnabled$forDisplayIdentifier$, "v@:c@");
-    class_addMethod($SpringBoard, @selector(invokeBackgrounder), (IMP)&$SpringBoard$invokeBackgrounder, "v@:");
-    class_addMethod($SpringBoard, @selector(dismissBackgrounderFeedback), (IMP)&$SpringBoard$dismissBackgrounderFeedback, "v@:");
-
-    Class $SBApplication = objc_getClass("SBApplication");
-    LOAD_HOOK($SBApplication, @selector(launchSucceeded:), SBApplication$launchSucceeded$);
-    LOAD_HOOK($SBApplication, @selector(deactivate), SBApplication$deactivate);
-    LOAD_HOOK($SBApplication, @selector(exitedAbnormally), SBApplication$exitedAbnormally);
-    LOAD_HOOK($SBApplication, @selector(exitedCommon), SBApplication$exitedCommon);
-    LOAD_HOOK($SBApplication, @selector(_startWatchdogTimerType:), SBApplication$_startWatchdogTimerType$);
 #if 0
     LOAD_HOOK($SBApplication, @selector(_relaunchAfterAbnormalExit:), SBApplication$_relaunchAfterAbnormalExit$);
     LOAD_HOOK($SBApplication, @selector(pathForDefaultImage:), SBApplication$pathForDefaultImage$);
 #endif
 
-    switch (invocationMethod) {
-        case BGInvocationMethodMenuShortHold:
-            LOAD_HOOK($SpringBoard, @selector(menuButtonDown:), SpringBoard$menuButtonDown$);
-            LOAD_HOOK($SpringBoard, @selector(menuButtonUp:), SpringBoard$menuButtonUp$);
-            break;
-        case BGInvocationMethodLockShortHold:
-            LOAD_HOOK($SpringBoard, @selector(lockButtonDown:), SpringBoard$lockButtonDown$);
-            LOAD_HOOK($SpringBoard, @selector(lockButtonUp:), SpringBoard$lockButtonUp$);
-            break;
-        case BGInvocationMethodNone:
-        default:
-            break;
-    }
+    NSLog(@"=== BG: 01");
+    if (invocationMethod == BGInvocationMethodMenuShortHold)
+        %init(GHomeHold);
+    else if (invocationMethod == BGInvocationMethodLockShortHold) {
+        NSLog(@"=== BG: 02");
+        %init(GLockHold);
+        }
 }
 
 /* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
