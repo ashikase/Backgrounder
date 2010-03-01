@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-02-16 17:16:21
+ * Last-modified: 2010-03-02 02:04:50
  */
 
 /**
@@ -426,6 +426,9 @@ void initSpringBoardHooks()
     loadPreferences();
 
     // Create the libactivator event listener
+    // NOTE: must load this *after* loading preferences, or else default
+    //       invocation method may mistakenly be set when another pre-Activator
+    //       method is already enabled.
     [BackgrounderActivator load];
 
 #if 0

@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-02-16 17:15:57
+ * Last-modified: 2010-03-02 01:46:27
  */
 
 /**
@@ -49,10 +49,15 @@
  
 + (void)load
 {
-    static BackgrounderActivator *activator = nil;
-    if (activator == nil) {
-        activator = [[BackgrounderActivator alloc] init];
-	    [[LAActivator sharedInstance] registerListener:activator forName:@APP_ID];
+    static BackgrounderActivator *listener = nil;
+    if (listener == nil) {
+        LAActivator *activator = [LAActivator sharedInstance];
+        if (![activator hasSeenListenerWithName:@APP_ID])
+            // Backgrounder has never been assigned an invocation method; set the default
+            [activator assignEvent:[LAEvent eventWithName:LAEventNameMenuHoldShort] toListenerWithName:@APP_ID];
+
+        listener = [[BackgrounderActivator alloc] init];
+	    [activator registerListener:listener forName:@APP_ID];
     }
 }
  
