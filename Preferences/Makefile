@@ -9,7 +9,6 @@ Preferences_OBJC_FILES = main.m \
 						 Application.m \
 						 AppSpecificPrefsController.m \
 						 BlacklistedApplicationsController.m \
-						 ControlController.m \
 						 DocumentationController.m \
 						 EnabledApplicationsController.m \
 						 GlobalPrefsController.m \
