@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 19:38:18
+ * Last-modified: 2010-03-02 01:40:53
  */
 
 /**
@@ -46,7 +46,6 @@
 
 
 // Allowed values
-static NSArray *allowedInvocationMethods = nil;
 static NSArray *allowedFeedbackTypes = nil;
 
 @implementation Preferences
@@ -56,7 +55,6 @@ static NSArray *allowedFeedbackTypes = nil;
 @synthesize animationsEnabled;
 @synthesize badgeEnabled;
 @synthesize badgeEnabledForAll;
-@synthesize invocationMethod;
 @synthesize feedbackType;
 @synthesize enabledApplications;
 @synthesize blacklistedApplications;
@@ -75,8 +73,6 @@ static NSArray *allowedFeedbackTypes = nil;
 {
     self = [super init];
     if (self) {
-        allowedInvocationMethods = [[NSArray alloc] initWithObjects:
-            @"homeShortHold", @"powerShortHold", @"none", nil];
         allowedFeedbackTypes = [[NSArray alloc] initWithObjects:
             @"simplePopup", @"taskMenuPopup", nil];
 
@@ -99,7 +95,6 @@ static NSArray *allowedFeedbackTypes = nil;
 {
     [onDiskValues release];
     [initialValues release];
-    [allowedInvocationMethods release];
     [allowedFeedbackTypes release];
 
     [super dealloc];
@@ -118,14 +113,6 @@ static NSArray *allowedFeedbackTypes = nil;
     [dict setObject:[NSNumber numberWithBool:badgeEnabledForAll] forKey:@"badgeEnabledForAll"];
 
     NSString *string = nil;
-    @try {
-        string = [allowedInvocationMethods objectAtIndex:invocationMethod];
-        [dict setObject:[string copy] forKey:@"invocationMethod"];
-    }
-    @catch (NSException *exception) {
-        // Ignore the exception (assumed to be NSRangeException)
-    }
-
     @try {
         string = [allowedFeedbackTypes objectAtIndex:feedbackType];
         [dict setObject:[string copy] forKey:@"feedbackType"];
@@ -167,7 +154,6 @@ static NSArray *allowedFeedbackTypes = nil;
     [dict setObject:[NSNumber numberWithBool:YES] forKey:@"animationsEnabled"];
     [dict setObject:[NSNumber numberWithBool:NO] forKey:@"badgeEnabled"];
     [dict setObject:[NSNumber numberWithBool:YES] forKey:@"badgeEnabledForAll"];
-    [dict setObject:@"homeShortPress" forKey:@"invocationMethod"];
     [dict setObject:@"simplePopup" forKey:@"feedbackType"];
 
     [dict setObject:[NSArray array] forKey:@"enabledApplications"];
@@ -191,12 +177,8 @@ static NSArray *allowedFeedbackTypes = nil;
     badgeEnabled = [defaults boolForKey:@"badgeEnabled"];
     badgeEnabledForAll = [defaults boolForKey:@"badgeEnabledForAll"];
 
-    NSString *string = [defaults stringForKey:@"invocationMethod"];
-    unsigned int index = [allowedInvocationMethods indexOfObject:string];
-    invocationMethod = (index == NSNotFound) ? 0 : index;
-
-    string = [defaults stringForKey:@"feedbackType"];
-    index = [allowedFeedbackTypes indexOfObject:string];
+    NSString *string = [defaults stringForKey:@"feedbackType"];
+    unsigned int index = [allowedFeedbackTypes indexOfObject:string];
     feedbackType = (index == NSNotFound) ? 0 : index;
 
     enabledApplications = [[defaults arrayForKey:@"enabledApplications"] retain];
