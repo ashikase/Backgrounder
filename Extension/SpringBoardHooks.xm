@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-03-02 02:04:50
+ * Last-modified: 2010-03-02 11:31:17
  */
 
 /**
@@ -60,6 +60,10 @@
 
 #import "BackgrounderActivator.h"
 #import "SimplePopup.h"
+
+@interface UIModalView : UIView
+@property(nonatomic,copy) NSString *title;
+@end
 
 struct GSEvent;
 
@@ -199,7 +203,7 @@ HOOK(SBStatusBarController, setStatusBarMode$mode$orientation$duration$fenceID$a
 //==============================================================================
 
 // The alert window displays instructions when the home button is held down
-static id alert = nil;
+static BackgrounderAlertItem *alert = nil;
 
 //==============================================================================
 
@@ -235,8 +239,22 @@ static id alert = nil;
     %orig;
 }
 
+- (void)_handleMenuButtonEvent
+{
+    // Remove the popup (may not be present)
+    [self dismissBackgrounderFeedback];
+
+    %orig;
+}
+
 %new(v@:)
 - (void)invokeBackgrounder
+{
+    [self invokeBackgrounderAndAutoDismiss:YES];
+}
+
+%new(v@:)
+- (void)invokeBackgrounderAndAutoDismiss:(BOOL)autoDismiss
 {
     id app = [SBWActiveDisplayStack topApplication];
     NSString *identifier = [app displayIdentifier];
@@ -252,6 +270,10 @@ static id alert = nil;
 
         SBAlertItemsController *controller = [objc_getClass("SBAlertItemsController") sharedInstance];
         [controller activateAlertItem:alert];
+
+        if (autoDismiss)
+            // After delay, simulate menu button press to suspend current app
+            [self performSelector:@selector(_handleMenuButtonEvent) withObject:nil afterDelay:1.0f];
     }
 }
 
@@ -262,6 +284,26 @@ static id alert = nil;
     [alert dismiss];
     [alert release];
     alert = nil;
+}
+
+%new(v@:)
+- (void)cancelPreviousBackgrounderRequest
+{
+    if (alert != nil) {
+        // Backgrounder was invoked (feedback exists)
+        alert.alertSheet.title = @"Cancelled!";
+
+        // Undo change to backgrounding status of current application
+        id app = [SBWActiveDisplayStack topApplication];
+        NSString *identifier = [app displayIdentifier];
+        if (app) {
+            BOOL isEnabled = [bgEnabledApps containsObject:identifier];
+            [self setBackgroundingEnabled:(!isEnabled) forDisplayIdentifier:identifier];
+        }
+
+        // Dismiss feedback after short delay (else cancellation message will not be seen)
+        [self performSelector:@selector(dismissBackgrounderFeedback) withObject:nil afterDelay:1.0f];
+    }
 }
 
 %new(v@:c@)
@@ -415,6 +457,26 @@ static id alert = nil;
 {
     if (type != 3 || ![bgEnabledApps containsObject:[self displayIdentifier]])
         %orig;
+}
+
+%end
+
+//==============================================================================
+
+%hook SBVoiceControlAlert
+
++ (BOOL)shouldEnterVoiceControl
+{
+    BOOL flag = %orig;
+    if (flag) {
+        // Voice Control will appear
+        if (alert != nil) {
+            // Backgrounder was invoked, cancel request
+            SpringBoard *springBoard = (SpringBoard *)[objc_getClass("SpringBoard") sharedApplication];
+            [springBoard cancelPreviousBackgrounderRequest];
+        }
+    }
+    return flag;
 }
 
 %end

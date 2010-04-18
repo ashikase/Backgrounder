@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-03-02 01:46:27
+ * Last-modified: 2010-03-02 02:35:13
  */
 
 /**
@@ -63,12 +63,16 @@
  
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event
 {
+    // NOTE: Do not auto dismiss feedback if event is short hold menu/lock button
+    BOOL autoDimiss = !([event.name isEqualToString:LAEventNameMenuHoldShort] ||
+        [event.name isEqualToString:LAEventNameLockHoldShort]);
+
+    // Invoke Backgrounder
     SpringBoard *springBoard = (SpringBoard *)[UIApplication sharedApplication];
-    [springBoard invokeBackgrounder];
-    [self performSelector:@selector(dismissBackgrounder) withObject:nil afterDelay:1.0f];
+    [springBoard invokeBackgrounderAndAutoDismiss:autoDimiss];
  
     // Prevent the default OS implementation
-	event.handled = YES;
+	event.handled = autoDimiss;
 }
  
 - (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event
@@ -77,17 +81,6 @@
     //[springBoard dismissBackgrounderFeedback];
 }
  
-- (void)dismissBackgrounder
-{
-    SpringBoard *springBoard = (SpringBoard *)[UIApplication sharedApplication];
-
-    // Backgrounder popup is visible; hide it
-    [springBoard dismissBackgrounderFeedback];
-
-    // Simulate menu button press to suspend current app
-    [springBoard  _handleMenuButtonEvent];
-}
-
 @end
 
 /* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
