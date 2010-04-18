@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-03 23:45:57
+ * Last-modified: 2010-04-03 23:49:36
  */
 
 /**
@@ -318,8 +318,8 @@ static BackgrounderAlertItem *alert = nil;
 
         // Undo change to backgrounding status of current application
         id app = [SBWActiveDisplayStack topApplication];
-        NSString *identifier = [app displayIdentifier];
         if (app) {
+            NSString *identifier = [app displayIdentifier];
             BOOL isEnabled = [bgEnabledApps containsObject:identifier];
             [self setBackgroundingEnabled:(!isEnabled) forDisplayIdentifier:identifier];
         }
