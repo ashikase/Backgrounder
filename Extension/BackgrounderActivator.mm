@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-03 23:47:48
+ * Last-modified: 2010-04-03 23:50:15
  */
 
 /**
@@ -66,12 +66,12 @@
     // NOTE: Do not auto dismiss feedback if event is short hold menu/lock button
     //       Auto dismiss simply sends a menu button press; this is not needed
     //       for short hold menu, and causes a screenshot for short hold lock
-    BOOL autoDismiss = !([event.name isEqualToString:LAEventNameMenuHoldShort] ||
+    BOOL autoSuspend = !([event.name isEqualToString:LAEventNameMenuHoldShort] ||
         [event.name isEqualToString:LAEventNameLockHoldShort]);
 
     // Invoke Backgrounder
     SpringBoard *springBoard = (SpringBoard *)[UIApplication sharedApplication];
-    [springBoard invokeBackgrounderAndAutoDismiss:autoDismiss];
+    [springBoard invokeBackgrounderAndAutoSuspend:autoSuspend];
  
     // Prevent the default OS implementation
     // NOTE: Activator does not properly handle appearance of voice control;

@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-03 23:49:36
+ * Last-modified: 2010-04-03 23:50:08
  */
 
 /**
@@ -266,11 +266,11 @@ static BackgrounderAlertItem *alert = nil;
 %new(v@:)
 - (void)invokeBackgrounder
 {
-    [self invokeBackgrounderAndAutoDismiss:YES];
+    [self invokeBackgrounderAndAutoSuspend:YES];
 }
 
 %new(v@:)
-- (void)invokeBackgrounderAndAutoDismiss:(BOOL)autoDismiss
+- (void)invokeBackgrounderAndAutoSuspend:(BOOL)autoSuspend
 {
     id app = [SBWActiveDisplayStack topApplication];
     NSString *identifier = [app displayIdentifier];
@@ -287,7 +287,7 @@ static BackgrounderAlertItem *alert = nil;
         SBAlertItemsController *controller = [objc_getClass("SBAlertItemsController") sharedInstance];
         [controller activateAlertItem:alert];
 
-        if (autoDismiss)
+        if (autoSuspend)
             // After delay, simulate menu button tap to suspend current app
             [self performSelector:@selector(simulateMenuButtonTap) withObject:nil afterDelay:0.6f];
     }
