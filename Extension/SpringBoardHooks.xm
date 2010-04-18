@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-14 02:14:35
+ * Last-modified: 2010-04-14 02:17:48
  */
 
 /**
@@ -276,7 +276,7 @@ static NSString *displayIdToSuspend = nil;
 }
 
 %new(v@:)
-- (void)cancelPreviousBackgrounderRequest
+- (void)cancelPreviousBackgrounderInvocation
 {
     if (alert != nil) {
         // Backgrounder was invoked (feedback exists)
