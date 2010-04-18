@@ -1,0 +1,11 @@
+> Backgrounder enables applications to continue running when minimized (i.e. to run in the background).
+> 
+> The long story:
+> 
+> Certain applications, such as Phone and Mail, can background without Backgrounder; support for this is built into SpringBoard (the iPhone OS home screen application). Backgrounder simply enables this functionality for *all* applications.
+> 
+> However...
+> 
+> As Phone and Mail officially support backgrounding, they are designed to use less resources when backgrounded. Other applications, though, are not designed for background use; even when backgrounded, they will continue to run as if they are in the foreground (and thus continue to update GUI elements, etc.). When memory becomes too low, the OS may force these applications to quit.
+> 
+> Simply having Backgrounder installed on a device will not slow it down or waste memory; running (processor/memory-intensive) applications in the background will.
