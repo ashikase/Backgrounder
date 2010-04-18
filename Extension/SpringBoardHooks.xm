@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-14 02:25:30
+ * Last-modified: 2010-04-14 02:31:26
  */
 
 /**
@@ -190,6 +190,7 @@ static BackgrounderAlertItem *alert = nil;
 @end
 
 static NSString *displayIdToSuspend = nil;
+static BOOL shouldSuspend = NO;
 
 %hook SpringBoard
 
@@ -219,25 +220,29 @@ static NSString *displayIdToSuspend = nil;
     %orig;
 }
 
-- (void)_handleMenuButtonEvent
+- (void)menuButtonUp:(GSEventRef)event
 {
-    // Remove the popup (may not be present)
-    [self dismissBackgrounderFeedback];
-
     %orig;
+
+    if (shouldSuspend) {
+        // Dismiss backgrounder message and suspend the application
+        // NOTE: Only used when invocation method is MenuHoldShort
+        [self performSelector:@selector(dismissBackgrounderFeedbackAndSuspend) withObject:nil];
+        shouldSuspend = NO;
+    }
 }
 
 - (void)lockButtonUp:(GSEventRef)event
 {
-    if (alert != nil) {
-        // Backgrounder was invoked
-
+    if (shouldSuspend) {
         // Reset the lock button state
         [self _unsetLockButtonBearTrap];
         [self _setLockButtonTimer:nil];
 
         // Dismiss backgrounder message and suspend the application
+        // NOTE: Only used when invocation method is LockHoldShort
         [self performSelector:@selector(dismissBackgrounderFeedbackAndSuspend) withObject:nil];
+        shouldSuspend = NO;
     } else {
         %orig;
     }
@@ -276,6 +281,9 @@ static NSString *displayIdToSuspend = nil;
         if (autoSuspend)
             // After delay, simulate menu button tap to suspend current app
             [self performSelector:@selector(dismissBackgrounderFeedbackAndSuspend) withObject:nil afterDelay:0.6f];
+        else
+            // NOTE: Only used when invocation method is MenuHoldShort or LockHoldShort
+            shouldSuspend = YES;
     }
 }
 
