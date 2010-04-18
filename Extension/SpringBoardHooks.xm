@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-03-02 11:31:17
+ * Last-modified: 2010-04-03 23:45:57
  */
 
 /**
@@ -247,6 +247,22 @@ static BackgrounderAlertItem *alert = nil;
     %orig;
 }
 
+- (void)lockButtonUp:(GSEventRef)event
+{
+    if (alert != nil) {
+        // Backgrounder was invoked
+
+        // Reset the lock button state
+        [self _unsetLockButtonBearTrap];
+        [self _setLockButtonTimer:nil];
+
+        // Simulate home-button press to dismiss feedback and suspend application
+        [self performSelector:@selector(simulateMenuButtonTap) withObject:nil];
+    } else {
+        %orig;
+    }
+}
+
 %new(v@:)
 - (void)invokeBackgrounder
 {
@@ -272,9 +288,16 @@ static BackgrounderAlertItem *alert = nil;
         [controller activateAlertItem:alert];
 
         if (autoDismiss)
-            // After delay, simulate menu button press to suspend current app
-            [self performSelector:@selector(_handleMenuButtonEvent) withObject:nil afterDelay:1.0f];
+            // After delay, simulate menu button tap to suspend current app
+            [self performSelector:@selector(simulateMenuButtonTap) withObject:nil afterDelay:0.6f];
     }
+}
+
+%new(v@:)
+- (void)simulateMenuButtonTap
+{
+    [self menuButtonDown:nil];
+    [self menuButtonUp:nil];
 }
 
 %new(v@:)
