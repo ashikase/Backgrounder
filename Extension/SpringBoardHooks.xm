@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-14 01:51:24
+ * Last-modified: 2010-04-14 02:14:35
  */
 
 /**
@@ -185,8 +185,11 @@ static BackgrounderAlertItem *alert = nil;
 //==============================================================================
 
 @interface SpringBoard (BackgrounderPrivate)
+- (void)suspendAppWithDisplayIdentifier:(NSString *)displayId;
 - (void)dismissBackgrounderFeedback;
 @end
+
+static NSString *displayIdToSuspend = nil;
 
 %hook SpringBoard
 
@@ -208,9 +211,11 @@ static BackgrounderAlertItem *alert = nil;
 
 - (void)dealloc
 {
+    [displayIdToSuspend release];
     [bgEnabledApps release];
     [activeApps release];
     [displayStacks release];
+
     %orig;
 }
 
@@ -231,8 +236,8 @@ static BackgrounderAlertItem *alert = nil;
         [self _unsetLockButtonBearTrap];
         [self _setLockButtonTimer:nil];
 
-        // Simulate home-button press to dismiss feedback and suspend application
-        [self performSelector:@selector(simulateMenuButtonTap) withObject:nil];
+        // Dismiss backgrounder message and suspend the application
+        [self performSelector:@selector(dismissBackgrounderFeedbackAndSuspend) withObject:nil];
     } else {
         %orig;
     }
@@ -253,35 +258,21 @@ static BackgrounderAlertItem *alert = nil;
         BOOL isEnabled = [bgEnabledApps containsObject:identifier];
         [self setBackgroundingEnabled:(!isEnabled) forDisplayIdentifier:identifier];
 
-        // Display simple popup
-        NSString *status = [NSString stringWithFormat:@"Backgrounding %s",
-                 (isEnabled ? "Disabled" : "Enabled")];
-
+        // Create a simple popup message
+        NSString *status = [NSString stringWithFormat:@"Backgrounding %s", (isEnabled ? "Disabled" : "Enabled")];
         alert = [[objc_getClass("BackgrounderAlertItem") alloc] initWithTitle:status message:nil];
 
+        // ... and display it
         SBAlertItemsController *controller = [objc_getClass("SBAlertItemsController") sharedInstance];
         [controller activateAlertItem:alert];
 
+        // Record identifer of application for later use
+        displayIdToSuspend = [identifier copy];
+
         if (autoSuspend)
             // After delay, simulate menu button tap to suspend current app
-            [self performSelector:@selector(simulateMenuButtonTap) withObject:nil afterDelay:0.6f];
+            [self performSelector:@selector(dismissBackgrounderFeedbackAndSuspend) withObject:nil afterDelay:0.6f];
     }
-}
-
-%new(v@:)
-- (void)simulateMenuButtonTap
-{
-    [self menuButtonDown:nil];
-    [self menuButtonUp:nil];
-}
-
-%new(v@:)
-- (void)dismissBackgrounderFeedback
-{
-    // Hide and release alert window (may be nil)
-    [alert dismiss];
-    [alert release];
-    alert = nil;
 }
 
 %new(v@:)
@@ -298,6 +289,10 @@ static BackgrounderAlertItem *alert = nil;
             BOOL isEnabled = [bgEnabledApps containsObject:identifier];
             [self setBackgroundingEnabled:(!isEnabled) forDisplayIdentifier:identifier];
         }
+
+        // Reset related variables
+        [displayIdToSuspend release];
+        displayIdToSuspend = nil;
 
         // Dismiss feedback after short delay (else cancellation message will not be seen)
         [self performSelector:@selector(dismissBackgrounderFeedback) withObject:nil afterDelay:1.0f];
@@ -325,6 +320,49 @@ static BackgrounderAlertItem *alert = nil;
                 [bgEnabledApps removeObject:identifier];
         }
     }
+}
+
+%new(v@:@)
+- (void)suspendAppWithDisplayIdentifier:(NSString *)displayId
+{
+    // Is an application
+    SBApplication *app = [[objc_getClass("SBApplicationController") sharedInstance]
+        applicationWithDisplayIdentifier:displayId];
+    if (app) {
+        if ([SBWActiveDisplayStack containsDisplay:app]) {
+            // Application is current app
+            // NOTE: Must set animation flag for deactivation, otherwise
+            //       application window does not disappear (reason yet unknown)
+            [app setDeactivationSetting:0x2 flag:YES]; // animate
+
+            // Remove from active display stack
+            [SBWActiveDisplayStack popDisplay:app];
+        }
+
+        // Deactivate the application
+        [SBWSuspendingDisplayStack pushDisplay:app];
+    }
+}
+
+%new(v@:)
+- (void)dismissBackgrounderFeedback
+{
+    // Hide and release alert window (may be nil)
+    [alert dismiss];
+    [alert release];
+    alert = nil;
+}
+
+%new(v@:)
+- (void)dismissBackgrounderFeedbackAndSuspend
+{
+    // Dismiss the message and suspend the application
+    [self dismissBackgrounderFeedback];
+    [self suspendAppWithDisplayIdentifier:displayIdToSuspend];
+
+    // Reset related variables
+    [displayIdToSuspend release];
+    displayIdToSuspend = nil;
 }
 
 %end
