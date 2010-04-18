@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-03 23:50:08
+ * Last-modified: 2010-04-11 22:45:06
  */
 
 /**
@@ -480,26 +480,6 @@ static BackgrounderAlertItem *alert = nil;
 {
     if (type != 3 || ![bgEnabledApps containsObject:[self displayIdentifier]])
         %orig;
-}
-
-%end
-
-//==============================================================================
-
-%hook SBVoiceControlAlert
-
-+ (BOOL)shouldEnterVoiceControl
-{
-    BOOL flag = %orig;
-    if (flag) {
-        // Voice Control will appear
-        if (alert != nil) {
-            // Backgrounder was invoked, cancel request
-            SpringBoard *springBoard = (SpringBoard *)[objc_getClass("SpringBoard") sharedApplication];
-            [springBoard cancelPreviousBackgrounderRequest];
-        }
-    }
-    return flag;
 }
 
 %end

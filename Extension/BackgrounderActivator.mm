@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-03 23:50:15
+ * Last-modified: 2010-04-11 22:39:25
  */
 
 /**
@@ -74,9 +74,7 @@
     [springBoard invokeBackgrounderAndAutoSuspend:autoSuspend];
  
     // Prevent the default OS implementation
-    // NOTE: Activator does not properly handle appearance of voice control;
-    //       must handle manually (when menu button is held).
-	event.handled = ![event.name isEqualToString:LAEventNameMenuHoldShort];
+	event.handled = YES;
 }
  
 - (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event
