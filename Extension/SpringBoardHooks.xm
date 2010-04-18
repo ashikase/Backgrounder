@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-14 01:48:17
+ * Last-modified: 2010-04-14 01:51:24
  */
 
 /**
@@ -73,13 +73,6 @@ static BOOL isPersistent = YES;
 static NSMutableArray *activeApps = nil;
 static NSMutableArray *bgEnabledApps = nil;
 static NSArray *blacklistedApps = nil;
-
-#if 0
-static NSMutableDictionary *statusBarStates = nil;
-static NSString *deactivatingApp = nil;
-
-static BOOL animateStatusBar = YES;
-#endif
 
 static BOOL badgeEnabled = NO;
 static BOOL badgeEnabledForAll = YES;
@@ -186,22 +179,6 @@ NSMutableArray *displayStacks = nil;
 
 //==============================================================================
 
-#if 0
-HOOK(SBStatusBarController, setStatusBarMode$mode$orientation$duration$fenceID$animation$,
-    void, int mode, int orientation, float duration, int fenceID, int animation)
-{
-    if (!animateStatusBar) {
-        duration = 0;
-        // Reset the flag to default (animation enabled)
-        animateStatusBar = YES;
-    }
-    CALL_ORIG(SBStatusBarController, setStatusBarMode$mode$orientation$duration$fenceID$animation$,
-            mode, orientation, duration, fenceID, animation);
-}
-#endif
-
-//==============================================================================
-
 // The alert window displays instructions when the home button is held down
 static BackgrounderAlertItem *alert = nil;
 
@@ -222,12 +199,6 @@ static BackgrounderAlertItem *alert = nil;
     //       apps (MobilePhone and MobileMail) plus two others
     activeApps = [[NSMutableArray alloc] initWithCapacity:4];
     bgEnabledApps = [[NSMutableArray alloc] initWithCapacity:2];
-
-#if 0
-    // Create a dictionary to store the statusbar state for active apps
-    // FIXME: Determine a way to do this without requiring extra storage
-    statusBarStates = [[NSMutableDictionary alloc] initWithCapacity:5];
-#endif
 
     // Initialize simple notification popup
     initSimplePopup();
@@ -417,11 +388,6 @@ static BackgrounderAlertItem *alert = nil;
     NSString *identifier = [self displayIdentifier];
     [activeApps removeObject:identifier];
 
-#if 0
-    // ... also remove status bar state data from states list
-    [statusBarStates removeObjectForKey:identifier];
-#endif
-
     if (badgeEnabled) {
         // Update the SpringBoard icon to indicate that the app is not running
         SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
@@ -433,21 +399,6 @@ static BackgrounderAlertItem *alert = nil;
 
 - (void)deactivate
 {
-#if 0
-    NSString *identifier = [self displayIdentifier];
-    if ([identifier isEqualToString:deactivatingApp]) {
-        [[objc_getClass("SpringBoard") sharedApplication] dismissBackgrounderFeedback];
-        [deactivatingApp release];
-        deactivatingApp = nil;
-    }
-
-    // Store the status bar state of the current application
-    SBStatusBarController *sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
-    NSNumber *mode = [NSNumber numberWithInt:[sbCont statusBarMode]];
-    NSNumber *orientation = [NSNumber numberWithInt:[sbCont statusBarOrientation]];
-    [statusBarStates setObject:[NSArray arrayWithObjects:mode, orientation, nil] forKey:identifier];
-#endif
-
     NSString *identifier = [self displayIdentifier];
     BOOL isBackgrounded = [bgEnabledApps containsObject:identifier];
 
@@ -500,18 +451,7 @@ void initSpringBoardHooks()
     //       method is already enabled.
     [BackgrounderActivator load];
 
-#if 0
-    Class $SBStatusBarController(objc_getClass("SBStatusBarController"));
-    LOAD_HOOK($SBStatusBarController, @selector(setStatusBarMode:orientation:duration:fenceID:animation:),
-        SBStatusBarController$setStatusBarMode$mode$orientation$duration$fenceID$animation$);
-#endif
-
     %init;
-
-#if 0
-    LOAD_HOOK($SBApplication, @selector(_relaunchAfterAbnormalExit:), SBApplication$_relaunchAfterAbnormalExit$);
-    LOAD_HOOK($SBApplication, @selector(pathForDefaultImage:), SBApplication$pathForDefaultImage$);
-#endif
 }
 
 /* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
