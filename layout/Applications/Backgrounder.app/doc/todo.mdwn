@@ -1,1 +1,13 @@
-> Currently empty.
+> # Todo
+> ## (These *might* be implemented)
+> - - -
+> * Lots. ;)
+
+- - -
+
+> # Rejected Requests
+> ## (These will not be implemented)
+> - - -
+> * Move preferences to Settings.app.
+>     * I had wanted to do this for all of my extensions; however my preferences require functionality that cannot be done via Settings.app's simple plist method. It would require me to research and use private API methods, methods that could change with each firmware update. This would mean more time spent on maintaining the preferences, and less time spent on improving this extension.
+>     * In other words, the preferences application is here to stay. If you don't like it you can hide the icon and access it via Spotlight.

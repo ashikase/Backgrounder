@@ -1,3 +1,10 @@
+> # Version svn.r332
+> - - -
+> * NEW: Activator support; all control is now handled via Ryan Petrich's Activator extension.
+> * FIX: Minor code cleanup and fixes.
+
+- - -
+
 > # Version svn.r295
 > - - -
 > * Two new invocation methods: hold power button, and none (for Kirikae, etc.)

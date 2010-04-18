@@ -1,9 +1,3 @@
-> Backgrounder's purpose is to prevent applications from quitting when minimized.
->
-> Please keep in mind that Backgrounder is a **hack**. Applications on iPhone OS are not designed to run in the background. Backgrounded applications will continue to run and use memory as if they are still in the foreground. When memory becomes too low, the OS may force applications to quit.
-
-- - -
-
 > # To enable backgrounding for an application:
 > ## (When default options are set)
 > - - -
