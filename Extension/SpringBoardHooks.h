@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-03 23:52:05
+ * Last-modified: 2010-04-14 01:48:03
  */
 
 /**
@@ -46,10 +46,7 @@
 - (void)setBackgroundingEnabled:(BOOL)enable forDisplayIdentifier:(NSString *)identifier;
 - (void)invokeBackgrounder;
 - (void)invokeBackgrounderAndAutoSuspend:(BOOL)autoSuspend;
-- (void)dismissBackgrounderFeedback;
 - (void)cancelPreviousBackgrounderRequest;
-- (void)switchToAppWithDisplayIdentifier:(NSString *)identifier;
-- (void)quitAppWithDisplayIdentifier:(NSString *)identifier;
 @end
 
 /* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */

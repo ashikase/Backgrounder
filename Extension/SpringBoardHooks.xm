@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-11 22:45:06
+ * Last-modified: 2010-04-14 01:48:17
  */
 
 /**
@@ -206,6 +206,10 @@ HOOK(SBStatusBarController, setStatusBarMode$mode$orientation$duration$fenceID$a
 static BackgrounderAlertItem *alert = nil;
 
 //==============================================================================
+
+@interface SpringBoard (BackgrounderPrivate)
+- (void)dismissBackgrounderFeedback;
+@end
 
 %hook SpringBoard
 
