@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-02-16 14:11:25
+ * Last-modified: 2010-04-20 23:46:16
  */
 
 /**
@@ -107,6 +107,18 @@ static void toggleBackgrounding(int signal)
         %orig;
 }
 
+- (void)applicationWillResignActive:(id)application
+{
+    if (!backgroundingEnabled)
+        %orig;
+}
+
+- (void)applicationDidBecomeActive:(id)application
+{
+    if (!backgroundingEnabled)
+        %orig;
+}
+
 %end
 
 %end // GApplication
@@ -151,22 +163,32 @@ static void toggleBackgrounding(int signal)
         %orig;
 }
 
-- (id)init
+- (void)_loadMainNibFile
 {
-    self = %orig;
-    if (self) {
-        // NOTE: May be a subclass of UIApplication
-        Class $$UIApplication = [self class];
-        MSHookMessageEx($$UIApplication, @selector(applicationSuspend:),
-                (IMP)&$GApplication$UIApplication$applicationSuspend$, (IMP*)&_GApplication$UIApplication$applicationSuspend$);
-        MSHookMessageEx($$UIApplication, @selector(applicationWillSuspend),
-                (IMP)&$GApplication$UIApplication$applicationWillSuspend, (IMP*)&_GApplication$UIApplication$applicationWillSuspend);
-        MSHookMessageEx($$UIApplication, @selector(applicationDidResume),
-                (IMP)&$GApplication$UIApplication$applicationDidResume, (IMP*)&_GApplication$UIApplication$applicationDidResume);
-        if (NO)
-            %init(GApplication);
-    }
-    return self;
+    // NOTE: This method always gets called, even if no NIB files are used.
+    //       This method was chosen as it is called after the application
+    //       delegate has been set.
+    // NOTE: If an application overrides this method (unlikely, but possible),
+    //       this extension's hooks will not be installed.
+    %orig;
+
+    // NOTE: May be a subclass of UIApplication
+    Class $$UIApplication = [self class];
+    MSHookMessageEx($$UIApplication, @selector(applicationSuspend:),
+            (IMP)&$GApplication$UIApplication$applicationSuspend$, (IMP*)&_GApplication$UIApplication$applicationSuspend$);
+    MSHookMessageEx($$UIApplication, @selector(applicationWillSuspend),
+            (IMP)&$GApplication$UIApplication$applicationWillSuspend, (IMP*)&_GApplication$UIApplication$applicationWillSuspend);
+    MSHookMessageEx($$UIApplication, @selector(applicationDidResume),
+            (IMP)&$GApplication$UIApplication$applicationDidResume, (IMP*)&_GApplication$UIApplication$applicationDidResume);
+    if (NO)
+        %init(GApplication);
+
+    id delegate = [self delegate];
+    Class $AppDelegate = delegate ? [delegate class] : [self class];
+    MSHookMessageEx($AppDelegate, @selector(applicationWillResignActive:),
+        (IMP)&$GApplication$UIApplication$applicationWillResignActive$, (IMP*)&_GApplication$UIApplication$applicationWillResignActive$);
+    MSHookMessageEx($AppDelegate, @selector(applicationDidBecomeActive:),
+        (IMP)&$GApplication$UIApplication$applicationDidBecomeActive$, (IMP*)&_GApplication$UIApplication$applicationDidBecomeActive$);
 }
 
 %new(c@:)
