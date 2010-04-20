@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-20 23:46:16
+ * Last-modified: 2010-04-20 23:52:13
  */
 
 /**
@@ -174,21 +174,16 @@ static void toggleBackgrounding(int signal)
 
     // NOTE: May be a subclass of UIApplication
     Class $$UIApplication = [self class];
-    MSHookMessageEx($$UIApplication, @selector(applicationSuspend:),
-            (IMP)&$GApplication$UIApplication$applicationSuspend$, (IMP*)&_GApplication$UIApplication$applicationSuspend$);
-    MSHookMessageEx($$UIApplication, @selector(applicationWillSuspend),
-            (IMP)&$GApplication$UIApplication$applicationWillSuspend, (IMP*)&_GApplication$UIApplication$applicationWillSuspend);
-    MSHookMessageEx($$UIApplication, @selector(applicationDidResume),
-            (IMP)&$GApplication$UIApplication$applicationDidResume, (IMP*)&_GApplication$UIApplication$applicationDidResume);
+    MSHookMessage($$UIApplication, @selector(applicationSuspend:), MSHake(GApplication$UIApplication$applicationSuspend$));
+    MSHookMessage($$UIApplication, @selector(applicationWillSuspend), MSHake(GApplication$UIApplication$applicationWillSuspend));
+    MSHookMessage($$UIApplication, @selector(applicationDidResume), MSHake(GApplication$UIApplication$applicationDidResume));
     if (NO)
         %init(GApplication);
 
     id delegate = [self delegate];
     Class $AppDelegate = delegate ? [delegate class] : [self class];
-    MSHookMessageEx($AppDelegate, @selector(applicationWillResignActive:),
-        (IMP)&$GApplication$UIApplication$applicationWillResignActive$, (IMP*)&_GApplication$UIApplication$applicationWillResignActive$);
-    MSHookMessageEx($AppDelegate, @selector(applicationDidBecomeActive:),
-        (IMP)&$GApplication$UIApplication$applicationDidBecomeActive$, (IMP*)&_GApplication$UIApplication$applicationDidBecomeActive$);
+    MSHookMessage($AppDelegate, @selector(applicationWillResignActive:), MSHake(GApplication$UIApplication$applicationWillResignActive$));
+    MSHookMessage($AppDelegate, @selector(applicationDidBecomeActive:), MSHake(GApplication$UIApplication$applicationDidBecomeActive$));
 }
 
 %new(c@:)
