@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-21 00:01:45
+ * Last-modified: 2010-04-21 00:10:19
  */
 
 /**
@@ -127,42 +127,6 @@ static void toggleBackgrounding(int signal)
 
 %hook UIApplication
 
-// Prevent execution of application's on-suspend method
-// NOTE: Normally this method does nothing; only system apps can overrride
-- (void)applicationWillSuspend
-{
-#if 0
-    [self removeStatusBarImageNamed:
-        [NSString stringWithFormat:@"Backgrounder"]];
-#endif
-
-    if (!backgroundingEnabled)
-        %orig;
-}
-
-// Prevent execution of application's on-resume methods
-// NOTE: Normally this method does nothing; only system apps can overrride
-- (void)applicationDidResume
-{
-#if 0
-    NSString *name = [NSString stringWithFormat:@"Backgrounder"];
-    if ([self respondsToSelector:@selector(addStatusBarImageNamed:removeOnExit:)])
-        [self addStatusBarImageNamed:name removeOnExit:YES];
-    else
-        [self addStatusBarImageNamed:name removeOnAbnormalExit:YES];
-#endif
-
-    if (!backgroundingEnabled)
-        %orig;
-}
-
-// Overriding this method prevents the application from quitting on suspend
-- (void)applicationSuspend:(GSEventRef)event
-{
-    if (!backgroundingEnabled)
-        %orig;
-}
-
 - (void)_loadMainNibFile
 {
     // NOTE: This method always gets called, even if no NIB files are used.
@@ -177,7 +141,10 @@ static void toggleBackgrounding(int signal)
     MSHookMessage($$UIApplication, @selector(applicationSuspend:), MSHake(GApplication$UIApplication$applicationSuspend$));
     MSHookMessage($$UIApplication, @selector(applicationWillSuspend), MSHake(GApplication$UIApplication$applicationWillSuspend));
     MSHookMessage($$UIApplication, @selector(applicationDidResume), MSHake(GApplication$UIApplication$applicationDidResume));
+
     if (NO)
+        // FIXME: This is needed to prevent Logos from complaining about an unused
+        //        hook group.
         %init(GApplication);
 
     id delegate = [self delegate];
