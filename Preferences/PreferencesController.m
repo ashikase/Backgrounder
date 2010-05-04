@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-25 03:34:23
+ * Last-modified: 2010-04-25 14:42:16
  */
 
 /**
@@ -47,6 +47,8 @@
 #import "Preferences.h"
 #import "ToggleButton.h"
 
+extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
+
 
 @implementation PreferencesController
 
@@ -54,12 +56,21 @@
 {
     self = [super initWithStyle:UITableViewStyleGrouped];
     if (self) {
-        self.title = (displayId == nil) ? @"Defaults" : @"App Name";
+        displayIdentifier = [displayId copy];
+
+        self.title = (displayId == nil) ? @"Defaults" :
+            [SBSCopyLocalizedApplicationNameForDisplayIdentifier(displayId) autorelease];
 
         self.navigationItem.backBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Back"
             style:UIBarButtonItemStyleBordered target:nil action:nil];
     }
     return self;
+}
+
+- (void)dealloc
+{
+    [displayIdentifier release];
+    [super dealloc];
 }
 
 #pragma mark - UITableViewDataSource
@@ -102,7 +113,8 @@
             cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:reuseIdSimple] autorelease];
             cell.selectionStyle = UITableViewCellSelectionStyleGray;
         }
-        cell.accessoryType = ([[Preferences sharedInstance] integerForKey:kBackgroundMethod] == indexPath.row) ?
+        cell.accessoryType = ([[Preferences sharedInstance] integerForKey:kBackgroundMethod
+                forDisplayIdentifier:displayIdentifier] == indexPath.row) ?
             UITableViewCellAccessoryCheckmark : UITableViewCellAccessoryNone;
     } else {
         // Backgrounding indicators, Other
@@ -121,16 +133,18 @@
         UIButton *button = (UIButton *)cell.accessoryView;
         if (indexPath.section == 1) {
             if (indexPath.row == 0) {
-                    button.selected = [[Preferences sharedInstance] boolForKey:kBadgeEnabled];
+                    button.selected = [[Preferences sharedInstance] boolForKey:kBadgeEnabled
+                        forDisplayIdentifier:displayIdentifier];
                     cell.imageView.image = [UIImage imageNamed:@"badge.png"];
             } else {
-                    button.selected = [[Preferences sharedInstance] boolForKey:kStatusBarIconEnabled];
+                    button.selected = [[Preferences sharedInstance] boolForKey:kStatusBarIconEnabled
+                        forDisplayIdentifier:displayIdentifier];
                     cell.imageView.image = [UIImage imageNamed:@"status_bar_icon.png"];
             }
         } else {
-            button.selected = (indexPath.row == 0) ?
-                [[Preferences sharedInstance] boolForKey:kAlwaysEnabled] :
-                [[Preferences sharedInstance] boolForKey:kPersistent];
+            NSString *key = (indexPath.row == 0) ? kAlwaysEnabled : kPersistent;
+            button.selected = [[Preferences sharedInstance] boolForKey:key
+                forDisplayIdentifier:displayIdentifier];
         }
     }
 
@@ -189,7 +203,8 @@
 {
     if (indexPath.section == 0) {
         // Store the selected option
-        [[Preferences sharedInstance] setInteger:indexPath.row forKey:kBackgroundMethod];
+        [[Preferences sharedInstance] setInteger:indexPath.row forKey:kBackgroundMethod
+            forDisplayIdentifier:displayIdentifier];
         [tableView reloadData];
     }
 }
@@ -205,7 +220,8 @@
 
     // Update preference
     NSIndexPath *indexPath = [self.tableView indexPathForCell:(UITableViewCell *)[button superview]];
-    [[Preferences sharedInstance] setBool:button.selected forKey:keys[indexPath.section - 1][indexPath.row]];
+    [[Preferences sharedInstance] setBool:button.selected forKey:keys[indexPath.section - 1][indexPath.row]
+        forDisplayIdentifier:displayIdentifier];
 }
 
 #pragma mark - Navigation bar delegates
