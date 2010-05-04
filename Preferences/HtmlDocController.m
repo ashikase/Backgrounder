@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 22:06:30
+ * Last-modified: 2010-05-03 01:23:09
  */
 
 /**
@@ -91,6 +91,7 @@ static NSString * contentsOfFile(NSString *path, NSString *name)
         // Create a navigation bar
         UINavigationBar *navBar = [[UINavigationBar alloc] initWithFrame:CGRectMake(0, 0, 320.0f, 44.0f)];
         navBar.barStyle = UIBarStyleBlackOpaque;
+        navBar.tintColor = [UIColor colorWithWhite:0.23 alpha:1];
         navBar.delegate = self;
 
         // Add title and buttons to navigation bar
