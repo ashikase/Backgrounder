@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-25 23:02:03
+ * Last-modified: 2010-04-26 03:35:46
  */
 
 /**
@@ -111,9 +111,7 @@
 
 - (NSArray *)keysRequiringRespring
 {
-    return [NSArray arrayWithObjects:
-        kBackgroundMethod, kBadgeEnabled, kStatusBarIconEnabled, kPersistent, kAlwaysEnabled,
-        nil];
+    return [NSArray arrayWithObjects:kDefaults, kOverrides, nil];
 }
 
 - (void)setObject:(id)value forKey:(NSString *)defaultName
