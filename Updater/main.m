@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 22:07:57
+ * Last-modified: 2010-04-29 22:25:08
  */
 
 /**
@@ -39,12 +39,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 #define kFirstRun                @"firstRun"
 
 #define kGlobal                  @"global"
 #define kOverrides               @"overrides"
 
-#define kBackgroundMethod        @"backgroundMethod"
+#define kBackgroundingMethod     @"backgroundingMethod"
 #define kBadgeEnabled            @"badgeEnabled"
 #define kStatusBarIconEnabled    @"statusBarIconEnabled"
 #define kPersistent              @"persistent"
@@ -112,7 +113,7 @@ int main(int argc, char **argv)
 
         // Create global settings
         NSDictionary *global = [NSDictionary dictionaryWithObjectsAndKeys:
-            [NSNumber numberWithInteger:2], kBackgroundMethod,
+            [NSNumber numberWithInteger:2], kBackgroundingMethod,
             [NSNumber numberWithBool:badgeEnabled], kBadgeEnabled,
             [NSNumber numberWithBool:NO], kStatusBarIconEnabled,
             [NSNumber numberWithBool:persistent], kPersistent,
@@ -125,7 +126,7 @@ int main(int argc, char **argv)
         // Add entries for blacklisted applications (use "Native" method)
         for (NSString *displayId in blacklistedApps) {
             NSMutableDictionary *dict = [global mutableCopy];
-            [dict setObject:[NSNumber numberWithInteger:1] forKey:kBackgroundMethod];
+            [dict setObject:[NSNumber numberWithInteger:1] forKey:kBackgroundingMethod];
             [overrides setObject:dict forKey:displayId];
             [dict release];
         }

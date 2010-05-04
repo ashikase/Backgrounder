@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 22:06:15
+ * Last-modified: 2010-04-29 22:24:11
  */
 
 /**
@@ -96,7 +96,7 @@
 
     // Set default values for global settings
     NSMutableDictionary *global = [NSMutableDictionary dictionary];
-    [global setObject:[NSNumber numberWithInteger:2] forKey:kBackgroundMethod];
+    [global setObject:[NSNumber numberWithInteger:2] forKey:kBackgroundingMethod];
     [global setObject:[NSNumber numberWithBool:NO] forKey:kBadgeEnabled];
     [global setObject:[NSNumber numberWithBool:NO] forKey:kStatusBarIconEnabled];
     [global setObject:[NSNumber numberWithBool:YES] forKey:kPersistent];
@@ -105,7 +105,7 @@
 
     // Set default overrides
     NSMutableDictionary *overDict = [global mutableCopy];
-    [overDict setObject:[NSNumber numberWithInteger:1] forKey:kBackgroundMethod];
+    [overDict setObject:[NSNumber numberWithInteger:1] forKey:kBackgroundingMethod];
     NSMutableDictionary *overrides = [NSMutableDictionary dictionaryWithObjectsAndKeys:
         overDict, @"com.apple.mobileipod",
         overDict, @"com.apple.mobilemail",

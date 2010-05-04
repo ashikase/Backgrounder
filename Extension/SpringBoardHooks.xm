@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 22:12:15
+ * Last-modified: 2010-04-29 22:25:28
  */
 
 /**
@@ -67,7 +67,7 @@ struct GSEvent;
 #define kGlobal                  @"global"
 #define kOverrides               @"overrides"
 
-#define kBackgroundMethod        @"backgroundMethod"
+#define kBackgroundingMethod     @"backgroundingMethod"
 #define kBadgeEnabled            @"badgeEnabled"
 #define kStatusBarIconEnabled    @"statusBarIconEnabled"
 #define kPersistent              @"persistent"
@@ -86,7 +86,7 @@ static void loadPreferences()
     if (globalPrefs == nil) {
         // Register values for defaults
         globalPrefs = [[NSDictionary alloc] initWithObjectsAndKeys:
-            [NSNumber numberWithInteger:2], kBackgroundMethod,
+            [NSNumber numberWithInteger:2], kBackgroundingMethod,
             [NSNumber numberWithBool:NO], kBadgeEnabled,
             [NSNumber numberWithBool:NO], kStatusBarIconEnabled,
             [NSNumber numberWithBool:YES], kPersistent,
@@ -284,7 +284,7 @@ static BOOL shouldSuspend = NO;
 
     id app = [SBWActiveDisplayStack topApplication];
     NSString *identifier = [app displayIdentifier];
-    if (app && integerForKey(kBackgroundMethod, identifier) == 2) {
+    if (app && integerForKey(kBackgroundingMethod, identifier) == 2) {
         BOOL isEnabled = [bgEnabledApps containsObject:identifier];
         [self setBackgroundingEnabled:(!isEnabled) forDisplayIdentifier:identifier];
 
@@ -335,7 +335,7 @@ static BOOL shouldSuspend = NO;
 %new(v@:c@)
 - (void)setBackgroundingEnabled:(BOOL)enable forDisplayIdentifier:(NSString *)identifier
 {
-    if (integerForKey(kBackgroundMethod, identifier) == 2) {
+    if (integerForKey(kBackgroundingMethod, identifier) == 2) {
         BOOL isEnabled = [bgEnabledApps containsObject:identifier];
         if (isEnabled != enable) {
             // Tell the application to change its backgrounding status
