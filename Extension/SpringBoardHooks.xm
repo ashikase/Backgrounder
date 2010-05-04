@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-04 11:44:38
+ * Last-modified: 2010-05-04 11:45:25
  */
 
 /**
@@ -83,7 +83,7 @@ extern "C" {
 static NSDictionary *globalPrefs = nil;
 
 // Store a list of apps that override the default preferences
-static NSArray *overriddenPrefs = nil;
+static NSArray *appsWithOverrides = nil;
 
 static void loadPreferences()
 {
@@ -115,13 +115,13 @@ static void loadPreferences()
     propList = CFPreferencesCopyAppValue((CFStringRef)kOverrides, appId);
     if (propList != NULL) {
         if (CFGetTypeID(propList) == CFDictionaryGetTypeID())
-            overriddenPrefs = [(NSDictionary *)propList allKeys];
+            appsWithOverrides = [(NSDictionary *)propList allKeys];
         CFRelease(propList);
     }
-    if (overriddenPrefs == nil) {
+    if (appsWithOverrides == nil) {
         // Use default values
         NSDictionary *dict = [defaults objectForKey:kOverrides];
-        overriddenPrefs = [dict allKeys];
+        appsWithOverrides = [dict allKeys];
 
         // Write a copy of the default values to disk
         // NOTE: This is done as the values are not cached; they are later
@@ -129,13 +129,13 @@ static void loadPreferences()
         CFPreferencesSetAppValue((CFStringRef)kOverrides, dict, appId);
         CFPreferencesSynchronize(appId, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost);
     }
-    [overriddenPrefs retain];
+    [appsWithOverrides retain];
 }
 
 static id objectForKey(NSString *key, NSString *displayId)
 {
     NSDictionary *prefs = nil;
-    if ([overriddenPrefs containsObject:displayId]) {
+    if ([appsWithOverrides containsObject:displayId]) {
         // This application does not use the default preferences
         prefs = [[[[NSUserDefaults standardUserDefaults] persistentDomainForName:@APP_ID]
             objectForKey:kOverrides] objectForKey:displayId];
