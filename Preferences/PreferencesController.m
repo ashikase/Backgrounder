@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 22:24:37
+ * Last-modified: 2010-05-02 21:12:52
  */
 
 /**
@@ -93,13 +93,13 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
     static NSString *cellTitles[][3] = {
         {@"Off", @"Native", @"Backgrounder"},
-        {@"Badge", @"Status Bar Icon", nil},
-        {@"Enable at Launch", @"Stay Enabled", nil}
+        {@"Enable at Launch", @"Stay Enabled", nil},
+        {@"Badge", @"Status Bar Icon", nil}
     };
     static NSString *cellSubtitles[][3] = {
         {@"App will terminate on minimize", @"Use native method, if supported", @"Run as if in foreground"},
-        {@"Mark the app's icon", @"Mark the app's status bar", nil},
-        {@"No need to manually enable", @"Must be disabled manually", nil}
+        {@"No need to manually enable", @"Must be disabled manually", nil},
+        {@"Mark the app's icon", @"Mark the app's status bar", nil}
     };
 
     UITableViewCell *cell = nil;
@@ -132,6 +132,10 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
         }
         UIButton *button = (UIButton *)cell.accessoryView;
         if (indexPath.section == 1) {
+            NSString *key = (indexPath.row == 0) ? kAlwaysEnabled : kPersistent;
+            button.selected = [[Preferences sharedInstance] boolForKey:key
+                forDisplayIdentifier:displayIdentifier];
+        } else {
             if (indexPath.row == 0) {
                     button.selected = [[Preferences sharedInstance] boolForKey:kBadgeEnabled
                         forDisplayIdentifier:displayIdentifier];
@@ -141,10 +145,6 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
                         forDisplayIdentifier:displayIdentifier];
                     cell.imageView.image = [UIImage imageNamed:@"status_bar_icon.png"];
             }
-        } else {
-            NSString *key = (indexPath.row == 0) ? kAlwaysEnabled : kPersistent;
-            button.selected = [[Preferences sharedInstance] boolForKey:key
-                forDisplayIdentifier:displayIdentifier];
         }
     }
 
@@ -166,7 +166,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section
 {
-    static NSString *titles[] = {@"Backgrounding method", @"Indicate status via...", @"Other settings"};
+    static NSString *titles[] = {@"Backgrounding method", @"Backgrounding state", @"Indicate status via..."};
 
     // Determine offset
     float topOffset = (section == 0) ? 10.0f : 0;
@@ -213,7 +213,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
 - (void)buttonToggled:(UIButton *)button
 {
-    static NSString *keys[][2] = {{kBadgeEnabled, kStatusBarIconEnabled}, {kAlwaysEnabled, kPersistent}};
+    static NSString *keys[][2] = {{kAlwaysEnabled, kPersistent}, {kBadgeEnabled, kStatusBarIconEnabled}};
 
     // Update selected state of button
     button.selected = !button.selected;
@@ -228,7 +228,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
 - (void)helpButtonTapped:(UIButton *)sender
 {
-    static NSString *helpFiles[] = {@"help_method.mdwn", @"help_indicators.mdwn", @"help_other.mdwn"};
+    static NSString *helpFiles[] = {@"help_method.mdwn", @"help_other.mdwn", @"help_indicators.mdwn"};
 
     // Create and show help page
     // NOTE: Controller is released in delegate callback
