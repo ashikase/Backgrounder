@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-23 00:37:22
+ * Last-modified: 2010-04-23 01:08:00
  */
 
 /**
@@ -51,9 +51,6 @@
 
 //==============================================================================
 
-// Allowed values
-static NSArray *allowedFeedbackTypes = nil;
-
 @implementation Preferences
 
 @dynamic needsRespring;
@@ -70,9 +67,6 @@ static NSArray *allowedFeedbackTypes = nil;
 {
     self = [super init];
     if (self) {
-        allowedFeedbackTypes = [[NSArray alloc] initWithObjects:
-            @"simplePopup", @"taskMenuPopup", nil];
-
         // Set default values for options that are not already
         // set in the application's on-disk preferences list.
         [self registerDefaults:[self defaults]];
@@ -99,10 +93,8 @@ static NSArray *allowedFeedbackTypes = nil;
 
     [dict setObject:[NSNumber numberWithBool:YES] forKey:@"firstRun"];
     [dict setObject:[NSNumber numberWithBool:YES] forKey:@"persistent"];
-    [dict setObject:[NSNumber numberWithBool:YES] forKey:@"animationsEnabled"];
     [dict setObject:[NSNumber numberWithBool:NO] forKey:@"badgeEnabled"];
     [dict setObject:[NSNumber numberWithBool:YES] forKey:@"badgeEnabledForAll"];
-    [dict setObject:@"simplePopup" forKey:@"feedbackType"];
 
     [dict setObject:[NSArray array] forKey:@"enabledApplications"];
 
@@ -117,8 +109,8 @@ static NSArray *allowedFeedbackTypes = nil;
 - (NSArray *)keysRequiringRespring
 {
     return [NSArray arrayWithObjects:
-        kFirstRun, kPersistent, kAnimationsEnabled, kBadgeEnabled, kBadgeEnabledForAll,
-        kFeedbackType, kEnabledApplications, kBlacklistedApplications,
+        kFirstRun, kPersistent, kBadgeEnabled, kBadgeEnabledForAll,
+        kEnabledApplications, kBlacklistedApplications,
         nil];
 }
 

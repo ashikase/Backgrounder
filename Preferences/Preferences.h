@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-23 00:35:28
+ * Last-modified: 2010-04-23 01:07:37
  */
 
 /**
@@ -42,10 +42,8 @@
 
 #define kFirstRun                @"firstRun"
 #define kPersistent              @"persistent"
-#define kAnimationsEnabled       @"animationsEnabled"
 #define kBadgeEnabled            @"badgeEnabled"
 #define kBadgeEnabledForAll      @"badgeEnabledForAll"
-#define kFeedbackType            @"feedbackType"
 #define kEnabledApplications     @"enabledApplications"
 #define kBlacklistedApplications @"blacklistedApplications"
 

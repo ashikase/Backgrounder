@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-23 01:04:04
+ * Last-modified: 2010-04-23 01:45:23
  */
 
 /**
@@ -126,11 +126,6 @@
             cell.imageView.image = nil;
             break;
         case 1:
-#if 0
-            button.selected = [[Preferences sharedInstance] animationsEnabled];
-            break;
-        case 2:
-#endif
             switch (indexPath.row) {
                 case 0:
                     button.selected = [[Preferences sharedInstance] boolForKey:kBadgeEnabled];
@@ -161,11 +156,6 @@
             [[Preferences sharedInstance] setBool:button.selected forKey:kPersistent];
             break;
         case 1:
-#if 0
-            [[Preferences sharedInstance] setAnimationsEnabled:button.selected];
-            break;
-        case 2:
-#endif
             switch (indexPath.row) {
                 case 0:
                     [[Preferences sharedInstance] setBool:button.selected forKey:kBadgeEnabled];
