@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-25 22:54:09
+ * Last-modified: 2010-04-25 23:02:03
  */
 
 /**
@@ -155,14 +155,18 @@
     id ret = nil;
 
     NSDictionary *dict = nil;
-    if (displayId != nil)
+    if (displayId != nil) {
         // Retrieve settings for the specified application
         dict = [[self objectForKey:kOverrides] objectForKey:displayId];
-    else
+        if (dict == nil)
+            // Settings do not exist; use defaults
+            dict = [self objectForKey:kDefaults];
+    } else {
         // Retrieve default settings
         dict = [self objectForKey:kDefaults];
+    }
 
-    if (dict)
+    if (dict != nil)
         // Retrieve the value for the specified key
         ret = [dict objectForKey:defaultName];
 
