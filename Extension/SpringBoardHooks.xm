@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 22:01:04
+ * Last-modified: 2010-04-29 22:12:15
  */
 
 /**
@@ -81,25 +81,6 @@ static NSArray *overriddenPrefs = nil;
 
 static void loadPreferences()
 {
-    // Invocation type
-    // NOTE: This setting is from pre-libactivator; convert and remove
-    CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("invocationMethod"), CFSTR(APP_ID));
-    if (propList) {
-        NSString *eventName = nil;
-        if ([(NSString *)propList isEqualToString:@"homeShortHold"])
-            eventName = LAEventNameMenuHoldShort;
-        else if ([(NSString *)propList isEqualToString:@"powerShortHold"])
-            eventName = LAEventNameLockHoldShort;
-        CFRelease(propList);
-
-        // Register the event type with libactivator
-        [[LAActivator sharedInstance] assignEvent:[LAEvent eventWithName:eventName] toListenerWithName:@APP_ID];
-
-        // Remove the preference, as it is no longer used
-        CFPreferencesSetAppValue(CFSTR("invocationMethod"), NULL, CFSTR(APP_ID));
-        CFPreferencesAppSynchronize(CFSTR(APP_ID));
-    }
-
     NSDictionary *prefs = [[NSUserDefaults standardUserDefaults] persistentDomainForName:@APP_ID];
     globalPrefs = [[prefs objectForKey:kGlobal] retain];
     if (globalPrefs == nil) {
