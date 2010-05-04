@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-25 02:36:01
+ * Last-modified: 2010-04-25 03:34:23
  */
 
 /**
@@ -47,10 +47,6 @@
 #import "Preferences.h"
 #import "ToggleButton.h"
 
-
-@interface UINavigationController (Mine)
-- (void)pushViewController:(id)controller transition:(int)transition;	// 0x30a59e20
-@end
 
 @implementation PreferencesController
 
