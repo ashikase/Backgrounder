@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-14 02:31:26
+ * Last-modified: 2010-04-26 02:27:57
  */
 
 /**
@@ -67,15 +67,29 @@
 
 struct GSEvent;
 
+// Preferences
+
+#define kDefaults                @"defaults"
+#define kOverrides               @"overrides"
+
+#define kBackgroundMethod        @"backgroundMethod"
+#define kBadgeEnabled            @"badgeEnabled"
+#define kStatusBarIconEnabled    @"statusBarIconEnabled"
+#define kPersistent              @"persistent"
+#define kAlwaysEnabled           @"alwaysEnabled"
+
+// Store a copy of the default preferences in memory
+static NSDictionary *defaultPrefs = nil;
+
+// Store a list of apps that override the default preferences
+static NSArray *overriddenPrefs = nil;
+
 
 static BOOL isPersistent = YES;
 
 static NSMutableArray *activeApps = nil;
 static NSMutableArray *bgEnabledApps = nil;
 static NSArray *blacklistedApps = nil;
-
-static BOOL badgeEnabled = NO;
-static BOOL badgeEnabledForAll = YES;
 
 //==============================================================================
 
@@ -86,20 +100,6 @@ static void loadPreferences()
         // NOTE: Defaults to YES
         if (CFGetTypeID(propList) == CFBooleanGetTypeID())
             isPersistent = CFBooleanGetValue(reinterpret_cast<CFBooleanRef>(propList));
-        CFRelease(propList);
-    }
-
-    propList = CFPreferencesCopyAppValue(CFSTR("badgeEnabled"), CFSTR(APP_ID));
-    if (propList) {
-        if (CFGetTypeID(propList) == CFBooleanGetTypeID())
-            badgeEnabled = CFBooleanGetValue(reinterpret_cast<CFBooleanRef>(propList));
-        CFRelease(propList);
-    }
-
-    propList = CFPreferencesCopyAppValue(CFSTR("badgeEnabledForAll"), CFSTR(APP_ID));
-    if (propList) {
-        if (CFGetTypeID(propList) == CFBooleanGetTypeID())
-            badgeEnabledForAll = CFBooleanGetValue(reinterpret_cast<CFBooleanRef>(propList));
         CFRelease(propList);
     }
 
@@ -128,6 +128,46 @@ static void loadPreferences()
         CFPreferencesSetAppValue(CFSTR("invocationMethod"), NULL, CFSTR(APP_ID));
         CFPreferencesAppSynchronize(CFSTR(APP_ID));
     }
+
+    NSDictionary *prefs = [[NSUserDefaults standardUserDefaults] persistentDomainForName:@APP_ID];
+    defaultPrefs = [[prefs objectForKey:kDefaults] retain];
+    if (defaultPrefs == nil) {
+        // Register values for defaults
+        defaultPrefs = [[NSDictionary alloc] initWithObjectsAndKeys:
+            [NSNumber numberWithInteger:2], kBackgroundMethod,
+            [NSNumber numberWithBool:NO], kBadgeEnabled,
+            [NSNumber numberWithBool:NO], kStatusBarIconEnabled,
+            [NSNumber numberWithBool:YES], kPersistent,
+            [NSNumber numberWithBool:NO], kAlwaysEnabled,
+            nil];
+    }
+    overriddenPrefs = [[[prefs objectForKey:kOverrides] allKeys] retain];
+}
+
+static id objectForKey(NSString *key, NSString *displayId)
+{
+    NSDictionary *prefs = nil;
+    if ([overriddenPrefs containsObject:displayId]) {
+        // This application does not use the default preferences
+        prefs = [[[[NSUserDefaults standardUserDefaults] persistentDomainForName:@APP_ID]
+            objectForKey:kOverrides] objectForKey:displayId];
+    } else {
+        // Use the default preferences
+        prefs = defaultPrefs;
+    }
+
+    return [prefs objectForKey:key];
+}
+
+static BOOL boolForKey(NSString *key, NSString *displayId)
+{
+    BOOL ret = NO;
+
+    id value = objectForKey(key, displayId);
+    if ([value isKindOfClass:[NSNumber class]])
+        ret = [value boolValue];
+
+    return ret;
 }
 
 //==============================================================================
@@ -418,7 +458,7 @@ static BOOL shouldSuspend = NO;
         [activeApps addObject:identifier];
     }
 
-    if (badgeEnabled && (badgeEnabledForAll || [bgEnabledApps containsObject:identifier]))
+    if (boolForKey(kBadgeEnabled, identifier) && [bgEnabledApps containsObject:identifier])
         // NOTE: This is mainly to catch applications that start in the background
         showBadgeForDisplayIdentifier(identifier);
 
@@ -438,7 +478,7 @@ static BOOL shouldSuspend = NO;
     NSString *identifier = [self displayIdentifier];
     [activeApps removeObject:identifier];
 
-    if (badgeEnabled) {
+    if (boolForKey(kBadgeEnabled, identifier)) {
         // Update the SpringBoard icon to indicate that the app is not running
         SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
         [[icon viewWithTag:1000] removeFromSuperview];
@@ -452,7 +492,7 @@ static BOOL shouldSuspend = NO;
     NSString *identifier = [self displayIdentifier];
     BOOL isBackgrounded = [bgEnabledApps containsObject:identifier];
 
-    if (badgeEnabled && (badgeEnabledForAll || isBackgrounded))
+    if (boolForKey(kBadgeEnabled, identifier) && isBackgrounded)
         // In case badge has not been added yet, add now
         showBadgeForDisplayIdentifier(identifier);
 
