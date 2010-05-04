@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 23:34:05
+ * Last-modified: 2010-05-02 22:52:54
  */
 
 /**
@@ -48,8 +48,8 @@
 #import <SpringBoard/SBApplicationIcon.h>
 #import <SpringBoard/SBApplicationController.h>
 #import <SpringBoard/SBAlertItemsController.h>
-#import <SpringBoard/SBIconModel.h>
 #import <SpringBoard/SBDisplayStack.h>
+#import <SpringBoard/SBIconModel.h>
 #import <SpringBoard/SBStatusBarController.h>
 #import <SpringBoard/SpringBoard.h>
 
@@ -506,6 +506,74 @@ static BOOL shouldSuspend = NO;
 
 //==============================================================================
 
+// NOTE: Only hooked for firmware < 3.1
+%group GFirmware30x
+
+%hook SBDisplayStack
+
+// FIXME: Find a better way to prevent auto-launch of Phone and Mail
+// NOTE: The SBDisable* preference keys are not used as they might get saved to
+//       SpringBoard's preferences list, which is also used in Safe Mode.
+- (void)pushDisplay:(id)display
+{
+    // NOTE: Activation setting 0x10000 is firstLaunchAfterBoot
+    if (self == SBWActiveDisplayStack
+        && [display activationSetting:0x10000]
+        && integerForKey(kBackgroundingMethod, [display displayIdentifier]) == 0) {
+        // Application has backgrounding disabled; prevent auto-launch at boot
+        // NOTE: Activation settings will remain if not manually cleared
+        [display clearActivationSettings];
+        return;
+    }
+
+    %orig;
+}
+
+%end
+
+%hook SBApplication
+
+- (void)_relaunchAfterAbnormalExit:(BOOL)exitedAbnormally
+{
+    // NOTE: This method gets called by both exitedNormally and exitedAbnormally
+    if (!exitedAbnormally && integerForKey(kBackgroundingMethod, [self displayIdentifier]) == 0) {
+        // Backgrounding is disabled for this app; prevent auto-relaunch
+        // NOTE: Only Phone and Mail are known to auto-relaunch
+
+        // NOTE: Original method also calls _cancelAutoRelaunch, to cancel
+        //       any outstanding delayed performSelector calls.
+        [self _cancelAutoRelaunch];
+    } else {
+        %orig;
+    }
+}
+
+%end
+
+%end // GFirmware30x
+
+// NOTE: Only hooked for firmware >= 3.1
+%group GFirmware31x
+
+%hook SBApplication
+
+- (BOOL)_shouldAutoLaunchOnBoot:(BOOL)boot
+{
+    // NOTE: This method determines both whether an application should be
+    //       launched at startup and whether it should be relaunched when
+    //       terminated.
+
+    // If backgrounding is disabled for this app; prevent auto-(re)launch
+    // NOTE: Only Phone and Mail are known to auto-(re)launch
+    return (integerForKey(kBackgroundingMethod, [self displayIdentifier]) == 0) ? NO : %orig;
+}
+
+%end
+
+%end // GFirmware31x
+
+//==============================================================================
+
 void initSpringBoardHooks()
 {
     loadPreferences();
@@ -517,6 +585,15 @@ void initSpringBoardHooks()
     [BackgrounderActivator load];
 
     %init;
+
+    // Load firmware-specific hooks
+    Class $SBApplication = objc_getClass("SBApplication");
+    if (class_getInstanceMethod($SBApplication, @selector(_shouldAutoLaunchOnBoot:)) == NULL)
+        // Firmware < 3.1
+        %init(GFirmware30x);
+    else
+        // Firmware >= 3.1
+        %init(GFirmware31x);
 }
 
 /* vim: set filetype=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
