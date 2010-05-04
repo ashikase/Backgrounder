@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-21 00:10:19
+ * Last-modified: 2010-04-29 21:58:03
  */
 
 /**
@@ -75,11 +75,6 @@ static void toggleBackgrounding(int signal)
 // NOTE: Normally this method does nothing; only system apps can overrride
 - (void)applicationWillSuspend
 {
-#if 0
-    [self removeStatusBarImageNamed:
-        [NSString stringWithFormat:@"Backgrounder"]];
-#endif
-
     if (!backgroundingEnabled)
         %orig;
 }
@@ -88,14 +83,6 @@ static void toggleBackgrounding(int signal)
 // NOTE: Normally this method does nothing; only system apps can overrride
 - (void)applicationDidResume
 {
-#if 0
-    NSString *name = [NSString stringWithFormat:@"Backgrounder"];
-    if ([self respondsToSelector:@selector(addStatusBarImageNamed:removeOnExit:)])
-        [self addStatusBarImageNamed:name removeOnExit:YES];
-    else
-        [self addStatusBarImageNamed:name removeOnAbnormalExit:YES];
-#endif
-
     if (!backgroundingEnabled)
         %orig;
 }
