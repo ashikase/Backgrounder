@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 13:18:15
+ * Last-modified: 2010-04-29 18:38:43
  */
 
 /**
@@ -104,8 +104,16 @@
     [dict setObject:global forKey:kGlobal];
 
     // Set default overrides
-    // FIXME: Default overrides should include Mail, Phone, iPod (Music/Video?) and Safari
-    [dict setObject:[NSMutableDictionary dictionary] forKey:kOverrides];
+    NSMutableDictionary *overDict = [global mutableCopy];
+    [overDict setObject:[NSNumber numberWithInteger:1] forKey:kBackgroundMethod];
+    NSMutableDictionary *overrides = [NSMutableDictionary dictionaryWithObjectsAndKeys:
+        overDict, @"com.apple.mobileipod",
+        overDict, @"com.apple.mobilemail",
+        overDict, @"com.apple.mobilephone",
+        overDict, @"com.apple.mobilesafari",
+        nil];
+    [dict setObject:overrides forKey:kOverrides];
+    [overDict release];
 
     return dict;
 }
