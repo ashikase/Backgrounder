@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 22:00:52
+ * Last-modified: 2010-05-03 01:17:22
  */
 
 /**
@@ -41,20 +41,33 @@
 
 
 static BOOL backgroundingEnabled = NO;
-static BOOL isBlacklisted = NO;
+static int backgroundingMethod = 2;
 
 #define GSEventRef void *
 
 //==============================================================================
 
+@interface UIApplication (Private)
+- (NSString *)displayIdentifier;
+- (void)terminateWithSuccess;
+@end
+
+#define kGlobal                  @"global"
+#define kOverrides               @"overrides"
+#define kBackgroundingMethod     @"backgroundingMethod"
+
 static void loadPreferences()
 {
-    CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("blacklistedApplications"), CFSTR(APP_ID));
-    if (propList) {
-        if (CFGetTypeID(propList) == CFArrayGetTypeID())
-            isBlacklisted = [(NSArray *)propList containsObject:[[NSBundle mainBundle] bundleIdentifier]];
-        CFRelease(propList);
-    }
+    NSString *displayId = [[UIApplication sharedApplication] displayIdentifier];
+
+    NSDictionary *defaults = [[NSUserDefaults standardUserDefaults] persistentDomainForName:@APP_ID];
+    NSDictionary *prefs = [[defaults objectForKey:kOverrides] objectForKey:displayId];
+    if (prefs == nil)
+        prefs = [defaults objectForKey:kGlobal];
+    
+    id value = [prefs objectForKey:kBackgroundingMethod];
+    if ([value isKindOfClass:[NSNumber class]])
+        backgroundingMethod = [value integerValue];
 }
 
 //==============================================================================
@@ -62,7 +75,8 @@ static void loadPreferences()
 // Callback
 static void toggleBackgrounding(int signal)
 {
-    backgroundingEnabled = !backgroundingEnabled;
+    if (backgroundingMethod == 2)
+        backgroundingEnabled = !backgroundingEnabled;
 }
 
 //==============================================================================
@@ -71,8 +85,25 @@ static void toggleBackgrounding(int signal)
 
 %hook UIApplication
 
+// Delegate method
+// NOTE: Only hooked when backgroundingMethod == 2
+- (void)applicationWillResignActive:(id)application
+{
+    if (!backgroundingEnabled)
+        %orig;
+}
+
+// Delegate method
+// NOTE: Only hooked when backgroundingMethod == 2
+- (void)applicationDidBecomeActive:(id)application
+{
+    if (!backgroundingEnabled)
+        %orig;
+}
+
 // Prevent execution of application's on-suspend method
 // NOTE: Normally this method does nothing; only system apps can overrride
+// NOTE: Only hooked when backgroundingMethod == 2
 - (void)applicationWillSuspend
 {
     if (!backgroundingEnabled)
@@ -81,6 +112,7 @@ static void toggleBackgrounding(int signal)
 
 // Prevent execution of application's on-resume methods
 // NOTE: Normally this method does nothing; only system apps can overrride
+// NOTE: Only hooked when backgroundingMethod == 2
 - (void)applicationDidResume
 {
     if (!backgroundingEnabled)
@@ -92,18 +124,21 @@ static void toggleBackgrounding(int signal)
 {
     if (!backgroundingEnabled)
         %orig;
+
+    if (backgroundingMethod == 0)
+        // Application should terminate on suspend; make certain that it does
+        [self performSelector:@selector(terminateWithSuccess) withObject:nil afterDelay:1.0f];
 }
 
-- (void)applicationWillResignActive:(id)application
+// Used by certain applications, such as Mail and Phone, instead of applicationSuspend:
+// NOTE: Only hooked when backgroundingMethod == 0
+- (void)applicationSuspend:(GSEventRef)event settings:(id)settings
 {
-    if (!backgroundingEnabled)
-        %orig;
-}
+    %orig;
 
-- (void)applicationDidBecomeActive:(id)application
-{
-    if (!backgroundingEnabled)
-        %orig;
+    // Application should terminate on suspend; make certain that it does
+    // NOTE: Called with delay so that it is performed during next event loop
+    [self performSelector:@selector(terminateWithSuccess) withObject:nil afterDelay:0];
 }
 
 %end
@@ -123,25 +158,39 @@ static void toggleBackgrounding(int signal)
     //       this extension's hooks will not be installed.
     %orig;
 
-    // NOTE: May be a subclass of UIApplication
+    // Load preferences to determine backgrounding method to use
+    loadPreferences();
+
+    if (backgroundingMethod == 1)
+        // Backgrounding method is set to native; do not hook anything else
+        return;
+
+    // NOTE: Application class may be a subclass of UIApplication (and not UIApplication itself)
     Class $$UIApplication = [self class];
     MSHookMessage($$UIApplication, @selector(applicationSuspend:), MSHake(GApplication$UIApplication$applicationSuspend$));
-    MSHookMessage($$UIApplication, @selector(applicationWillSuspend), MSHake(GApplication$UIApplication$applicationWillSuspend));
-    MSHookMessage($$UIApplication, @selector(applicationDidResume), MSHake(GApplication$UIApplication$applicationDidResume));
+
+    if (backgroundingMethod == 0) {
+        if (class_getInstanceMethod($$UIApplication, @selector(applicationSuspend:settings:)) != NULL)
+            MSHookMessage($$UIApplication, @selector(applicationSuspend:settings:),
+                    MSHake(GApplication$UIApplication$applicationSuspend$settings$));
+    } else {
+        MSHookMessage($$UIApplication, @selector(applicationWillSuspend), MSHake(GApplication$UIApplication$applicationWillSuspend));
+        MSHookMessage($$UIApplication, @selector(applicationDidResume), MSHake(GApplication$UIApplication$applicationDidResume));
+
+        id delegate = [self delegate];
+        Class $AppDelegate = delegate ? [delegate class] : [self class];
+        if (class_getInstanceMethod($AppDelegate, @selector(applicationWillResignActive:)) != NULL)
+            MSHookMessage($AppDelegate, @selector(applicationWillResignActive:),
+                    MSHake(GApplication$UIApplication$applicationWillResignActive$));
+        if (class_getInstanceMethod($AppDelegate, @selector(applicationDidBecomeActive:)) != NULL)
+            MSHookMessage($AppDelegate, @selector(applicationDidBecomeActive:),
+                    MSHake(GApplication$UIApplication$applicationDidBecomeActive$));
+    }
 
     if (NO)
         // FIXME: This is needed to prevent Logos from complaining about an unused
         //        hook group.
         %init(GApplication);
-
-    id delegate = [self delegate];
-    Class $AppDelegate = delegate ? [delegate class] : [self class];
-    if (class_getInstanceMethod($AppDelegate, @selector(applicationWillResignActive:)) != NULL)
-        MSHookMessage($AppDelegate, @selector(applicationWillResignActive:),
-                MSHake(GApplication$UIApplication$applicationWillResignActive$));
-    if (class_getInstanceMethod($AppDelegate, @selector(applicationDidBecomeActive:)) != NULL)
-        MSHookMessage($AppDelegate, @selector(applicationDidBecomeActive:),
-                MSHake(GApplication$UIApplication$applicationDidBecomeActive$));
 }
 
 %new(c@:)
@@ -153,7 +202,8 @@ static void toggleBackgrounding(int signal)
 %new(v@:c)
 - (void)setBackgroundingEnabled:(BOOL)enable
 {
-    backgroundingEnabled = enable;
+    if (backgroundingMethod == 2)
+        backgroundingEnabled = enable;
 }
 
 %end
@@ -162,10 +212,7 @@ static void toggleBackgrounding(int signal)
 
 void initApplicationHooks()
 {
-    loadPreferences();
-
-    if (!isBlacklisted)
-        %init;
+    %init;
 
     // Setup action to take upon receiving toggle signal from SpringBoard
     // NOTE: Done this way as the application hooks *must* be installed in
