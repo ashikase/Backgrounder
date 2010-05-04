@@ -203,7 +203,6 @@ static NSArray *allApplications = nil;
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    NSLog(@"=== returning: %d", [applications count]);
     return [applications count];
 }
 
@@ -212,28 +211,14 @@ static NSArray *allApplications = nil;
     static NSString *reuseIdentifier = @"ApplicationCell";
 
     // Try to retrieve from the table view a now-unused cell with the given identifier
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
+    ApplicationCell *cell = (ApplicationCell *)[tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
     if (cell == nil) {
         // Cell does not exist, create a new one
         cell = [[[ApplicationCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
         cell.selectionStyle = UITableViewCellSelectionStyleGray;
-        //cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
     }
 
-    NSString *identifier = [applications objectAtIndex:indexPath.row];
-    NSLog(@"=== cell is: %@", identifier);
-
-    NSString *displayName = SBSCopyLocalizedApplicationNameForDisplayIdentifier(identifier);
-    [cell setText:displayName];
-    [displayName release];
-
-    UIImage *icon = nil;
-    NSString *iconPath = SBSCopyIconImagePathForDisplayIdentifier(identifier);
-    if (iconPath != nil) {
-        icon = [UIImage imageWithContentsOfFile:iconPath];
-        [iconPath release];
-    }
-    [cell setImage:icon];
+    cell.displayId = [applications objectAtIndex:indexPath.row];
 
     return cell;
 }

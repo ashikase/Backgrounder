@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 19:57:40
+ * Last-modified: 2010-04-29 20:24:30
  */
 
 /**
@@ -48,10 +48,6 @@
 #import "DocumentationController.h"
 #import "Preferences.h"
 #import "PreferencesController.h"
-
-// SpringBoardServices
-extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
-extern NSString * SBSCopyIconImagePathForDisplayIdentifier(NSString *identifier);
 
 
 //______________________________________________________________________________
@@ -184,7 +180,7 @@ static NSArray *applicationDisplayIdentifiers()
     static NSString *reuseIdentifier = @"ApplicationCell";
 
     // Try to retrieve from the table view a now-unused cell with the given identifier
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
+    ApplicationCell *cell = (ApplicationCell *)[tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
     if (cell == nil) {
         // Cell does not exist, create a new one
         cell = [[[ApplicationCell alloc] initWithFrame:CGRectZero reuseIdentifier:reuseIdentifier] autorelease];
@@ -193,19 +189,7 @@ static NSArray *applicationDisplayIdentifiers()
         cell.editingAccessoryType = UITableViewCellAccessoryDisclosureIndicator;
     }
 
-    NSString *identifier = [applications objectAtIndex:indexPath.row];
-
-    NSString *displayName = SBSCopyLocalizedApplicationNameForDisplayIdentifier(identifier);
-    [cell setText:displayName];
-    [displayName release];
-
-    UIImage *icon = nil;
-    NSString *iconPath = SBSCopyIconImagePathForDisplayIdentifier(identifier);
-    if (iconPath != nil) {
-        icon = [UIImage imageWithContentsOfFile:iconPath];
-        [iconPath release];
-    }
-    [cell setImage:icon];
+    cell.displayId = [applications objectAtIndex:indexPath.row];
 
     return cell;
 }

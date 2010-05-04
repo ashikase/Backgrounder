@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-23 01:01:29
+ * Last-modified: 2010-04-29 20:20:50
  */
 
 /**
@@ -42,8 +42,11 @@
 
 @interface ApplicationCell : UITableViewCell
 {
+    NSString *displayId;
 }
+
+@property(nonatomic, copy) NSString *displayId;
 
 @end
 
-/* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
+/* vim: set syntax=objc sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */

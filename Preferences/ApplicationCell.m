@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 13:45:56
+ * Last-modified: 2010-04-29 20:23:28
  */
 
 /**
@@ -42,8 +42,34 @@
 
 #import "ApplicationCell.h"
 
+// SpringBoardServices
+extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
+extern NSString * SBSCopyIconImagePathForDisplayIdentifier(NSString *identifier);
+
 
 @implementation ApplicationCell
+
+@synthesize displayId;
+
+- (void)setDisplayId:(NSString *)identifier
+{
+    if (![displayId isEqualToString:identifier]) {
+        [displayId release];
+        displayId = [identifier copy];
+
+        NSString *displayName = SBSCopyLocalizedApplicationNameForDisplayIdentifier(identifier);
+        self.textLabel.text = displayName;
+        [displayName release];
+
+        UIImage *icon = nil;
+        NSString *iconPath = SBSCopyIconImagePathForDisplayIdentifier(identifier);
+        if (iconPath != nil) {
+            icon = [UIImage imageWithContentsOfFile:iconPath];
+            [iconPath release];
+        }
+        self.imageView.image = icon;
+    }
+}
 
 - (void)layoutSubviews
 {
@@ -57,4 +83,4 @@
 
 @end
 
-/* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
+/* vim: set syntax=objc sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
