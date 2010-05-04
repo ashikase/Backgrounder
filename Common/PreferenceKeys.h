@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-04 12:47:09
+ * Last-modified: 2010-05-04 12:12:02
  */
 
 /**
@@ -40,30 +40,24 @@
  */
 
 
-#import "PreferenceKeys.h"
+// Preference settings keys
+
+#define kFirstRun                @"firstRun"
+
+#define kGlobal                  @"global"
+#define kOverrides               @"overrides"
+
+#define kBackgroundingMethod     @"backgroundingMethod"
+#define kBadgeEnabled            @"badgeEnabled"
+#define kStatusBarIconEnabled    @"statusBarIconEnabled"
+#define kPersistent              @"persistent"
+#define kAlwaysEnabled           @"alwaysEnabled"
 
 
-@interface Preferences : NSUserDefaults
-{
-    NSDictionary *initialValues;
-    NSMutableArray *respringRequestors;
-}
+// Former preference settings keys
 
-@property(nonatomic, readonly) BOOL needsRespring;
-
-+ (Preferences *)sharedInstance;
-
-- (id)objectForKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId;
-- (BOOL)boolForKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId;
-- (NSInteger)integerForKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId;
-
-- (void)setObject:(id)value forKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId;
-- (void)setBool:(BOOL)value forKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId;
-- (void)setInteger:(NSInteger)value forKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId;
-
-- (void)addOverrideForDisplayId:(NSString *)displayId;
-- (void)removeOverrideForDisplayId:(NSString *)displayId;
-
-@end
+#define kBadgeEnabledForAll      @"badgeEnabledForAll"
+#define kBlacklistedApps         @"blacklistedApplications"
+#define kEnabledApps             @"enabledApplications"
 
 /* vim: set filetype=objc sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
