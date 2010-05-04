@@ -8,6 +8,7 @@ Preferences_OBJC_FILES = main.m \
 						 Application.m \
 						 DocumentationController.m \
 						 HtmlDocController.m \
+						 OverridesController.m \
 						 Preferences.m \
 						 PreferencesController.m \
 						 RootController.m \
