@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-03 10:25:53
+ * Last-modified: 2010-05-04 11:21:59
  */
 
 /**
@@ -62,6 +62,12 @@
 
 struct GSEvent;
 
+// GraphicsServices
+extern "C" {
+    extern CFStringRef kGSUnifiedIPodCapability;
+    Boolean GSSystemHasCapability(CFStringRef capability);
+}
+
 //==============================================================================
 
 #define kGlobal                  @"global"
@@ -81,19 +87,49 @@ static NSArray *overriddenPrefs = nil;
 
 static void loadPreferences()
 {
-    NSDictionary *prefs = [[NSUserDefaults standardUserDefaults] persistentDomainForName:@APP_ID];
-    globalPrefs = [[prefs objectForKey:kGlobal] retain];
-    if (globalPrefs == nil) {
-        // Register values for defaults
-        globalPrefs = [[NSDictionary alloc] initWithObjectsAndKeys:
-            [NSNumber numberWithInteger:2], kBackgroundingMethod,
-            [NSNumber numberWithBool:NO], kBadgeEnabled,
-            [NSNumber numberWithBool:NO], kStatusBarIconEnabled,
-            [NSNumber numberWithBool:YES], kPersistent,
-            [NSNumber numberWithBool:NO], kAlwaysEnabled,
-            nil];
+    CFStringRef appId = CFSTR(APP_ID);
+
+    // Read in default values for preference settings
+    // NOTE: The values used depends on whether or not this device has the
+    //       "unified iPod" capability. This capability cannot be determined 
+    //       until after SBPlatformController is initialized, which happens in
+    //       applicationDidFinishLaunching:.
+    NSString *filename = GSSystemHasCapability(kGSUnifiedIPodCapability) ?
+        @"Defaults-UnifiedIPod" : @"Defaults-NonunifiedIPod";
+    NSDictionary *defaults = [NSDictionary dictionaryWithContentsOfFile:
+        [NSString stringWithFormat:@"/Applications/Backgrounder.app/%@.plist", filename]];
+
+    // Try reading user's global preference settings
+    CFPropertyListRef propList = CFPreferencesCopyAppValue((CFStringRef)kGlobal, appId);
+    if (propList != NULL) {
+        if (CFGetTypeID(propList) == CFDictionaryGetTypeID())
+            globalPrefs = [NSDictionary dictionaryWithDictionary:(NSDictionary *)propList];
+        CFRelease(propList);
     }
-    overriddenPrefs = [[[prefs objectForKey:kOverrides] allKeys] retain];
+    if (globalPrefs == nil)
+        // Use default values
+        globalPrefs = [defaults objectForKey:kGlobal];
+    [globalPrefs retain];
+
+    // Try reading user's overrides preference settings
+    propList = CFPreferencesCopyAppValue((CFStringRef)kOverrides, appId);
+    if (propList != NULL) {
+        if (CFGetTypeID(propList) == CFDictionaryGetTypeID())
+            overriddenPrefs = [(NSDictionary *)propList allKeys];
+        CFRelease(propList);
+    }
+    if (overriddenPrefs == nil) {
+        // Use default values
+        NSDictionary *dict = [defaults objectForKey:kOverrides];
+        overriddenPrefs = [dict allKeys];
+
+        // Write a copy of the default values to disk
+        // NOTE: This is done as the values are not cached; they are later
+        //       accessed from disk, and thus must be available there.
+        CFPreferencesSetAppValue((CFStringRef)kOverrides, dict, appId);
+        CFPreferencesSynchronize(appId, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost);
+    }
+    [overriddenPrefs retain];
 }
 
 static id objectForKey(NSString *key, NSString *displayId)
@@ -205,15 +241,22 @@ static BOOL shouldSuspend = NO;
     // NOTE: SpringBoard creates four stacks at startup
     displayStacks = [[NSMutableArray alloc] initWithCapacity:4];
 
+    // Call original implementation
+    %orig;
+
+    // Load extension preferences
+    loadPreferences();
+
     // NOTE: The initial capacity value was chosen to hold the default active
     //       apps (MobilePhone and MobileMail) plus two others
     activeApps = [[NSMutableArray alloc] initWithCapacity:4];
     bgEnabledApps = [[NSMutableArray alloc] initWithCapacity:2];
 
-    // Initialize simple notification popup
-    initSimplePopup();
-
-    %orig;
+    // Create the libactivator event listener
+    // NOTE: must load this *after* loading preferences, or else default
+    //       invocation method may mistakenly be set when another pre-Activator
+    //       method is already enabled.
+    [BackgrounderActivator load];
 }
 
 - (void)dealloc
@@ -578,14 +621,6 @@ static BOOL shouldSuspend = NO;
 
 void initSpringBoardHooks()
 {
-    loadPreferences();
-
-    // Create the libactivator event listener
-    // NOTE: must load this *after* loading preferences, or else default
-    //       invocation method may mistakenly be set when another pre-Activator
-    //       method is already enabled.
-    [BackgrounderActivator load];
-
     %init;
 
     // Load firmware-specific hooks
@@ -596,6 +631,9 @@ void initSpringBoardHooks()
     else
         // Firmware >= 3.1
         %init(GFirmware31x);
+
+    // Initialize simple notification popup
+    initSimplePopup();
 }
 
 /* vim: set filetype=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */

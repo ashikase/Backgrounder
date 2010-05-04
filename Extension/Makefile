@@ -9,6 +9,7 @@ Backgrounder_OBJCC_FILES = main.mm \
 Backgrounder_CFLAGS = -F$(SYSROOT)/System/Library/CoreServices -DAPP_ID=\"$(APP_ID)\"
 Backgrounder_LDFLAGS = -lactivator
 Backgrounder_FRAMEWORKS = UIKit CoreGraphics
+Backgrounder_PRIVATE_FRAMEWORKS = GraphicsServices
 
 include ../framework/makefiles/common.mk
 include ../framework/makefiles/tweak.mk
