@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-25 01:40:27
+ * Last-modified: 2010-04-25 01:26:54
  */
 
 /**
@@ -40,27 +40,14 @@
  */
 
 
-#define kFirstRun                @"firstRun"
-#define kBackgroundMethod        @"backgroundMethod"
-#define kBadgeEnabled            @"badgeEnabled"
-#define kStatusBarIconEnabled    @"statusBarIconEnabled"
-#define kPersistent              @"persistent"
-#define kAlwaysEnabled           @"alwaysEnabled"
+#import "HtmlDocController.h"
 
-#define kBadgeEnabledForAll      @"badgeEnabledForAll"
-#define kEnabledApplications     @"enabledApplications"
-#define kBlacklistedApplications @"blacklistedApplications"
-
-
-@interface Preferences : NSUserDefaults
+@interface PreferencesController : UITableViewController <HtmlDocControllerDelegate>
 {
-    NSDictionary *initialValues;
-    NSMutableArray *respringRequestors;
+    NSString *displayIdentifier;
 }
 
-@property(nonatomic, readonly) BOOL needsRespring;
-
-+ (Preferences *)sharedInstance;
+- (id)initWithDisplayIdentifier:(NSString *)displayId;
 
 @end
 

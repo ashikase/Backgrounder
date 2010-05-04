@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-23 01:08:00
+ * Last-modified: 2010-04-25 02:24:12
  */
 
 /**
@@ -91,9 +91,13 @@
 {
     NSMutableDictionary *dict = [NSMutableDictionary dictionary];
 
-    [dict setObject:[NSNumber numberWithBool:YES] forKey:@"firstRun"];
-    [dict setObject:[NSNumber numberWithBool:YES] forKey:@"persistent"];
-    [dict setObject:[NSNumber numberWithBool:NO] forKey:@"badgeEnabled"];
+    [dict setObject:[NSNumber numberWithBool:YES] forKey:kFirstRun];
+    [dict setObject:[NSNumber numberWithInteger:2] forKey:kBackgroundMethod];
+    [dict setObject:[NSNumber numberWithBool:NO] forKey:kBadgeEnabled];
+    [dict setObject:[NSNumber numberWithBool:NO] forKey:kStatusBarIconEnabled];
+    [dict setObject:[NSNumber numberWithBool:YES] forKey:kPersistent];
+    [dict setObject:[NSNumber numberWithBool:NO] forKey:kAlwaysEnabled];
+
     [dict setObject:[NSNumber numberWithBool:YES] forKey:@"badgeEnabledForAll"];
 
     [dict setObject:[NSArray array] forKey:@"enabledApplications"];
@@ -109,8 +113,8 @@
 - (NSArray *)keysRequiringRespring
 {
     return [NSArray arrayWithObjects:
-        kFirstRun, kPersistent, kBadgeEnabled, kBadgeEnabledForAll,
-        kEnabledApplications, kBlacklistedApplications,
+        kFirstRun, kBackgroundMethod, kBadgeEnabled, kStatusBarIconEnabled, kPersistent, kAlwaysEnabled,
+        kBadgeEnabledForAll, kEnabledApplications, kBlacklistedApplications,
         nil];
 }
 

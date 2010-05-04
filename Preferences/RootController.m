@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-23 01:06:17
+ * Last-modified: 2010-04-25 02:39:14
  */
 
 /**
@@ -47,6 +47,7 @@
 #import "AppSpecificPrefsController.h"
 #import "Constants.h"
 #import "DocumentationController.h"
+#import "PreferencesController.h"
 #import "GlobalPrefsController.h"
 
 
@@ -141,7 +142,7 @@
             cell.textLabel.text = @"Control";
             cell.detailTextLabel.text = @"(via Activator)";
         } else {
-            static NSString *cellTitles[] = {@"Global", nil, @"Application-specific"};
+            static NSString *cellTitles[] = {@"Defaults", nil, @"Application-specific"};
 
             // Try to retrieve from the table view a now-unused cell with the given identifier
             cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSimple];
@@ -179,7 +180,7 @@
         switch (indexPath.row) {
             case 0:
                 // Global
-                vc = [[[GlobalPrefsController alloc] initWithStyle:1] autorelease];
+                vc = [[[PreferencesController alloc] initWithDisplayIdentifier:nil] autorelease];
                 break;
             case 1:
                 // Control

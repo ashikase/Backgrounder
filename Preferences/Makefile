@@ -14,6 +14,7 @@ Preferences_OBJC_FILES = main.m \
 						 GlobalPrefsController.m \
 						 HtmlDocController.m \
 						 Preferences.m \
+						 PreferencesController.m \
 						 RootController.m \
 						 ToggleButton.m
 Preferences_CFLAGS = -DAPP_ID=\"$(APP_ID)\"
