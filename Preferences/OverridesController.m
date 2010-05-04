@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 12:53:40
+ * Last-modified: 2010-04-29 19:57:40
  */
 
 /**
@@ -140,6 +140,7 @@ static NSArray *applicationDisplayIdentifiers()
 {
     [super loadView];
 
+    // Set the table to edit mode so that delete buttons are shown
     self.tableView.editing = YES;
     self.tableView.allowsSelectionDuringEditing = YES;
 }
@@ -150,18 +151,12 @@ static NSArray *applicationDisplayIdentifiers()
     [super dealloc];
 }
 
-- (void)enumerateApplications
-{
-    //NSArray *array = applicationDisplayIdentifiers();
-    //NSArray *sortedArray = [array sortedArrayUsingFunction:compareDisplayNames context:NULL];
-    //[rootController setDisplayIdentifiers:sortedArray];
-    [self.tableView reloadData];
-}
-
 - (void)viewWillAppear:(BOOL)animated
 {
     // Update the table contents
+    [applications release];
     applications = [[[[Preferences sharedInstance] objectForKey:kOverrides] allKeys] retain];
+    [self.tableView reloadData];
  
     // Reset the table by deselecting the current selection
     [self.tableView deselectRowAtIndexPath:[self.tableView indexPathForSelectedRow] animated:YES];
@@ -177,11 +172,6 @@ static NSArray *applicationDisplayIdentifiers()
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
     return 1;
-}
-
-- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(int)section
-{
-    return nil;
 }
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
@@ -254,6 +244,25 @@ static NSArray *applicationDisplayIdentifiers()
 - (void)addButtonTapped:(id)sender
 {
     // Display list of applications
+    UIViewController *vc = [[[ApplicationPickerController alloc] initWithDelegate:self] autorelease];
+    [self presentModalViewController:vc animated:YES];
+}
+
+#pragma mark - ApplicationPickerControllerDelegate methods
+
+- (void)applicationPickerController:(ApplicationPickerController *)controller didSelectAppWithDisplayIdentifier:(NSString *)displayId
+{
+    // Add settings for the selected application
+    [[Preferences sharedInstance] addOverrideForDisplayId:displayId];
+
+    // Dismiss the application picker
+    [self dismissModalViewControllerAnimated:YES];
+}
+
+- (void)applicationPickerControllerDidFinish:(ApplicationPickerController *)controller
+{
+    // Dismiss the application picker
+    [self dismissModalViewControllerAnimated:YES];
 }
 
 @end

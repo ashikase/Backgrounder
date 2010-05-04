@@ -4,7 +4,7 @@ APP_ID = jp.ashikase.backgrounder
 Preferences_BUNDLE_NAME = Backgrounder
 Preferences_OBJC_FILES = main.m \
 						 ApplicationCell.m \
-						 ApplicationListController.m \
+						 ApplicationPickerController.m \
 						 Application.m \
 						 DocumentationController.m \
 						 HtmlDocController.m \

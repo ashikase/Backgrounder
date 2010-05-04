@@ -3,11 +3,11 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 13:33:40
+ * Last-modified: 2010-04-29 19:30:40
  */
 
 /**
- * Copyright (C) 2008-2009  Lance Fetters (aka. ashikase)
+ * Copyright (C) 2008-2010  Lance Fetters (aka. ashikase)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,14 +40,33 @@
  */
 
 
-#import "ApplicationPickerController.h"
+@class UIProgressHUD;
 
+@protocol ApplicationPickerControllerDelegate;
 
-@interface OverridesController : UITableViewController <ApplicationPickerControllerDelegate>
+@interface ApplicationPickerController : UIViewController <UITableViewDelegate, UITableViewDataSource> 
 {
-    NSArray *applications;
+	id<ApplicationPickerControllerDelegate> delegate;
+
+    // Table to view list of applications
+	UITableView *appsTableView;
+
+    // Progress indicator shown when loading applications list
+    UIProgressHUD *busyIndicator;
+
+    // Variables to track changes made on this page
+    NSMutableArray *applications;
 }
 
+@property(nonatomic, assign) id<ApplicationPickerControllerDelegate> delegate;
+
+- (id)initWithDelegate:(id<ApplicationPickerControllerDelegate>)delegate;
+
+@end
+
+@protocol ApplicationPickerControllerDelegate <NSObject>
+- (void)applicationPickerController:(ApplicationPickerController *)controller didSelectAppWithDisplayIdentifier:(NSString *)displayId;
+- (void)applicationPickerControllerDidFinish:(ApplicationPickerController *)controller;
 @end
 
 /* vim: set syntax=objc sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
