@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-26 02:57:32
+ * Last-modified: 2010-04-26 03:05:23
  */
 
 /**
@@ -417,17 +417,9 @@ static BOOL shouldSuspend = NO;
 {
     NSString *identifier = [self displayIdentifier];
 
-    BOOL isAlwaysEnabled = NO;
-    CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("enabledApplications"), CFSTR(APP_ID));
-    if (propList) {
-        if (CFGetTypeID(propList) == CFArrayGetTypeID())
-            isAlwaysEnabled = [(NSArray *)propList containsObject:identifier];
-        CFRelease(propList);
-    }
-
     if ([activeApps containsObject:identifier]) {
         // Was restored from backgrounded state
-        if (!boolForKey(kPersistent, identifier) && !isAlwaysEnabled) {
+        if (!boolForKey(kPersistent, identifier) && !boolForKey(kAlwaysEnabled, identifier)) {
             // Tell the application to disable backgrounding
             kill([self pid], SIGUSR1);
 
@@ -436,7 +428,7 @@ static BOOL shouldSuspend = NO;
         } 
     } else {
         // Initial launch; check if this application is set to always background
-        if (isAlwaysEnabled) {
+        if (boolForKey(kAlwaysEnabled, identifier)) {
             // Tell the application to enable backgrounding
             kill([self pid], SIGUSR1);
 
