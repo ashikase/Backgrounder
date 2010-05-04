@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 22:25:28
+ * Last-modified: 2010-04-29 23:34:05
  */
 
 /**
@@ -439,7 +439,10 @@ static BOOL shouldSuspend = NO;
 
 - (void)exitedAbnormally
 {
+    // NOTE: The only time an application would exit while backgrounding is
+    //       enabled is if it exited abnormally (e.g. crash).
     [bgEnabledApps removeObject:[self displayIdentifier]];
+
     %orig;
 }
 
