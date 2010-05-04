@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-25 02:24:12
+ * Last-modified: 2010-04-25 14:45:29
  */
 
 /**
@@ -148,6 +148,96 @@
 - (BOOL)needsRespring
 {
     return ([respringRequestors count] != 0);
+}
+
+#pragma mark - Value retrieval methods
+
+- (id)objectForKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId
+{
+    id ret = nil;
+
+    NSDictionary *dict = nil;
+    if (displayId != nil)
+        // Retrieve settings for the specified application
+        dict = [[self objectForKey:kOverrides] objectForKey:displayId];
+    else
+        // Retrieve default settings
+        dict = [self objectForKey:kDefaults];
+
+    if (dict)
+        // Retrieve the value for the specified key
+        ret = [dict objectForKey:defaultName];
+
+    return ret;
+}
+
+- (BOOL)boolForKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId
+{
+    BOOL ret = NO;
+
+    id value = [self objectForKey:defaultName forDisplayIdentifier:displayId];
+    if ([value isKindOfClass:[NSNumber class]])
+        ret = [value boolValue];
+
+    return ret;
+}
+
+- (NSInteger)integerForKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId
+{
+    NSInteger ret = 0;
+
+    id value = [self objectForKey:defaultName forDisplayIdentifier:displayId];
+    if ([value isKindOfClass:[NSNumber class]])
+        ret = [value integerValue];
+
+    return ret;
+}
+
+- (void)setObject:(id)value forKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId
+{
+    NSMutableDictionary *dict = nil;
+    if (displayId != nil) {
+        // Retrieve settings for the specified application
+        dict = [[self objectForKey:kOverrides] objectForKey:displayId];
+        if (dict == nil)
+            // Settings do not exist; copy defaults
+            dict = [self objectForKey:kDefaults];
+
+        // Create mutable copy
+        dict = [NSMutableDictionary dictionaryWithDictionary:dict];
+
+        // Store the value
+        [dict setObject:value forKey:defaultName];
+
+        // Store application settings back to overrides
+        NSMutableDictionary *overDict = [NSMutableDictionary dictionaryWithDictionary:[self objectForKey:kOverrides]];
+        [overDict setObject:dict forKey:displayId];
+
+        // Store overrides
+        [self setObject:overDict forKey:kOverrides];
+    } else {
+        // Retrieve default settings
+        // NOTE: While it should not happen, simply calling mutableCopy on the
+        //       result of objectForKey: could lead to a nil dictionary.
+        //       This also applies to other mutable copies used in this method.
+        dict = [NSMutableDictionary dictionaryWithDictionary:[self objectForKey:kDefaults]];
+
+        // Store the value
+        [dict setObject:value forKey:defaultName];
+
+        // Store the default settings
+        [self setObject:dict forKey:kDefaults];
+    }
+}
+
+- (void)setBool:(BOOL)value forKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId
+{
+    [self setObject:[NSNumber numberWithBool:value] forKey:defaultName forDisplayIdentifier:displayId];
+}
+
+- (void)setInteger:(NSInteger)value forKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId
+{
+    [self setObject:[NSNumber numberWithInteger:value] forKey:defaultName forDisplayIdentifier:displayId];
 }
 
 @end

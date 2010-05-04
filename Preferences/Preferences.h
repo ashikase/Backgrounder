@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-25 01:40:27
+ * Last-modified: 2010-04-25 14:45:25
  */
 
 /**
@@ -41,6 +41,10 @@
 
 
 #define kFirstRun                @"firstRun"
+
+#define kDefaults                @"defaults"
+#define kOverrides               @"overrides"
+
 #define kBackgroundMethod        @"backgroundMethod"
 #define kBadgeEnabled            @"badgeEnabled"
 #define kStatusBarIconEnabled    @"statusBarIconEnabled"
@@ -61,6 +65,14 @@
 @property(nonatomic, readonly) BOOL needsRespring;
 
 + (Preferences *)sharedInstance;
+
+- (id)objectForKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId;
+- (BOOL)boolForKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId;
+- (NSInteger)integerForKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId;
+
+- (void)setObject:(id)value forKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId;
+- (void)setBool:(BOOL)value forKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId;
+- (void)setInteger:(NSInteger)value forKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId;
 
 @end
 
