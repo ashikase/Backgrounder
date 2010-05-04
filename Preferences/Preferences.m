@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-02 23:21:06
+ * Last-modified: 2010-05-03 21:40:13
  */
 
 /**
@@ -43,6 +43,10 @@
 #import "Preferences.h"
 
 #import <notify.h>
+
+// GraphicsServices
+extern CFStringRef kGSUnifiedIPodCapability;
+Boolean GSSystemHasCapability(CFStringRef capability);
 
 
 @interface Preferences (Private)
@@ -89,33 +93,14 @@
 
 - (NSDictionary *)defaults
 {
-    NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+    // NOTE: The set of defaults used depends on whether or not the device
+    //       has the unified iPod application. By default, iPhone does and
+    //       iPod Touch/iPad do not.
+    NSString *filename = GSSystemHasCapability(kGSUnifiedIPodCapability) ?
+        @"Defaults-UnifiedIPod" : @"Defaults-NonunifiedIPod";
 
-    // Set first-run flag
-    [dict setObject:[NSNumber numberWithBool:YES] forKey:kFirstRun];
-
-    // Set default values for global settings
-    NSMutableDictionary *global = [NSMutableDictionary dictionary];
-    [global setObject:[NSNumber numberWithInteger:2] forKey:kBackgroundingMethod];
-    [global setObject:[NSNumber numberWithBool:NO] forKey:kBadgeEnabled];
-    [global setObject:[NSNumber numberWithBool:NO] forKey:kStatusBarIconEnabled];
-    [global setObject:[NSNumber numberWithBool:YES] forKey:kPersistent];
-    [global setObject:[NSNumber numberWithBool:NO] forKey:kAlwaysEnabled];
-    [dict setObject:global forKey:kGlobal];
-
-    // Set default overrides
-    NSMutableDictionary *overDict = [global mutableCopy];
-    [overDict setObject:[NSNumber numberWithInteger:1] forKey:kBackgroundingMethod];
-    NSMutableDictionary *overrides = [NSMutableDictionary dictionaryWithObjectsAndKeys:
-        overDict, @"com.apple.mobileipod",
-        overDict, @"com.apple.mobilemail",
-        overDict, @"com.apple.mobilephone",
-        overDict, @"com.apple.mobilesafari",
-        nil];
-    [dict setObject:overrides forKey:kOverrides];
-    [overDict release];
-
-    return dict;
+    return [NSDictionary dictionaryWithContentsOfFile:
+        [[NSBundle mainBundle] pathForResource:filename ofType:@"plist"]];
 }
 
 - (NSArray *)keysRequiringRespring

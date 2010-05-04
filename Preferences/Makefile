@@ -16,7 +16,7 @@ Preferences_OBJC_FILES = main.m \
 Preferences_CFLAGS = -std=gnu99 -DAPP_ID=\"$(APP_ID)\"
 Preferences_LDFLAGS = -lactivator
 Preferences_FRAMEWORKS = UIKit CoreGraphics
-Preferences_PRIVATE_FRAMEWORKS = SpringBoardServices
+Preferences_PRIVATE_FRAMEWORKS = GraphicsServices SpringBoardServices
 
 include ../framework/makefiles/common.mk
 include ../framework/makefiles/application.mk
