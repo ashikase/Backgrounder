@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-25 00:01:59
+ * Last-modified: 2010-04-25 01:12:02
  */
 
 /**
@@ -85,7 +85,39 @@ static NSString * contentsOfFile(NSString *path, NSString *name)
 
 - (void)loadView
 {
-    self.view = webView;
+    NSLog(@"=== 01: %@ and %@", self.navigationController, self.tabBarController);
+    if (self.navigationController == nil && self.tabBarController == nil) {
+    NSLog(@"=== 02");
+        // Being presented modally; add a title and a dismiss button
+ 
+        // Create a navigation bar
+        UINavigationBar *navBar = [[UINavigationBar alloc] initWithFrame:CGRectMake(0, 0, 320.0f, 44.0f)];
+        navBar.barStyle = UIBarStyleBlackOpaque;
+        navBar.delegate = self;
+
+        // Add title and buttons to navigation bar
+        UINavigationItem *navItem = [[UINavigationItem alloc] initWithTitle:self.title];
+        navItem.leftBarButtonItem = [[[UIBarButtonItem alloc] initWithTitle:@"Dismiss"
+                style:UIBarButtonItemStyleDone target:self action:@selector(dismissButtonTapped)] autorelease];
+        [navBar pushNavigationItem:navItem animated:NO];
+        [navItem release];
+
+        // Create a view to hold the navigation bar and web view
+        UIView *view = [[UIView alloc] initWithFrame:[[UIScreen mainScreen] applicationFrame]];
+        [view addSubview:navBar]; 
+        [navBar release];
+
+        // Adjust and add web view
+        webView.frame = CGRectMake(0, 44.0f, 320.0f, view.bounds.size.height - 44.0f);
+        [view addSubview:webView]; 
+
+        self.view = view;
+        [view release];
+    } else {
+    NSLog(@"=== 03");
+        self.view = webView;
+    }
+    NSLog(@"=== 04");
 }
 
 - (void)dealloc
@@ -156,6 +188,13 @@ static NSString * contentsOfFile(NSString *path, NSString *name)
         ret = ![[UIApplication sharedApplication] openURL:url];
 
     return ret;
+}
+
+#pragma mark - UINavigationItem action
+
+- (void)dismissButtonTapped
+{
+    [self dismissModalViewControllerAnimated:YES];
 }
 
 @end
