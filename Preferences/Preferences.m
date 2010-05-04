@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-25 22:51:41
+ * Last-modified: 2010-04-25 22:54:09
  */
 
 /**
@@ -91,12 +91,20 @@
 {
     NSMutableDictionary *dict = [NSMutableDictionary dictionary];
 
+    // Set first-run flag
     [dict setObject:[NSNumber numberWithBool:YES] forKey:kFirstRun];
-    [dict setObject:[NSNumber numberWithInteger:2] forKey:kBackgroundMethod];
-    [dict setObject:[NSNumber numberWithBool:NO] forKey:kBadgeEnabled];
-    [dict setObject:[NSNumber numberWithBool:NO] forKey:kStatusBarIconEnabled];
-    [dict setObject:[NSNumber numberWithBool:YES] forKey:kPersistent];
-    [dict setObject:[NSNumber numberWithBool:NO] forKey:kAlwaysEnabled];
+
+    // Set defaults
+    NSMutableDictionary *defDict = [NSMutableDictionary dictionary];
+    [defDict setObject:[NSNumber numberWithInteger:2] forKey:kBackgroundMethod];
+    [defDict setObject:[NSNumber numberWithBool:NO] forKey:kBadgeEnabled];
+    [defDict setObject:[NSNumber numberWithBool:NO] forKey:kStatusBarIconEnabled];
+    [defDict setObject:[NSNumber numberWithBool:YES] forKey:kPersistent];
+    [defDict setObject:[NSNumber numberWithBool:NO] forKey:kAlwaysEnabled];
+    [dict setObject:defDict forKey:kDefaults];
+
+    // Set overrides
+    [dict setObject:[NSMutableDictionary dictionary] forKey:kOverrides];
 
     return dict;
 }
