@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-02 22:52:54
+ * Last-modified: 2010-05-03 10:25:53
  */
 
 /**
@@ -430,7 +430,7 @@ static BOOL shouldSuspend = NO;
         [activeApps addObject:identifier];
     }
 
-    if (boolForKey(kBadgeEnabled, identifier) && [bgEnabledApps containsObject:identifier])
+    if (boolForKey(kBadgeEnabled, identifier))
         // NOTE: This is mainly to catch applications that start in the background
         showBadgeForDisplayIdentifier(identifier);
 
@@ -455,6 +455,7 @@ static BOOL shouldSuspend = NO;
 
     if (boolForKey(kBadgeEnabled, identifier)) {
         // Update the SpringBoard icon to indicate that the app is not running
+        // FIXME: Consider removing the kBadgeEnabled check as a method of optimization
         SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
         [[icon viewWithTag:1000] removeFromSuperview];
     }
@@ -469,6 +470,7 @@ static BOOL shouldSuspend = NO;
 
     if (boolForKey(kBadgeEnabled, identifier) && isBackgrounded)
         // In case badge has not been added yet, add now
+        // FIXME: Confirm if this is still needed
         showBadgeForDisplayIdentifier(identifier);
 
     BOOL flag;
