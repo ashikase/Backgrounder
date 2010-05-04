@@ -1,0 +1,11 @@
+> # Badge
+> ## (Default: Off)
+> - - -
+> * When enabled, displays a badge on the application's icon on the home screen (SpringBoard).
+
+- - -
+
+> # Status Bar Icon
+> ## (Default: Off)
+> - - -
+> * When enabled, if the application has backgrounding enabled, an icon will be displayed in the status bar when the application is active.

@@ -1,0 +1,21 @@
+> # Enable at Launch
+> ## (Default: Off)
+> - - -
+> * **Off:**  
+>   The application will start with backgrounding disabled.
+>
+> * **On:**  
+>   The application will start with backgrounding enabled; it can later be disabled via normal methods.
+
+- - -
+
+> # Stay Enabled
+> ## (Default: On)
+> - - -
+> * **Off:**  
+>   Backgrounding must be enabled every time the application is minimized.
+>
+>   Using this setting, one could, for example, use a single press of the Home button to quit the application and a double press to background it.
+>
+> * **On:**  
+>   Once backgrounding has been enabled for the application, it will remain enabled until the user manually disables it - no matter how many times the application is minimized and restored.
