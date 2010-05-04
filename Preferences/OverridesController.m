@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 20:24:30
+ * Last-modified: 2010-04-29 20:30:48
  */
 
 /**
@@ -42,80 +42,10 @@
 
 #import "OverridesController.h"
 
-//#import <objc/runtime.h>
-
 #import "ApplicationCell.h"
-#import "DocumentationController.h"
 #import "Preferences.h"
 #import "PreferencesController.h"
 
-
-//______________________________________________________________________________
-//______________________________________________________________________________
-
-#if 0
-static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
-{
-    NSInteger ret;
-
-    NSString *name_a = SBSCopyLocalizedApplicationNameForDisplayIdentifier(a);
-    NSString *name_b = SBSCopyLocalizedApplicationNameForDisplayIdentifier(b);
-    ret = [name_a caseInsensitiveCompare:name_b];
-    [name_a release];
-    [name_b release];
-
-    return ret;
-}
-
-static NSArray *applicationDisplayIdentifiers()
-{
-    // First, get a list of all possible application paths
-    NSMutableArray *paths = [NSMutableArray array];
-
-    // ... scan /Applications (System/Jailbreak applications)
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-    for (NSString *path in [fileManager directoryContentsAtPath:@"/Applications"]) {
-        if ([path hasSuffix:@".app"] && ![path hasPrefix:@"."])
-           [paths addObject:[NSString stringWithFormat:@"/Applications/%@", path]];
-    }
-
-    // ... scan /var/mobile/Applications (AppStore applications)
-    for (NSString *path in [fileManager directoryContentsAtPath:@"/var/mobile/Applications"]) {
-        for (NSString *subpath in [fileManager directoryContentsAtPath:
-                [NSString stringWithFormat:@"/var/mobile/Applications/%@", path]]) {
-            if ([subpath hasSuffix:@".app"])
-                [paths addObject:[NSString stringWithFormat:@"/var/mobile/Applications/%@/%@", path, subpath]];
-        }
-    }
-
-    // Then, go through paths and record valid application identifiers
-    NSMutableArray *identifiers = [NSMutableArray array];
-
-    for (NSString *path in paths) {
-        NSBundle *bundle = [NSBundle bundleWithPath:path];
-        if (bundle) {
-            NSString *identifier = [bundle bundleIdentifier];
-
-            // Filter out non-applications and apps that should remain hidden
-            // FIXME: The proper fix is to only show non-hidden apps and apps
-            //        that are in Categories; unfortunately, the design of
-            //        Categories does not make it easy to determine what apps
-            //        a given folder contains.
-            if (identifier &&
-                ![identifier hasPrefix:@"jp.ashikase.springjumps."] &&
-                ![identifier isEqualToString:@"com.iptm.bigboss.sbsettings"] &&
-                ![identifier isEqualToString:@"com.apple.webapp"])
-            [identifiers addObject:identifier];
-        }
-    }
-
-    return identifiers;
-}
-
-#endif
-
-//______________________________________________________________________________
-//______________________________________________________________________________
 
 @implementation OverridesController
 
@@ -153,14 +83,6 @@ static NSArray *applicationDisplayIdentifiers()
     [applications release];
     applications = [[[[Preferences sharedInstance] objectForKey:kOverrides] allKeys] retain];
     [self.tableView reloadData];
- 
-    // Reset the table by deselecting the current selection
-    [self.tableView deselectRowAtIndexPath:[self.tableView indexPathForSelectedRow] animated:YES];
-}
-
-- (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    return UITableViewCellEditingStyleDelete;
 }
 
 #pragma mark - UITableViewDataSource
@@ -214,6 +136,11 @@ static NSArray *applicationDisplayIdentifiers()
 }
 
 #pragma mark - UITableViewCellDelegate
+
+- (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return UITableViewCellEditingStyleDelete;
+}
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
