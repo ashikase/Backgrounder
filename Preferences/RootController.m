@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-25 02:39:14
+ * Last-modified: 2010-04-25 03:15:16
  */
 
 /**
@@ -44,11 +44,9 @@
 
 #import <libactivator/libactivator.h>
 
-#import "AppSpecificPrefsController.h"
 #import "Constants.h"
 #import "DocumentationController.h"
 #import "PreferencesController.h"
-#import "GlobalPrefsController.h"
 
 
 @implementation RootController
@@ -76,15 +74,29 @@
 - (void)viewDidLoad
 {
     // Create and add footer view
-    UIView *view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320.0f, 188.0f)];
+
+    // Determine footer height
+    int sections = [self.tableView numberOfSections];
+    // ... add height of spacing between sections
+    float height = 20.0f * sections;
+    for (int i = 0; i < sections; i++)
+        // ... add height of each section
+        height += 44.0f * [self.tableView numberOfRowsInSection:i] + 1.0f;
+
+    // NOTE: Height of table area is 416.0f (480.0f - status bar - navigation bar)
+    UIView *view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320.0f, 416.0f - height)];
 
     // Donation button
     UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
     [button addTarget:self action:@selector(openDonationLink) forControlEvents:UIControlEventTouchUpInside];
     UIImage *image = [UIImage imageNamed:@"donate.png"];
     [button setImage:image forState:UIControlStateNormal];
-    button.frame = CGRectMake((320.0f - image.size.width) / 2.0f, view.bounds.size.height - image.size.height, image.size.width, image.size.height);
+    button.frame = CGRectMake((320.0f - image.size.width) / 2.0f, view.bounds.size.height - image.size.height - 10.0f,
+            image.size.width, image.size.height);
     [view addSubview:button];
+
+    // Note height of donation button
+    float donationHeight = image.size.height;
 
     // Author label
     UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
@@ -95,7 +107,8 @@
     [label setBackgroundColor:[UIColor clearColor]];
     [label setFont:[UIFont systemFontOfSize:16.0f]];
     CGSize size = [label.text sizeWithFont:label.font];
-    [label setFrame:CGRectMake((320.0f - size.width) / 2.0f, view.bounds.size.height - image.size.height - size.height - 2.0f, size.width, size.height)];
+    [label setFrame:CGRectMake((320.0f - size.width) / 2.0f, view.bounds.size.height - donationHeight - size.height - 12.0f,
+            size.width, size.height)];
     [view addSubview:label];
     [label release];
 
@@ -113,46 +126,39 @@
 
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return 2;
+	return 3;
 }
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    static int rows[] = {3, 1};
+    static int rows[] = {2, 1, 1};
     return rows[section];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    static NSString *reuseIdSimple = @"SimpleCell";
     static NSString *reuseIdRightValue = @"RightValueCell";
     static NSString *reuseIdSubtitle = @"SubtitleCell";
 
-    UITableViewCell *cell = nil;
-    if (indexPath.section == 0) {
-        if (indexPath.row == 1) {
-            // Try to retrieve from the table view a now-unused cell with the given identifier
-            cell = [tableView dequeueReusableCellWithIdentifier:reuseIdRightValue];
-            if (cell == nil) {
-                // Cell does not exist, create a new one
-                cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:reuseIdRightValue] autorelease];
-                cell.selectionStyle = UITableViewCellSelectionStyleGray;
-                cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-            }
-            cell.textLabel.text = @"Control";
-            cell.detailTextLabel.text = @"(via Activator)";
-        } else {
-            static NSString *cellTitles[] = {@"Defaults", nil, @"Application-specific"};
+    static NSString *cellTitles[][2] = {
+        {@"Defaults", @"Applications"},
+        {@"Control", nil},
+        {@"Documentation", nil}};
 
-            // Try to retrieve from the table view a now-unused cell with the given identifier
-            cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSimple];
-            if (cell == nil) {
-                // Cell does not exist, create a new one
-                cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdSimple] autorelease];
-                cell.selectionStyle = UITableViewCellSelectionStyleGray;
-                cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-            }
-            cell.textLabel.text = cellTitles[indexPath.row];
+    static NSString *cellSubtitles[][2] = {
+        {@"Default settings used by apps", @"Override defaults for specific apps"},
+        {@"(via Activator)", nil},
+        {@"Usage, Issues, Todo, etc.", nil}};
+
+    UITableViewCell *cell = nil;
+    if (indexPath.section == 1) {
+        // Try to retrieve from the table view a now-unused cell with the given identifier
+        cell = [tableView dequeueReusableCellWithIdentifier:reuseIdRightValue];
+        if (cell == nil) {
+            // Cell does not exist, create a new one
+            cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:reuseIdRightValue] autorelease];
+            cell.selectionStyle = UITableViewCellSelectionStyleGray;
+            cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
         }
     } else {
         // Try to retrieve from the table view a now-unused cell with the given identifier
@@ -163,9 +169,9 @@
             cell.selectionStyle = UITableViewCellSelectionStyleGray;
             cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
         }
-        cell.textLabel.text = @"Documentation";
-        cell.detailTextLabel.text = @"Usage, Issues, Todo, etc.";
     }
+    cell.textLabel.text = cellTitles[indexPath.section][indexPath.row];
+    cell.detailTextLabel.text = cellSubtitles[indexPath.section][indexPath.row];
 
     return cell;
 }
@@ -176,26 +182,26 @@
 {
     UIViewController *vc = nil;
 
-    if (indexPath.section == 0) {
-        switch (indexPath.row) {
-            case 0:
+    switch (indexPath.section) {
+        case 0:
+            if (indexPath.row == 0)
                 // Global
                 vc = [[[PreferencesController alloc] initWithDisplayIdentifier:nil] autorelease];
-                break;
-            case 1:
-                // Control
-                vc = [[[LAListenerSettingsViewController alloc] init] autorelease];
-                [(LAListenerSettingsViewController *)vc setListenerName:@APP_ID];
-                break;
-            case 2:
-            default:
+            //else
                 // Application-specific
-                vc = [[[AppSpecificPrefsController alloc] initWithStyle:1] autorelease];
-                break;
-        }
-    } else {
-        // Documentation
-        vc = [[[DocumentationController alloc] initWithStyle:1] autorelease];
+                //vc = [[[AppSpecificPrefsController alloc] initWithStyle:1] autorelease];
+            break;
+        case 1:
+            // Control
+            vc = [[[LAListenerSettingsViewController alloc] init] autorelease];
+            [(LAListenerSettingsViewController *)vc setListenerName:@APP_ID];
+            break;
+        case 2:
+            // Documentation
+            vc = [[[DocumentationController alloc] initWithStyle:1] autorelease];
+            break;
+        default:
+            break;
     }
 
     if (vc)
