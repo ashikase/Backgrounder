@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 21:55:31
+ * Last-modified: 2010-04-29 21:59:30
  */
 
 /**
@@ -48,15 +48,10 @@
 #import <SpringBoard/SBApplicationIcon.h>
 #import <SpringBoard/SBApplicationController.h>
 #import <SpringBoard/SBAlertItemsController.h>
-#import <SpringBoard/SBAwayController.h>
-#import <SpringBoard/SBIconController.h>
 #import <SpringBoard/SBIconModel.h>
 #import <SpringBoard/SBDisplayStack.h>
 #import <SpringBoard/SBStatusBarController.h>
-#import <SpringBoard/SBUIController.h>
 #import <SpringBoard/SpringBoard.h>
-
-#import <substrate.h>
 
 #import "BackgrounderActivator.h"
 #import "SimplePopup.h"
