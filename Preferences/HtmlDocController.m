@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 13:50:10
+ * Last-modified: 2010-04-24 22:30:51
  */
 
 /**
@@ -130,20 +130,14 @@ static NSString * contentsOfFile(NSString *path, NSString *name)
     NSString *content = nil;
 
     if (fileName) {
-        // Try loading a previously-downloaded version of the file
-        filePath = @DOC_CACHE_PATH;
+        // Try loading the specified file
+        filePath = [NSString stringWithFormat:@"%@/%@",
+                 [[NSBundle mainBundle] bundlePath], @DOC_BUNDLE_PATH];
         content = contentsOfFile(filePath, fileName);
 
-        if (content == nil) {
-            // Try loading the version of the file included in the install package
-            filePath = [NSString stringWithFormat:@"%@/%@",
-                     [[NSBundle mainBundle] bundlePath], @DOC_BUNDLE_PATH];
-            content = contentsOfFile(filePath, fileName);
-
-            if (content == nil)
-                // Set an error message
-                content = @"<div style=\"text-align:center;\">(404: File not found)</div>";
-        }
+        if (content == nil)
+            // Set an error message
+            content = @"<div style=\"text-align:center;\">(404: File not found)</div>";
     }
 
     if (templateFileName) {
@@ -160,26 +154,6 @@ static NSString * contentsOfFile(NSString *path, NSString *name)
     }
 
     [webView loadHTMLString:content baseURL:[NSURL fileURLWithPath:filePath isDirectory:YES]];
-}
-
-- (void)loadRemoteFile
-{
-    NSError *error = nil;
-    NSHTTPURLResponse *response = nil;
-    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:
-        [NSString stringWithFormat:@"%@/%@", @DOC_URL, fileName]]];
-    NSData *data = [NSURLConnection sendSynchronousRequest:request
-        returningResponse:&response error:&error];
-  
-    NSLog(@"Response status: %ld, %@", (long)[response statusCode],
-        [NSHTTPURLResponse localizedStringForStatusCode:[response statusCode]]);
-    if (data) {
-        // Display in webview
-        [webView loadData:data MIMEType:@"text/html" textEncodingName:@"UTF-8" baseURL:
-     [NSURL URLWithString:@DOC_URL]];
-
-        // Save to local cache
-    }
 }
 
 @end

@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-23 01:02:19
+ * Last-modified: 2010-04-24 22:28:37
  */
 
 /**
@@ -52,7 +52,6 @@
 - (id)initWithContentsOfFile:(NSString *)fileName title:(NSString *)title;
 
 - (void)loadLocalFile;
-- (void)loadRemoteFile;
 
 @end
 
