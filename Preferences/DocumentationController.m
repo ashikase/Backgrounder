@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-23 01:05:06
+ * Last-modified: 2010-04-25 00:21:39
  */
 
 /**
@@ -43,7 +43,6 @@
 #import "DocumentationController.h"
 
 #import "Constants.h"
-#import "HtmlDocController.h"
 #import "Preferences.h"
 
 
@@ -129,12 +128,24 @@
         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@DEVSITE_URL]];
     } else {
         UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
-        UIViewController *vc = [[[HtmlDocController alloc]
-            initWithContentsOfFile:fileNames[indexPath.row] title:cell.textLabel.text]
-            autorelease];
-        [(HtmlDocController *)vc setTemplateFileName:@"template.html"];
-        [[self navigationController] pushViewController:vc animated:YES];
+
+        // NOTE: Controller is released in delegate callback
+        HtmlDocController *docCont = [[HtmlDocController alloc]
+            initWithContentsOfFile:fileNames[indexPath.row] templateFile:@"template.html" title:cell.textLabel.text];
+        docCont.delegate = self;
     }
+}
+
+#pragma mark - HtmlDocController delegate
+
+- (void)htmlDocControllerDidFinishLoading:(HtmlDocController *)docCont
+{
+    [[self navigationController] pushViewController:[docCont autorelease] animated:YES];
+}
+
+- (void)htmlDocControllerDidFailToLoad:(HtmlDocController *)docCont
+{
+    [docCont autorelease];
 }
 
 @end

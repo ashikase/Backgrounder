@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-24 22:28:37
+ * Last-modified: 2010-04-25 00:01:40
  */
 
 /**
@@ -40,19 +40,26 @@
  */
 
 
+@protocol HtmlDocControllerDelegate;
+
 @interface HtmlDocController : UIViewController <UIWebViewDelegate>
 {
+    id<HtmlDocControllerDelegate> delegate;
+
     NSString *fileName;
     NSString *templateFileName;
     UIWebView *webView;
 }
 
-@property(nonatomic, copy) NSString *templateFileName;
+@property(nonatomic, assign) id<HtmlDocControllerDelegate> delegate;
 
-- (id)initWithContentsOfFile:(NSString *)fileName title:(NSString *)title;
+- (id)initWithContentsOfFile:(NSString *)fileName templateFile:(NSString *)templateFileName title:(NSString *)title;
 
-- (void)loadLocalFile;
+@end
 
+@protocol HtmlDocControllerDelegate <NSObject>
+- (void)htmlDocControllerDidFinishLoading:(HtmlDocController *)docCont;
+- (void)htmlDocControllerDidFailToLoad:(HtmlDocController *)docCont;
 @end
 
 /* vim: set syntax=objc sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */

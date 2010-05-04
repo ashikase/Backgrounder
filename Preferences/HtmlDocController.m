@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-24 22:30:51
+ * Last-modified: 2010-04-25 00:01:59
  */
 
 /**
@@ -45,76 +45,6 @@
 #import "Constants.h"
 
 
-@implementation HtmlDocController
-
-@synthesize templateFileName;
-
-- (id)initWithContentsOfFile:(NSString *)fileName_ title:(NSString *)title
-{
-    self = [super initWithNibName:nil bundle:nil];
-    if (self) {
-        self.title = title;
-        fileName = [fileName_ copy];
-    }
-    return self;
-}
-
-- (void)loadView
-{
-    CGRect frame = [[UIScreen mainScreen] applicationFrame];
-
-    UIView *view = [[UIView alloc] initWithFrame:frame];
-    [view setBackgroundColor:[UIColor groupTableViewBackgroundColor]];
-
-    webView = [[UIWebView alloc] initWithFrame:[view bounds]];
-    [webView setAutoresizingMask:(1 << 4)]; // UIViewAutoresizingFlexibleHeight;
-    [webView setBackgroundColor:[UIColor groupTableViewBackgroundColor]];
-    [webView setDelegate:self];
-    [webView setHidden:YES];
-    [view addSubview:webView];
-
-    [self setView:view];
-    [view release];
-}
-
-- (void)dealloc
-{
-    [webView release];
-    [fileName release];
-
-    [super dealloc];
-}
-
-- (void)viewWillAppear:(BOOL)animated
-{
-    [self loadLocalFile];
-}
-
-- (void)webViewDidFinishLoad:(UIWebView *)webView_
-{
-    [webView_ setHidden:NO];
-}
-
-- (void)webView:(UIWebView *)webView_ didFailLoadWithError:(NSError *)error
-{
-    // FIXME: Should handle this somehow, perhaps display an error popup?
-}
-
-- (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request
-    navigationType:(UIWebViewNavigationType)navigationType
-{
-    BOOL ret = YES;
-
-    NSURL *url = [request URL];
-    if (navigationType == 0 && [[url scheme] hasPrefix: @"http"])
-        // http(s) link was clicked, open with external browser
-        ret = ![[UIApplication sharedApplication] openURL:url];
-
-    return ret;
-}
-
-#pragma mark - File loading methods
-
 static NSString * contentsOfFile(NSString *path, NSString *name)
 {
     NSStringEncoding encoding;
@@ -124,7 +54,52 @@ static NSString * contentsOfFile(NSString *path, NSString *name)
         usedEncoding:&encoding error:&error];
 }
 
-- (void)loadLocalFile
+//==============================================================================
+
+@implementation HtmlDocController
+
+@synthesize delegate;
+
+- (id)initWithContentsOfFile:(NSString *)fileName_ templateFile:(NSString *)templateFileName_ title:(NSString *)title
+{
+    self = [super initWithNibName:nil bundle:nil];
+    if (self) {
+        self.title = title;
+        fileName = [fileName_ copy];
+        templateFileName = [templateFileName_ copy];
+
+        // NOTE: Using CGRectZero as initial size causes page layout issues
+        CGSize size = [[UIScreen mainScreen] applicationFrame].size;
+        webView = [[UIWebView alloc] initWithFrame:CGRectMake(0, 0, size.width, size.height)];
+        webView.delegate = self;
+        webView.autoresizingMask = UIViewAutoresizingFlexibleHeight;
+        webView.backgroundColor = [UIColor groupTableViewBackgroundColor];
+
+        // Load the specified file
+        // NOTE: Called with a delay parameter so that is executed on the next
+        //       event loop, thus allowing this method to return first.
+        [self performSelector:@selector(loadFile) withObject:nil afterDelay:0];
+    }
+    return self;
+}
+
+- (void)loadView
+{
+    self.view = webView;
+}
+
+- (void)dealloc
+{
+    [webView release];
+    [templateFileName release];
+    [fileName release];
+
+    [super dealloc];
+}
+
+#pragma mark - File loading methods
+
+- (void)loadFile
 {
     NSString *filePath = nil;
     NSString *content = nil;
@@ -154,6 +129,33 @@ static NSString * contentsOfFile(NSString *path, NSString *name)
     }
 
     [webView loadHTMLString:content baseURL:[NSURL fileURLWithPath:filePath isDirectory:YES]];
+}
+
+#pragma mark - UIWebView delegate methods
+
+- (void)webViewDidFinishLoad:(UIWebView *)webView_
+{
+    if ([delegate respondsToSelector:@selector(htmlDocControllerDidFinishLoading:)])
+        [delegate htmlDocControllerDidFinishLoading:self];
+}
+
+- (void)webView:(UIWebView *)webView_ didFailLoadWithError:(NSError *)error
+{
+    if ([delegate respondsToSelector:@selector(htmlDocControllerDidFailToLoad:)])
+        [delegate htmlDocControllerDidFailToLoad:self];
+}
+
+- (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request
+    navigationType:(UIWebViewNavigationType)navigationType
+{
+    BOOL ret = YES;
+
+    NSURL *url = [request URL];
+    if (navigationType == 0 && [[url scheme] hasPrefix: @"http"])
+        // http(s) link was clicked, open with external browser
+        ret = ![[UIApplication sharedApplication] openURL:url];
+
+    return ret;
 }
 
 @end
