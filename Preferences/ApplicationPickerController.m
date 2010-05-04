@@ -62,11 +62,10 @@ static NSArray *applicationDisplayIdentifiers()
         if (bundle) {
             NSString *identifier = [bundle bundleIdentifier];
 
-            // Filter out non-applications and apps that should remain hidden
-            // FIXME: The proper fix is to only show non-hidden apps and apps
-            //        that are in Categories; unfortunately, the design of
-            //        Categories does not make it easy to determine what apps
-            //        a given folder contains.
+            // Filter out non-apps and apps that are not executed directly
+            // FIXME: Should Categories folders be in this list? Categories
+            //        folders are apps, but when used with CategoriesSB they are
+            //        non-apps.
             if (identifier &&
                 ![identifier hasPrefix:@"jp.ashikase.springjumps."] &&
                 ![identifier isEqualToString:@"com.iptm.bigboss.sbsettings"] &&
