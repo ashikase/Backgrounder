@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 13:32:53
+ * Last-modified: 2010-04-29 21:55:31
  */
 
 /**
@@ -275,6 +275,21 @@ static BOOL shouldSuspend = NO;
         shouldSuspend = NO;
     } else {
         %orig;
+    }
+}
+
+- (void)frontDisplayDidChange
+{
+    // NOTE: Always first try removing status bar indicator, as previous
+    //       application may have had it enabled even if the current does not.
+    SBStatusBarController *sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
+    [sbCont removeStatusBarItem:@"Backgrounder"];
+
+    id app = [SBWActiveDisplayStack topApplication];
+    if (app != nil) {
+        NSString *identifier = [app displayIdentifier];
+        if (boolForKey(kStatusBarIconEnabled, identifier) && [bgEnabledApps containsObject:identifier])
+            [sbCont addStatusBarItem:@"Backgrounder"];
     }
 }
 
