@@ -14,7 +14,8 @@ Preferences_OBJC_FILES = main.m \
 						 GlobalPrefsController.m \
 						 HtmlDocController.m \
 						 Preferences.m \
-						 RootController.m
+						 RootController.m \
+						 ToggleButton.m
 Preferences_CFLAGS = -DAPP_ID=\"$(APP_ID)\"
 Preferences_LDFLAGS = -lactivator
 Preferences_FRAMEWORKS = UIKit CoreGraphics

@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-23 20:58:20
+ * Last-modified: 2010-04-22 00:46:17
  */
 
 /**
@@ -51,6 +51,7 @@
 #import "Constants.h"
 #import "HtmlDocController.h"
 #import "Preferences.h"
+#import "ToggleButton.h"
 
 #define HELP_FILE "global_prefs.mdwn"
 
@@ -117,19 +118,9 @@
         cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:reuseIdToggle] autorelease];
         [cell setSelectionStyle:0];
 
-        UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
-        button.frame = CGRectMake(0, 0, 54.0f, 27.0f);
-        button.titleLabel.font = [UIFont boldSystemFontOfSize:17.0f];
-        [button setBackgroundImage:[[UIImage imageNamed:@"toggle_off.png"]
-            stretchableImageWithLeftCapWidth:5.0f topCapHeight:0] forState:UIControlStateNormal];
-        [button setBackgroundImage:[[UIImage imageNamed:@"toggle_on.png"]
-            stretchableImageWithLeftCapWidth:5.0f topCapHeight:0] forState:UIControlStateSelected];
-        [button setTitle:@"OFF" forState:UIControlStateNormal];
-        [button setTitle:@"ON" forState:UIControlStateSelected];
-        [button setTitleColor:[UIColor colorWithWhite:0.5f alpha:1.0f] forState:UIControlStateNormal];
-        [button setTitleColor:[UIColor whiteColor] forState:UIControlStateSelected];
+        ToggleButton *button = [ToggleButton button];
         [button addTarget:self action:@selector(buttonToggled:) forControlEvents:UIControlEventTouchUpInside];
-        [cell setAccessoryView:button];
+        cell.accessoryView = button;
     }
     cell.textLabel.text = cellTitles[indexPath.section][indexPath.row];
     cell.detailTextLabel.text = cellSubtitles[indexPath.section][indexPath.row];
