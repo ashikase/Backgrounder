@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 13:41:00
+ * Last-modified: 2010-04-29 21:30:24
  */
 
 /**
@@ -138,38 +138,25 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    static NSString *reuseIdRightValue = @"RightValueCell";
     static NSString *reuseIdSubtitle = @"SubtitleCell";
 
     static NSString *cellTitles[][2] = {
         {@"Global", @"Overrides"},
-        {@"Control", nil},
+        {@"Control (via Activator)", nil},
         {@"Documentation", nil}};
 
     static NSString *cellSubtitles[][2] = {
         {@"Settings used by all apps", @"Override global settings for chosen apps"},
-        {@"(via Activator)", nil},
+        {@"Set action used to toggle backgrounding", nil},
         {@"Usage, Issues, Todo, etc.", nil}};
 
-    UITableViewCell *cell = nil;
-    if (indexPath.section == 1) {
-        // Try to retrieve from the table view a now-unused cell with the given identifier
-        cell = [tableView dequeueReusableCellWithIdentifier:reuseIdRightValue];
-        if (cell == nil) {
-            // Cell does not exist, create a new one
-            cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:reuseIdRightValue] autorelease];
-            cell.selectionStyle = UITableViewCellSelectionStyleGray;
-            cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-        }
-    } else {
-        // Try to retrieve from the table view a now-unused cell with the given identifier
-        cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSubtitle];
-        if (cell == nil) {
-            // Cell does not exist, create a new one
-            cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:reuseIdSubtitle] autorelease];
-            cell.selectionStyle = UITableViewCellSelectionStyleGray;
-            cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-        }
+    // Try to retrieve from the table view a now-unused cell with the given identifier
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSubtitle];
+    if (cell == nil) {
+        // Cell does not exist, create a new one
+        cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:reuseIdSubtitle] autorelease];
+        cell.selectionStyle = UITableViewCellSelectionStyleGray;
+        cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
     }
     cell.textLabel.text = cellTitles[indexPath.section][indexPath.row];
     cell.detailTextLabel.text = cellSubtitles[indexPath.section][indexPath.row];
