@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-26 03:27:35
+ * Last-modified: 2010-04-26 03:35:01
  */
 
 /**
@@ -67,7 +67,7 @@
 
 struct GSEvent;
 
-// Preferences
+//==============================================================================
 
 #define kDefaults                @"defaults"
 #define kOverrides               @"overrides"
@@ -83,12 +83,6 @@ static NSDictionary *defaultPrefs = nil;
 
 // Store a list of apps that override the default preferences
 static NSArray *overriddenPrefs = nil;
-
-
-static NSMutableArray *activeApps = nil;
-static NSMutableArray *bgEnabledApps = nil;
-
-//==============================================================================
 
 static void loadPreferences()
 {
@@ -221,6 +215,9 @@ static BackgrounderAlertItem *alert = nil;
 - (void)suspendAppWithDisplayIdentifier:(NSString *)displayId;
 - (void)dismissBackgrounderFeedback;
 @end
+
+static NSMutableArray *activeApps = nil;
+static NSMutableArray *bgEnabledApps = nil;
 
 static NSString *displayIdToSuspend = nil;
 static BOOL shouldSuspend = NO;
