@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 22:06:06
+ * Last-modified: 2010-05-03 13:14:41
  */
 
 /**
@@ -46,6 +46,25 @@
 #import "Preferences.h"
 #import "PreferencesController.h"
 
+// SpringBoardServices
+extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
+
+//==============================================================================
+
+static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
+{
+    NSInteger ret;
+
+    NSString *name_a = SBSCopyLocalizedApplicationNameForDisplayIdentifier(a);
+    NSString *name_b = SBSCopyLocalizedApplicationNameForDisplayIdentifier(b);
+    ret = [name_a caseInsensitiveCompare:name_b];
+    [name_a release];
+    [name_b release];
+
+    return ret;
+}
+
+//==============================================================================
 
 @implementation OverridesController
 
@@ -81,7 +100,10 @@
 {
     // Update the table contents
     [applications release];
-    applications = [[[[Preferences sharedInstance] objectForKey:kOverrides] allKeys] retain];
+    applications = [[[Preferences sharedInstance] objectForKey:kOverrides] allKeys];
+    applications = [[applications sortedArrayUsingFunction:compareDisplayNames context:NULL] retain];
+
+    // Refresh the table
     [self.tableView reloadData];
 }
 
