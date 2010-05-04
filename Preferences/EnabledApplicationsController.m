@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 15:27:35
+ * Last-modified: 2010-04-23 00:43:04
  */
 
 /**
@@ -62,7 +62,7 @@
 
         // Get a copy of the list of currently enabled applications
         applications = [[NSMutableArray alloc]
-            initWithArray:[[Preferences sharedInstance] enabledApplications]];
+            initWithArray:[[Preferences sharedInstance] arrayForKey:kEnabledApplications]];
     }
     return self;
 }
@@ -70,7 +70,7 @@
 - (void)viewWillDisappear:(BOOL)animated
 {
     if (isModified)
-        [[Preferences sharedInstance] setEnabledApplications:applications];
+        [[Preferences sharedInstance] setObject:applications forKey:kEnabledApplications];
 }
 
 #pragma mark - Navigation bar delegates

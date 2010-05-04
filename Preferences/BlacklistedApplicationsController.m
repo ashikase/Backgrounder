@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2009-09-22 15:27:28
+ * Last-modified: 2010-04-23 00:44:06
  */
 
 /**
@@ -62,7 +62,7 @@
 
         // Get a copy of the list of currently blacklisted applications
         applications = [[NSMutableArray alloc]
-            initWithArray:[[Preferences sharedInstance] blacklistedApplications]];
+            initWithArray:[[Preferences sharedInstance] arrayForKey:kBlacklistedApplications]];
     }
     return self;
 }
@@ -70,7 +70,7 @@
 - (void)viewWillDisappear:(BOOL)animated
 {
     if (isModified)
-        [[Preferences sharedInstance] setBlacklistedApplications:applications];
+        [[Preferences sharedInstance] setObject:applications forKey:kBlacklistedApplications];
 }
 
 #pragma mark - Navigation bar delegates

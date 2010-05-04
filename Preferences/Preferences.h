@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-03-02 01:40:04
+ * Last-modified: 2010-04-23 00:35:28
  */
 
 /**
@@ -40,47 +40,25 @@
  */
 
 
-#import <Foundation/NSObject.h>
+#define kFirstRun                @"firstRun"
+#define kPersistent              @"persistent"
+#define kAnimationsEnabled       @"animationsEnabled"
+#define kBadgeEnabled            @"badgeEnabled"
+#define kBadgeEnabledForAll      @"badgeEnabledForAll"
+#define kFeedbackType            @"feedbackType"
+#define kEnabledApplications     @"enabledApplications"
+#define kBlacklistedApplications @"blacklistedApplications"
 
 
-@class NSArray;
-@class NSDictionary;
-@class NSString;
-
-@interface Preferences : NSObject
+@interface Preferences : NSUserDefaults
 {
     NSDictionary *initialValues;
-    NSDictionary *onDiskValues;
-
-    BOOL firstRun;
-    BOOL persistent;
-    BOOL animationsEnabled;
-    BOOL badgeEnabled;
-    BOOL badgeEnabledForAll;
-    unsigned int feedbackType;
-    NSArray *enabledApplications;
-    NSArray *blacklistedApplications;
+    NSMutableArray *respringRequestors;
 }
 
-@property(nonatomic) BOOL firstRun;
-@property(nonatomic, getter=isPersistent) BOOL persistent;
-@property(nonatomic) BOOL animationsEnabled;
-@property(nonatomic) BOOL badgeEnabled;
-@property(nonatomic) BOOL badgeEnabledForAll;
-@property(nonatomic) unsigned int feedbackType;
-@property(nonatomic, retain) NSArray *enabledApplications;
-@property(nonatomic, retain) NSArray *blacklistedApplications;
+@property(nonatomic, readonly) BOOL needsRespring;
 
 + (Preferences *)sharedInstance;
-
-- (NSDictionary *)dictionaryRepresentation;
-
-- (BOOL)isModified;
-- (BOOL)needsRespring;
-
-- (void)registerDefaults;
-- (void)readFromDisk;
-- (void)writeToDisk;
 
 @end
 

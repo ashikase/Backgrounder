@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-22 00:46:17
+ * Last-modified: 2010-04-23 00:46:29
  */
 
 /**
@@ -93,7 +93,7 @@
     if (section == 0)
         rows = 1;
     else
-        rows = [[Preferences sharedInstance] badgeEnabled] ? 2 : 1;
+        rows = [[Preferences sharedInstance] boolForKey:kBadgeEnabled] ? 2 : 1;
     return rows;
 }
 
@@ -128,7 +128,7 @@
     UIButton *button = (UIButton *)[cell accessoryView];
     switch (indexPath.section) {
         case 0:
-            button.selected = [[Preferences sharedInstance] isPersistent];
+            button.selected = [[Preferences sharedInstance] boolForKey:kPersistent];
             cell.imageView.image = nil;
             break;
         case 1:
@@ -139,11 +139,11 @@
 #endif
             switch (indexPath.row) {
                 case 0:
-                    button.selected = [[Preferences sharedInstance] badgeEnabled];
+                    button.selected = [[Preferences sharedInstance] boolForKey:kBadgeEnabled];
                     cell.imageView.image = [UIImage imageNamed:@"badge.png"];
                     break;
                 case 1:
-                    button.selected = [[Preferences sharedInstance] badgeEnabledForAll];
+                    button.selected = [[Preferences sharedInstance] boolForKey:kBadgeEnabledForAll];
                     break;
                 default:
                     break;
@@ -164,7 +164,7 @@
     NSIndexPath *indexPath = [self.tableView indexPathForCell:(UITableViewCell *)[button superview]];
     switch (indexPath.section) {
         case 0:
-            [[Preferences sharedInstance] setPersistent:button.selected];
+            [[Preferences sharedInstance] setBool:button.selected forKey:kPersistent];
             break;
         case 1:
 #if 0
@@ -174,7 +174,7 @@
 #endif
             switch (indexPath.row) {
                 case 0:
-                    [[Preferences sharedInstance] setBadgeEnabled:button.selected];
+                    [[Preferences sharedInstance] setBool:button.selected forKey:kBadgeEnabled];
 
                     // Animate showing/hiding of suboption
                     NSArray *indexPaths = [NSArray arrayWithObjects:[NSIndexPath indexPathForRow:1 inSection:1], nil];
@@ -184,7 +184,7 @@
                         [self.tableView deleteRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationTop];
                     break;
                 case 1:
-                    [[Preferences sharedInstance] setBadgeEnabledForAll:button.selected];
+                    [[Preferences sharedInstance] setBool:button.selected forKey:kBadgeEnabledForAll];
                     break;
                 default:
                     break;

@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-03-02 01:40:53
+ * Last-modified: 2010-04-23 00:37:22
  */
 
 /**
@@ -42,24 +42,21 @@
 
 #import "Preferences.h"
 
-#import <Foundation/Foundation.h>
+#import <notify.h>
 
+
+@interface Preferences (Private)
+- (NSDictionary *)defaults;
+@end;
+
+//==============================================================================
 
 // Allowed values
 static NSArray *allowedFeedbackTypes = nil;
 
 @implementation Preferences
 
-@synthesize firstRun;
-@synthesize persistent;
-@synthesize animationsEnabled;
-@synthesize badgeEnabled;
-@synthesize badgeEnabledForAll;
-@synthesize feedbackType;
-@synthesize enabledApplications;
-@synthesize blacklistedApplications;
-
-#pragma mark - Methods
+@dynamic needsRespring;
 
 + (Preferences *)sharedInstance
 {
@@ -76,78 +73,29 @@ static NSArray *allowedFeedbackTypes = nil;
         allowedFeedbackTypes = [[NSArray alloc] initWithObjects:
             @"simplePopup", @"taskMenuPopup", nil];
 
-        // Setup default values
-        [self registerDefaults];
-
-        // Load preference values into memory
-        [self readFromDisk];
+        // Set default values for options that are not already
+        // set in the application's on-disk preferences list.
+        [self registerDefaults:[self defaults]];
 
         // Retain a copy of the initial values of the preferences
         initialValues = [[self dictionaryRepresentation] retain];
 
-        // The on-disk values at startup are the same as initialValues
-        onDiskValues = [initialValues retain];
+        // Create an array to hold requests for respring
+        respringRequestors = [[NSMutableArray alloc] init];
     }
     return self;
 }
 
 - (void)dealloc
 {
-    [onDiskValues release];
+    [respringRequestors release];
     [initialValues release];
-    [allowedFeedbackTypes release];
-
     [super dealloc];
 }
 
-#pragma mark - Other
-
-- (NSDictionary *)dictionaryRepresentation
+- (NSDictionary *)defaults
 {
-    NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity:4];
-
-    [dict setObject:[NSNumber numberWithBool:firstRun] forKey:@"firstRun"];
-    [dict setObject:[NSNumber numberWithBool:persistent] forKey:@"persistent"];
-    [dict setObject:[NSNumber numberWithBool:animationsEnabled] forKey:@"animationsEnabled"];
-    [dict setObject:[NSNumber numberWithBool:badgeEnabled] forKey:@"badgeEnabled"];
-    [dict setObject:[NSNumber numberWithBool:badgeEnabledForAll] forKey:@"badgeEnabledForAll"];
-
-    NSString *string = nil;
-    @try {
-        string = [allowedFeedbackTypes objectAtIndex:feedbackType];
-        [dict setObject:[string copy] forKey:@"feedbackType"];
-    }
-    @catch (NSException *exception) {
-        // Ignore the exception (assumed to be NSRangeException)
-    }
-
-    [dict setObject:[enabledApplications copy] forKey:@"enabledApplications"];
-    [dict setObject:[blacklistedApplications copy] forKey:@"blacklistedApplications"];
-
-    return dict;
-}
-
-#pragma mark - Status
-
-- (BOOL)isModified
-{
-    return ![[self dictionaryRepresentation] isEqual:onDiskValues];
-}
-
-- (BOOL)needsRespring
-{
-    return ![[self dictionaryRepresentation] isEqual:initialValues];
-}
-
-#pragma mark - Read/Write methods
-
-- (void)registerDefaults
-{
-    // NOTE: This method sets default values for options that are not already
-    //       set in the application's on-disk preferences list.
-
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithCapacity:4];
+    NSMutableDictionary *dict = [NSMutableDictionary dictionary];
 
     [dict setObject:[NSNumber numberWithBool:YES] forKey:@"firstRun"];
     [dict setObject:[NSNumber numberWithBool:YES] forKey:@"persistent"];
@@ -163,39 +111,47 @@ static NSArray *allowedFeedbackTypes = nil;
         nil];
     [dict setObject:array forKey:@"blacklistedApplications"];
 
-
-    [defaults registerDefaults:dict];
+    return dict;
 }
 
-- (void)readFromDisk
+- (NSArray *)keysRequiringRespring
 {
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    
-    firstRun = [defaults boolForKey:@"firstRun"];
-    persistent = [defaults boolForKey:@"persistent"];
-    animationsEnabled = [defaults boolForKey:@"animationsEnabled"];
-    badgeEnabled = [defaults boolForKey:@"badgeEnabled"];
-    badgeEnabledForAll = [defaults boolForKey:@"badgeEnabledForAll"];
-
-    NSString *string = [defaults stringForKey:@"feedbackType"];
-    unsigned int index = [allowedFeedbackTypes indexOfObject:string];
-    feedbackType = (index == NSNotFound) ? 0 : index;
-
-    enabledApplications = [[defaults arrayForKey:@"enabledApplications"] retain];
-    blacklistedApplications = [[defaults arrayForKey:@"blacklistedApplications"] retain];
+    return [NSArray arrayWithObjects:
+        kFirstRun, kPersistent, kAnimationsEnabled, kBadgeEnabled, kBadgeEnabledForAll,
+        kFeedbackType, kEnabledApplications, kBlacklistedApplications,
+        nil];
 }
 
-- (void)writeToDisk
+- (void)setObject:(id)value forKey:(NSString *)defaultName
 {
-    NSDictionary *dict = [self dictionaryRepresentation];
+    // Update the value
+    [super setObject:value forKey:defaultName];
 
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    [defaults setPersistentDomain:dict forName:[[NSBundle mainBundle] bundleIdentifier]];
-    [defaults synchronize];
+    // Immediately write to disk
+    [self synchronize];
 
-    // Update the list of on-disk values
-    [onDiskValues release];
-    onDiskValues = [dict retain];
+    // Check if the selected key requires a respring
+    if ([[self keysRequiringRespring] containsObject:defaultName]) {
+        // Make sure that the value differe from the initial value
+        id initialValue = [initialValues objectForKey:defaultName];
+        BOOL valuesDiffer = ![value isEqual:initialValue];
+        // FIXME: Write to disk, remove on respring
+        // FIXME: Show drop down to indicate respring is needed
+        if (valuesDiffer) {
+            if (![respringRequestors containsObject:defaultName])
+                [respringRequestors addObject:defaultName];
+        } else {
+            [respringRequestors removeObject:defaultName];
+        }
+    }
+
+    // Send notification that a preference has changed
+    notify_post(APP_ID".preferenceChanged");
+}
+
+- (BOOL)needsRespring
+{
+    return ([respringRequestors count] != 0);
 }
 
 @end
