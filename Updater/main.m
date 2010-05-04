@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 13:29:09
+ * Last-modified: 2010-04-29 14:33:45
  */
 
 /**
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
-    // Get preferences for all domains
+    // Get preferences for all applications
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
 
     // Get preferences for Backgrounder
@@ -69,84 +69,93 @@ int main(int argc, char **argv)
         // Preferences do not exist; nothing to convert
         return 0;
 
-    if ([prefs objectForKey:kGlobal] != nil || [prefs objectForKey:kOverrides] != nil)
-        // Updated preferences already exist; do not overwrite
-        return 0;
-
-    // Create variables for old settings, set default values
-    BOOL badgeEnabled = NO;
-    BOOL badgeEnabledForAll = YES;
-    BOOL persistent = YES;
-
-    NSArray *blacklistedApps = nil;
-    NSArray *enabledApps = nil;
-
-    // Load stored settings, if they exist
-    id value = [prefs objectForKey:kBadgeEnabled];
-    if (value != nil && [value isKindOfClass:[NSNumber class]])
-        badgeEnabled = [value boolValue];
-    
-    value = [prefs objectForKey:kBadgeEnabledForAll];
-    if (value != nil && [value isKindOfClass:[NSNumber class]])
-        badgeEnabledForAll = [value boolValue];
-
-    value = [prefs objectForKey:kPersistent];
-    if (value != nil && [value isKindOfClass:[NSNumber class]])
-        persistent = [value boolValue];
-
-    value = [prefs objectForKey:kBlacklistedApps];
-    if (value != nil && [value isKindOfClass:[NSArray class]])
-        blacklistedApps = value;
-
-    value = [prefs objectForKey:kEnabledApps];
-    if (value != nil && [value isKindOfClass:[NSArray class]])
-        enabledApps = value;
-
-    // Create global settings
-    NSDictionary *global = [NSDictionary dictionaryWithObjectsAndKeys:
-        [NSNumber numberWithInteger:2], kBackgroundMethod,
-        [NSNumber numberWithBool:badgeEnabled], kBadgeEnabled,
-        [NSNumber numberWithBool:NO], kStatusBarIconEnabled,
-        [NSNumber numberWithBool:persistent], kPersistent,
-        [NSNumber numberWithBool:NO], kAlwaysEnabled,
-        nil];
-
-    // Create overrides
-    NSMutableDictionary *overrides = [NSMutableDictionary dictionary];
-
-    // Add entries for blacklisted applications (use "Native" method)
-    for (NSString *displayId in blacklistedApps) {
-        NSMutableDictionary *dict = [global mutableCopy];
-        [dict setObject:[NSNumber numberWithInteger:1] forKey:kBackgroundMethod];
-        [overrides setObject:dict forKey:displayId];
-        [dict release];
+    // Check for existance of no-longer-used preferences
+    BOOL needsConversion = NO;
+    NSArray *array = [NSArray arrayWithObjects:
+        kBadgeEnabled, kBadgeEnabledForAll, kPersistent, kBlacklistedApps, kEnabledApps, nil];
+    for (NSString *key in array) {
+        if ([prefs objectForKey:key] != nil) {
+            needsConversion = YES;
+            break;
+        }
     }
 
-    // Add entries for always-enabled applications
-    for (NSString *displayId in enabledApps) {
-        // Make sure settings for this app do not yet exist
-        // NOTE: Technically, always-enabled would have been pointless with blacklisted
-        NSMutableDictionary *dict = [overrides objectForKey:displayId];
-        if (dict == nil)
-            dict = (NSMutableDictionary *)global;
-        dict = [dict mutableCopy];
-        [dict setObject:[NSNumber numberWithBool:YES] forKey:kAlwaysEnabled];
-        [overrides setObject:dict forKey:displayId];
-        [dict release];
+    if (needsConversion) {
+        // Create variables for old settings, set default values
+        BOOL badgeEnabled = NO;
+        BOOL badgeEnabledForAll = YES;
+        BOOL persistent = YES;
+
+        NSArray *blacklistedApps = nil;
+        NSArray *enabledApps = nil;
+
+        // Load stored settings, if they exist
+        id value = [prefs objectForKey:kBadgeEnabled];
+        if (value != nil && [value isKindOfClass:[NSNumber class]])
+            badgeEnabled = [value boolValue];
+
+        value = [prefs objectForKey:kBadgeEnabledForAll];
+        if (value != nil && [value isKindOfClass:[NSNumber class]])
+            badgeEnabledForAll = [value boolValue];
+
+        value = [prefs objectForKey:kPersistent];
+        if (value != nil && [value isKindOfClass:[NSNumber class]])
+            persistent = [value boolValue];
+
+        value = [prefs objectForKey:kBlacklistedApps];
+        if (value != nil && [value isKindOfClass:[NSArray class]])
+            blacklistedApps = value;
+
+        value = [prefs objectForKey:kEnabledApps];
+        if (value != nil && [value isKindOfClass:[NSArray class]])
+            enabledApps = value;
+
+        // Create global settings
+        NSDictionary *global = [NSDictionary dictionaryWithObjectsAndKeys:
+            [NSNumber numberWithInteger:2], kBackgroundMethod,
+            [NSNumber numberWithBool:badgeEnabled], kBadgeEnabled,
+            [NSNumber numberWithBool:NO], kStatusBarIconEnabled,
+            [NSNumber numberWithBool:persistent], kPersistent,
+            [NSNumber numberWithBool:NO], kAlwaysEnabled,
+            nil];
+
+        // Create overrides
+        NSMutableDictionary *overrides = [NSMutableDictionary dictionary];
+
+        // Add entries for blacklisted applications (use "Native" method)
+        for (NSString *displayId in blacklistedApps) {
+            NSMutableDictionary *dict = [global mutableCopy];
+            [dict setObject:[NSNumber numberWithInteger:1] forKey:kBackgroundMethod];
+            [overrides setObject:dict forKey:displayId];
+            [dict release];
+        }
+
+        // Add entries for always-enabled applications
+        for (NSString *displayId in enabledApps) {
+            // Make sure settings for this app do not yet exist
+            // NOTE: Technically, always-enabled would have been pointless with blacklisted
+            NSMutableDictionary *dict = [overrides objectForKey:displayId];
+            if (dict == nil)
+                dict = (NSMutableDictionary *)global;
+            dict = [dict mutableCopy];
+            [dict setObject:[NSNumber numberWithBool:YES] forKey:kAlwaysEnabled];
+            [overrides setObject:dict forKey:displayId];
+            [dict release];
+        }
+
+        // Create structure for updated preferences
+        // NOTE: firstRun will always be NO as preferences existed
+        //       (and hence the preferences application had been run)
+        prefs = [NSDictionary dictionaryWithObjectsAndKeys:
+            [NSNumber numberWithBool:NO], kFirstRun,
+            global, kGlobal,
+            overrides, kOverrides,
+            nil];
+
+        // Save updated preferences to disk, replacing old
+        [defaults setPersistentDomain:prefs forName:@APP_ID];
+        [defaults synchronize];
     }
-
-    // Create structure for updated preferences
-    // NOTE: firstRun will always be NO as preferences existed
-    //       (and hence the preferences application had been run)
-    prefs = [NSDictionary dictionaryWithObjectsAndKeys:
-        [NSNumber numberWithBool:NO], kFirstRun,
-        global, kGlobal,
-        overrides, kOverrides,
-        nil];
-
-    // Save updated preferences to disk, replacing old
-    [defaults setPersistentDomain:prefs forName:@APP_ID];
-    [defaults synchronize];
 
     [pool release];
     return 0;
