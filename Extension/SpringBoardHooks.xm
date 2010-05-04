@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-26 03:05:23
+ * Last-modified: 2010-04-26 03:27:35
  */
 
 /**
@@ -87,22 +87,14 @@ static NSArray *overriddenPrefs = nil;
 
 static NSMutableArray *activeApps = nil;
 static NSMutableArray *bgEnabledApps = nil;
-static NSArray *blacklistedApps = nil;
 
 //==============================================================================
 
 static void loadPreferences()
 {
-    CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("blacklistedApplications"), CFSTR(APP_ID));
-    if (propList) {
-        if (CFGetTypeID(propList) == CFArrayGetTypeID())
-            blacklistedApps = [[NSArray alloc] initWithArray:(NSArray *)propList];
-        CFRelease(propList);
-    }
-
     // Invocation type
     // NOTE: This setting is from pre-libactivator; convert and remove
-    propList = CFPreferencesCopyAppValue(CFSTR("invocationMethod"), CFSTR(APP_ID));
+    CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("invocationMethod"), CFSTR(APP_ID));
     if (propList) {
         NSString *eventName = nil;
         if ([(NSString *)propList isEqualToString:@"homeShortHold"])
@@ -156,6 +148,17 @@ static BOOL boolForKey(NSString *key, NSString *displayId)
     id value = objectForKey(key, displayId);
     if ([value isKindOfClass:[NSNumber class]])
         ret = [value boolValue];
+
+    return ret;
+}
+
+static NSInteger integerForKey(NSString *key, NSString *displayId)
+{
+    NSInteger ret = NO;
+
+    id value = objectForKey(key, displayId);
+    if ([value isKindOfClass:[NSNumber class]])
+        ret = [value integerValue];
 
     return ret;
 }
@@ -293,7 +296,7 @@ static BOOL shouldSuspend = NO;
 
     id app = [SBWActiveDisplayStack topApplication];
     NSString *identifier = [app displayIdentifier];
-    if (app && ![blacklistedApps containsObject:identifier]) {
+    if (app && integerForKey(kBackgroundMethod, identifier) == 2) {
         BOOL isEnabled = [bgEnabledApps containsObject:identifier];
         [self setBackgroundingEnabled:(!isEnabled) forDisplayIdentifier:identifier];
 
@@ -344,8 +347,7 @@ static BOOL shouldSuspend = NO;
 %new(v@:c@)
 - (void)setBackgroundingEnabled:(BOOL)enable forDisplayIdentifier:(NSString *)identifier
 {
-    if (![blacklistedApps containsObject:identifier]) {
-        // Not blacklisted
+    if (integerForKey(kBackgroundMethod, identifier) == 2) {
         BOOL isEnabled = [bgEnabledApps containsObject:identifier];
         if (isEnabled != enable) {
             // Tell the application to change its backgrounding status
