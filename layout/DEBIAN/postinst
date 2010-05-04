@@ -1,0 +1,6 @@
+#!/bin/sh
+
+if [ -f "/var/mobile/Library/Preferences/jp.ashikase.backgrounder.plist" ]; then
+    # Run updater application to convert old settings to new per-app format
+    su -l mobile -c /Applications/Backgrounder.app/Updater
+fi
