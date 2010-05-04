@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-25 14:45:29
+ * Last-modified: 2010-04-25 17:46:31
  */
 
 /**
@@ -98,15 +98,6 @@
     [dict setObject:[NSNumber numberWithBool:YES] forKey:kPersistent];
     [dict setObject:[NSNumber numberWithBool:NO] forKey:kAlwaysEnabled];
 
-    [dict setObject:[NSNumber numberWithBool:YES] forKey:@"badgeEnabledForAll"];
-
-    [dict setObject:[NSArray array] forKey:@"enabledApplications"];
-
-    NSArray *array = [NSArray arrayWithObjects:
-        @"com.apple.mobilephone", @"com.apple.mobilemail", @"com.apple.mobilesafari", @"com.apple.mobileipod",
-        nil];
-    [dict setObject:array forKey:@"blacklistedApplications"];
-
     return dict;
 }
 
@@ -114,7 +105,6 @@
 {
     return [NSArray arrayWithObjects:
         kFirstRun, kBackgroundMethod, kBadgeEnabled, kStatusBarIconEnabled, kPersistent, kAlwaysEnabled,
-        kBadgeEnabledForAll, kEnabledApplications, kBlacklistedApplications,
         nil];
 }
 
