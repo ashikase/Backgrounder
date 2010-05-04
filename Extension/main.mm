@@ -3,11 +3,11 @@
  * Type: iPhoneOS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-02-16 13:49:41
+ * Last-modified: 2010-04-29 22:01:58
  */
 
 /**
- * Copyright (C) 2008-2009  Lance Fetters (aka. ashikase)
+ * Copyright (C) 2008-2010  Lance Fetters (aka. ashikase)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,4 +56,4 @@ __attribute__((constructor)) static void init()
     [pool release];
 }
 
-/* vim: set syntax=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
+/* vim: set filetype=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */

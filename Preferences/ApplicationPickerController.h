@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 19:30:40
+ * Last-modified: 2010-04-29 22:05:57
  */
 
 /**
@@ -69,4 +69,4 @@
 - (void)applicationPickerControllerDidFinish:(ApplicationPickerController *)controller;
 @end
 
-/* vim: set syntax=objc sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
+/* vim: set filetype=objc sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
