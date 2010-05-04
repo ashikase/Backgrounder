@@ -1,11 +1,17 @@
 > # Badge
 > ## (Default: Off)
 > - - -
-> * When enabled, displays a badge on the application's icon on the home screen (SpringBoard).
+> * **On:**  
+>     If the application is currently loaded, a badge will be displayed on the application's icon on the home screen (SpringBoard).
+> 
+>     The badge will be displayed regardless of backgrounding method/state.
 
 - - -
 
 > # Status Bar Icon
 > ## (Default: Off)
 > - - -
-> * When enabled, if the application has backgrounding enabled, an icon will be displayed in the status bar when the application is active.
+> * **On:**  
+>     If the application has backgrounding enabled, an icon will be displayed in the status bar when the application is active.
+>
+>     In other words, the presence of this icon indicates that the current application will continue to run in the background when minimized. Currently, this option only works with the "Backgrounder" backgrounding method.
