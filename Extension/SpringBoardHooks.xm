@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-26 03:35:01
+ * Last-modified: 2010-04-29 13:32:53
  */
 
 /**
@@ -69,7 +69,7 @@ struct GSEvent;
 
 //==============================================================================
 
-#define kDefaults                @"defaults"
+#define kGlobal                  @"global"
 #define kOverrides               @"overrides"
 
 #define kBackgroundMethod        @"backgroundMethod"
@@ -78,8 +78,8 @@ struct GSEvent;
 #define kPersistent              @"persistent"
 #define kAlwaysEnabled           @"alwaysEnabled"
 
-// Store a copy of the default preferences in memory
-static NSDictionary *defaultPrefs = nil;
+// Store a copy of the global preferences in memory
+static NSDictionary *globalPrefs = nil;
 
 // Store a list of apps that override the default preferences
 static NSArray *overriddenPrefs = nil;
@@ -106,10 +106,10 @@ static void loadPreferences()
     }
 
     NSDictionary *prefs = [[NSUserDefaults standardUserDefaults] persistentDomainForName:@APP_ID];
-    defaultPrefs = [[prefs objectForKey:kDefaults] retain];
-    if (defaultPrefs == nil) {
+    globalPrefs = [[prefs objectForKey:kGlobal] retain];
+    if (globalPrefs == nil) {
         // Register values for defaults
-        defaultPrefs = [[NSDictionary alloc] initWithObjectsAndKeys:
+        globalPrefs = [[NSDictionary alloc] initWithObjectsAndKeys:
             [NSNumber numberWithInteger:2], kBackgroundMethod,
             [NSNumber numberWithBool:NO], kBadgeEnabled,
             [NSNumber numberWithBool:NO], kStatusBarIconEnabled,
@@ -129,7 +129,7 @@ static id objectForKey(NSString *key, NSString *displayId)
             objectForKey:kOverrides] objectForKey:displayId];
     } else {
         // Use the default preferences
-        prefs = defaultPrefs;
+        prefs = globalPrefs;
     }
 
     return [prefs objectForKey:key];

@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 12:50:19
+ * Last-modified: 2010-04-29 13:41:00
  */
 
 /**
@@ -142,12 +142,12 @@
     static NSString *reuseIdSubtitle = @"SubtitleCell";
 
     static NSString *cellTitles[][2] = {
-        {@"Defaults", @"Overrides"},
+        {@"Global", @"Overrides"},
         {@"Control", nil},
         {@"Documentation", nil}};
 
     static NSString *cellSubtitles[][2] = {
-        {@"Default settings used by apps", @"Override defaults for specific apps"},
+        {@"Settings used by all apps", @"Override global settings for chosen apps"},
         {@"(via Activator)", nil},
         {@"Usage, Issues, Todo, etc.", nil}};
 

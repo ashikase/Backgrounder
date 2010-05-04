@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 12:46:56
+ * Last-modified: 2010-04-29 13:18:15
  */
 
 /**
@@ -94,16 +94,17 @@
     // Set first-run flag
     [dict setObject:[NSNumber numberWithBool:YES] forKey:kFirstRun];
 
-    // Set defaults
-    NSMutableDictionary *defDict = [NSMutableDictionary dictionary];
-    [defDict setObject:[NSNumber numberWithInteger:2] forKey:kBackgroundMethod];
-    [defDict setObject:[NSNumber numberWithBool:NO] forKey:kBadgeEnabled];
-    [defDict setObject:[NSNumber numberWithBool:NO] forKey:kStatusBarIconEnabled];
-    [defDict setObject:[NSNumber numberWithBool:YES] forKey:kPersistent];
-    [defDict setObject:[NSNumber numberWithBool:NO] forKey:kAlwaysEnabled];
-    [dict setObject:defDict forKey:kDefaults];
+    // Set default values for global settings
+    NSMutableDictionary *global = [NSMutableDictionary dictionary];
+    [global setObject:[NSNumber numberWithInteger:2] forKey:kBackgroundMethod];
+    [global setObject:[NSNumber numberWithBool:NO] forKey:kBadgeEnabled];
+    [global setObject:[NSNumber numberWithBool:NO] forKey:kStatusBarIconEnabled];
+    [global setObject:[NSNumber numberWithBool:YES] forKey:kPersistent];
+    [global setObject:[NSNumber numberWithBool:NO] forKey:kAlwaysEnabled];
+    [dict setObject:global forKey:kGlobal];
 
-    // Set overrides
+    // Set default overrides
+    // FIXME: Default overrides should include Mail, Phone, iPod (Music/Video?) and Safari
     [dict setObject:[NSMutableDictionary dictionary] forKey:kOverrides];
 
     return dict;
@@ -111,7 +112,7 @@
 
 - (NSArray *)keysRequiringRespring
 {
-    return [NSArray arrayWithObjects:kDefaults, kOverrides, nil];
+    return [NSArray arrayWithObjects:kGlobal, kOverrides, nil];
 }
 
 - (void)setObject:(id)value forKey:(NSString *)defaultName
@@ -157,11 +158,11 @@
         // Retrieve settings for the specified application
         dict = [[self objectForKey:kOverrides] objectForKey:displayId];
         if (dict == nil)
-            // Settings do not exist; use defaults
-            dict = [self objectForKey:kDefaults];
+            // Settings do not exist; use global settings
+            dict = [self objectForKey:kGlobal];
     } else {
-        // Retrieve default settings
-        dict = [self objectForKey:kDefaults];
+        // Retrieve global settings
+        dict = [self objectForKey:kGlobal];
     }
 
     if (dict != nil)
@@ -200,8 +201,8 @@
         // Retrieve settings for the specified application
         dict = [[self objectForKey:kOverrides] objectForKey:displayId];
         if (dict == nil)
-            // Settings do not exist; copy defaults
-            dict = [self objectForKey:kDefaults];
+            // Settings do not exist; copy global settings
+            dict = [self objectForKey:kGlobal];
 
         // Create mutable copy
         dict = [NSMutableDictionary dictionaryWithDictionary:dict];
@@ -216,17 +217,17 @@
         // Store overrides
         [self setObject:overDict forKey:kOverrides];
     } else {
-        // Retrieve default settings
+        // Retrieve global settings
         // NOTE: While it should not happen, simply calling mutableCopy on the
         //       result of objectForKey: could lead to a nil dictionary.
         //       This also applies to other mutable copies used in this method.
-        dict = [NSMutableDictionary dictionaryWithDictionary:[self objectForKey:kDefaults]];
+        dict = [NSMutableDictionary dictionaryWithDictionary:[self objectForKey:kGlobal]];
 
         // Store the value
         [dict setObject:value forKey:defaultName];
 
-        // Store the default settings
-        [self setObject:dict forKey:kDefaults];
+        // Store the global settings
+        [self setObject:dict forKey:kGlobal];
     }
 }
 
@@ -245,7 +246,7 @@
 - (void)addOverrideForDisplayId:(NSString *)displayId
 {
     NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithDictionary:[self objectForKey:kOverrides]];
-    [dict setObject:[self objectForKey:kDefaults] forKey:displayId];
+    [dict setObject:[self objectForKey:kGlobal] forKey:displayId];
     [self setObject:dict forKey:kOverrides];
 }
 

@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-25 14:42:16
+ * Last-modified: 2010-04-29 13:35:56
  */
 
 /**
@@ -58,7 +58,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
     if (self) {
         displayIdentifier = [displayId copy];
 
-        self.title = (displayId == nil) ? @"Defaults" :
+        self.title = (displayId == nil) ? @"Global Settings" :
             [SBSCopyLocalizedApplicationNameForDisplayIdentifier(displayId) autorelease];
 
         self.navigationItem.backBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Back"

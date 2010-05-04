@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 00:33:15
+ * Last-modified: 2010-04-29 13:29:09
  */
 
 /**
@@ -41,7 +41,7 @@
 
 #define kFirstRun                @"firstRun"
 
-#define kDefaults                @"defaults"
+#define kGlobal                  @"global"
 #define kOverrides               @"overrides"
 
 #define kBackgroundMethod        @"backgroundMethod"
@@ -61,19 +61,19 @@ int main(int argc, char **argv)
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
     // Get preferences for all domains
-    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
 
     // Get preferences for Backgrounder
-    NSDictionary *prefs = [userDefaults persistentDomainForName:@APP_ID];
+    NSDictionary *prefs = [defaults persistentDomainForName:@APP_ID];
     if (prefs == nil)
         // Preferences do not exist; nothing to convert
         return 0;
 
-    if ([prefs objectForKey:kDefaults] != nil || [prefs objectForKey:kOverrides] != nil)
+    if ([prefs objectForKey:kGlobal] != nil || [prefs objectForKey:kOverrides] != nil)
         // Updated preferences already exist; do not overwrite
         return 0;
 
-    // Create variables for old settings, set defaults
+    // Create variables for old settings, set default values
     BOOL badgeEnabled = NO;
     BOOL badgeEnabledForAll = YES;
     BOOL persistent = YES;
@@ -102,8 +102,8 @@ int main(int argc, char **argv)
     if (value != nil && [value isKindOfClass:[NSArray class]])
         enabledApps = value;
 
-    // Create defaults
-    NSDictionary *defaults = [NSDictionary dictionaryWithObjectsAndKeys:
+    // Create global settings
+    NSDictionary *global = [NSDictionary dictionaryWithObjectsAndKeys:
         [NSNumber numberWithInteger:2], kBackgroundMethod,
         [NSNumber numberWithBool:badgeEnabled], kBadgeEnabled,
         [NSNumber numberWithBool:NO], kStatusBarIconEnabled,
@@ -116,7 +116,7 @@ int main(int argc, char **argv)
 
     // Add entries for blacklisted applications (use "Native" method)
     for (NSString *displayId in blacklistedApps) {
-        NSMutableDictionary *dict = [defaults mutableCopy];
+        NSMutableDictionary *dict = [global mutableCopy];
         [dict setObject:[NSNumber numberWithInteger:1] forKey:kBackgroundMethod];
         [overrides setObject:dict forKey:displayId];
         [dict release];
@@ -128,7 +128,7 @@ int main(int argc, char **argv)
         // NOTE: Technically, always-enabled would have been pointless with blacklisted
         NSMutableDictionary *dict = [overrides objectForKey:displayId];
         if (dict == nil)
-            dict = (NSMutableDictionary *)defaults;
+            dict = (NSMutableDictionary *)global;
         dict = [dict mutableCopy];
         [dict setObject:[NSNumber numberWithBool:YES] forKey:kAlwaysEnabled];
         [overrides setObject:dict forKey:displayId];
@@ -140,13 +140,13 @@ int main(int argc, char **argv)
     //       (and hence the preferences application had been run)
     prefs = [NSDictionary dictionaryWithObjectsAndKeys:
         [NSNumber numberWithBool:NO], kFirstRun,
-        defaults, kDefaults,
+        global, kGlobal,
         overrides, kOverrides,
         nil];
 
     // Save updated preferences to disk, replacing old
-    [userDefaults setPersistentDomain:prefs forName:@APP_ID];
-    [userDefaults synchronize];
+    [defaults setPersistentDomain:prefs forName:@APP_ID];
+    [defaults synchronize];
 
     [pool release];
     return 0;
