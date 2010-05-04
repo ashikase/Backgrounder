@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-25 01:12:02
+ * Last-modified: 2010-04-29 01:24:28
  */
 
 /**
@@ -85,9 +85,7 @@ static NSString * contentsOfFile(NSString *path, NSString *name)
 
 - (void)loadView
 {
-    NSLog(@"=== 01: %@ and %@", self.navigationController, self.tabBarController);
     if (self.navigationController == nil && self.tabBarController == nil) {
-    NSLog(@"=== 02");
         // Being presented modally; add a title and a dismiss button
  
         // Create a navigation bar
@@ -114,10 +112,8 @@ static NSString * contentsOfFile(NSString *path, NSString *name)
         self.view = view;
         [view release];
     } else {
-    NSLog(@"=== 03");
         self.view = webView;
     }
-    NSLog(@"=== 04");
 }
 
 - (void)dealloc
