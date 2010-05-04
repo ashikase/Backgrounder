@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-26 02:27:57
+ * Last-modified: 2010-04-26 02:57:32
  */
 
 /**
@@ -85,8 +85,6 @@ static NSDictionary *defaultPrefs = nil;
 static NSArray *overriddenPrefs = nil;
 
 
-static BOOL isPersistent = YES;
-
 static NSMutableArray *activeApps = nil;
 static NSMutableArray *bgEnabledApps = nil;
 static NSArray *blacklistedApps = nil;
@@ -95,15 +93,7 @@ static NSArray *blacklistedApps = nil;
 
 static void loadPreferences()
 {
-    CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("persistent"), CFSTR(APP_ID));
-    if (propList) {
-        // NOTE: Defaults to YES
-        if (CFGetTypeID(propList) == CFBooleanGetTypeID())
-            isPersistent = CFBooleanGetValue(reinterpret_cast<CFBooleanRef>(propList));
-        CFRelease(propList);
-    }
-
-    propList = CFPreferencesCopyAppValue(CFSTR("blacklistedApplications"), CFSTR(APP_ID));
+    CFPropertyListRef propList = CFPreferencesCopyAppValue(CFSTR("blacklistedApplications"), CFSTR(APP_ID));
     if (propList) {
         if (CFGetTypeID(propList) == CFArrayGetTypeID())
             blacklistedApps = [[NSArray alloc] initWithArray:(NSArray *)propList];
@@ -437,7 +427,7 @@ static BOOL shouldSuspend = NO;
 
     if ([activeApps containsObject:identifier]) {
         // Was restored from backgrounded state
-        if (!isPersistent && !isAlwaysEnabled) {
+        if (!boolForKey(kPersistent, identifier) && !isAlwaysEnabled) {
             // Tell the application to disable backgrounding
             kill([self pid], SIGUSR1);
 
