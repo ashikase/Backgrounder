@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-02 21:12:52
+ * Last-modified: 2010-05-04 12:59:19
  */
 
 /**
@@ -228,7 +228,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
 - (void)helpButtonTapped:(UIButton *)sender
 {
-    static NSString *helpFiles[] = {@"help_method.mdwn", @"help_other.mdwn", @"help_indicators.mdwn"};
+    static NSString *helpFiles[] = {@"help_method.mdwn", @"help_state.mdwn", @"help_indicators.mdwn"};
 
     // Create and show help page
     // NOTE: Controller is released in delegate callback
