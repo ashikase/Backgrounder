@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-04 23:31:59
+ * Last-modified: 2010-05-05 01:03:25
  */
 
 /**
@@ -294,6 +294,8 @@ static BOOL shouldSuspend = NO;
 
 - (void)frontDisplayDidChange
 {
+    %orig;
+
     // NOTE: Always first try removing status bar indicator, as previous
     //       application may have had it enabled even if the current does not.
     SBStatusBarController *sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
