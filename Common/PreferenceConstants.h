@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-05 01:55:19
+ * Last-modified: 2010-05-08 05:11:13
  */
 
 /**
@@ -61,6 +61,7 @@ typedef enum {
 #define kStatusBarIconEnabled    @"statusBarIconEnabled"
 #define kPersistent              @"persistent"
 #define kEnableAtLaunch          @"enableAtLaunch"
+#define kMinimizeOnToggle        @"minimizeOnToggle"
 
 
 // Former preference settings keys

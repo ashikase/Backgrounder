@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-08 04:05:59
+ * Last-modified: 2010-05-08 05:21:48
  */
 
 /**
@@ -354,12 +354,13 @@ static BOOL shouldSuspend = NO;
         SBAlertItemsController *controller = [objc_getClass("SBAlertItemsController") sharedInstance];
         [controller activateAlertItem:alert];
 
-        // Record identifer of application for later use
-        displayIdToSuspend = [identifier copy];
+        if (boolForKey(kMinimizeOnToggle, identifier))
+            // Record identifer of application for suspension later
+            displayIdToSuspend = [identifier copy];
 
         if (autoSuspend)
             // After delay, simulate menu button tap to suspend current app
-            [self performSelector:@selector(dismissBackgrounderFeedbackAndSuspend) withObject:nil afterDelay:0.6f];
+            [self performSelector:@selector(dismissBackgrounderFeedbackAndSuspend) withObject:nil afterDelay:0.7f];
         else
             // NOTE: Only used when invocation method is MenuHoldShort or LockHoldShort
             shouldSuspend = YES;
@@ -403,11 +404,20 @@ static BOOL shouldSuspend = NO;
             //        hooks enabled, this will cause it to exit abnormally
             kill([app pid], SIGUSR1);
 
-            // Store the new backgrounding status of the application
-            if (enable)
+            // Prepare to update status bar icon, if necessary and enabled
+            SBStatusBarController *sbCont = nil;
+            if (app == [SBWActiveDisplayStack topApplication] && boolForKey(kStatusBarIconEnabled, identifier))
+                sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
+
+            // Store the new backgrounding status of the application and
+            // optionally update the status bar icon
+            if (enable) {
                 [bgEnabledApps addObject:identifier];
-            else
+                [sbCont addStatusBarItem:@"Backgrounder"];
+            } else {
                 [bgEnabledApps removeObject:identifier];
+                [sbCont removeStatusBarItem:@"Backgrounder"];
+            }
         }
     }
 }
@@ -448,11 +458,15 @@ static BOOL shouldSuspend = NO;
 {
     // Dismiss the message and suspend the application
     [self dismissBackgrounderFeedback];
-    [self suspendAppWithDisplayIdentifier:displayIdToSuspend];
 
-    // Reset related variables
-    [displayIdToSuspend release];
-    displayIdToSuspend = nil;
+    if (displayIdToSuspend != nil) {
+        // Suspend the specified application
+        [self suspendAppWithDisplayIdentifier:displayIdToSuspend];
+
+        // Reset related variables
+        [displayIdToSuspend release];
+        displayIdToSuspend = nil;
+    }
 }
 
 %end

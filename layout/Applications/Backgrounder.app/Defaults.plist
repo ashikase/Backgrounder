@@ -12,6 +12,8 @@
 		<integer>2</integer>
 		<key>badgeEnabled</key>
 		<false/>
+		<key>minimizeOnToggle</key>
+		<true/>
 		<key>persistent</key>
 		<true/>
 		<key>statusBarIconEnabled</key>
