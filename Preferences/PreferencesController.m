@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-09 04:36:29
+ * Last-modified: 2010-05-11 22:32:05
  */
 
 /**
@@ -82,7 +82,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    static int rows[] = {3, 2, 2, 1};
+    static int rows[] = {3, 2, 2, 2};
     return rows[section];
 }
 
@@ -95,13 +95,13 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
         {@"Off", @"Native", @"Backgrounder"},
         {@"Enable at Launch", @"Stay Enabled", nil},
         {@"Badge", @"Status Bar Icon", nil},
-        {@"Minimize on Toggle", nil, nil}
+        {@"Fallback to Native", @"Minimize on Toggle", nil}
     };
     static NSString *cellSubtitles[][3] = {
         {@"App will quit when minimized", @"Use native method, if supported", @"Run as if in foreground"},
         {@"No need to manually enable", @"Must be disabled manually", nil},
         {@"Mark the app's icon", @"Mark the app's status bar", nil},
-        {@"Minimize app when toggling state", nil, nil}
+        {@"If state disabled, use native method", @"Minimize app when toggling state", nil}
     };
 
     // All cells access preferences
@@ -142,7 +142,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
         static NSString *keys[][2] = {
             {kEnableAtLaunch, kPersistent},
             {kBadgeEnabled, kStatusBarIconEnabled},
-            {kMinimizeOnToggle, nil}};
+            {kFallbackToNative, kMinimizeOnToggle}};
 
         UIButton *button = (UIButton *)cell.accessoryView;
         button.selected = [prefs boolForKey:keys[indexPath.section - 1][indexPath.row] forDisplayIdentifier:displayIdentifier];
@@ -235,7 +235,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
     static NSString *keys[][2] = {
         {kEnableAtLaunch, kPersistent},
         {kBadgeEnabled, kStatusBarIconEnabled},
-        {kMinimizeOnToggle, nil}};
+        {kFallbackToNative, kMinimizeOnToggle}};
 
     // Update selected state of button
     button.selected = !button.selected;

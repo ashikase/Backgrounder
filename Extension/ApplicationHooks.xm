@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-05 01:50:08
+ * Last-modified: 2010-05-11 22:23:35
  */
 
 /**
@@ -44,6 +44,7 @@
 
 static BOOL backgroundingEnabled = NO;
 static BGBackgroundingMethod backgroundingMethod = BGBackgroundingMethodBackgrounder;
+static BOOL fallbackToNative = YES;
 
 #define GSEventRef void *
 
@@ -66,9 +67,15 @@ static void loadPreferences()
     if (prefs == nil)
         prefs = [defaults objectForKey:kGlobal];
     
+    // Backgrounding method
     id value = [prefs objectForKey:kBackgroundingMethod];
     if ([value isKindOfClass:[NSNumber class]])
         backgroundingMethod = (BGBackgroundingMethod)[value integerValue];
+
+    // Fallback to native
+    value = [prefs objectForKey:kFallbackToNative];
+    if ([value isKindOfClass:[NSNumber class]])
+        fallbackToNative = [value boolValue];
 }
 
 //==============================================================================
@@ -152,11 +159,13 @@ typedef struct {
     if (!backgroundingEnabled) {
         %orig;
 
-        // Application should terminate on suspend; make certain that it does
-        // FIXME: Determine if there is any benefit of using shouldExitAfterSendSuspend
-        //        over forceExit.
-        UIApplicationFlags &_applicationFlags = MSHookIvar<UIApplicationFlags>(self, "_applicationFlags");
-        _applicationFlags.shouldExitAfterSendSuspend = YES;
+        if (backgroundingMethod == BGBackgroundingMethodOff || !fallbackToNative) {
+            // Application should terminate on suspend; make certain that it does
+            // FIXME: Determine if there is any benefit of using shouldExitAfterSendSuspend
+            //        over forceExit.
+            UIApplicationFlags &_applicationFlags = MSHookIvar<UIApplicationFlags>(self, "_applicationFlags");
+            _applicationFlags.shouldExitAfterSendSuspend = YES;
+        }
     }
 }
 
@@ -167,12 +176,14 @@ typedef struct {
     if (!backgroundingEnabled) {
         %orig;
 
-        // Application should terminate on suspend; make certain that it does
-        // NOTE: The shouldExitAfterSendSuspend flag appears to be ignored when
-        //       this alternative method is called; resort to more "drastic"
-        //       measures.
-        UIApplicationFlags &_applicationFlags = MSHookIvar<UIApplicationFlags>(self, "_applicationFlags");
-        _applicationFlags.forceExit = YES;
+        if (backgroundingMethod == BGBackgroundingMethodOff || !fallbackToNative) {
+            // Application should terminate on suspend; make certain that it does
+            // NOTE: The shouldExitAfterSendSuspend flag appears to be ignored when
+            //       this alternative method is called; resort to more "drastic"
+            //       measures.
+            UIApplicationFlags &_applicationFlags = MSHookIvar<UIApplicationFlags>(self, "_applicationFlags");
+            _applicationFlags.forceExit = YES;
+        }
     }
 }
 

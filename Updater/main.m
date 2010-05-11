@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-05 01:57:08
+ * Last-modified: 2010-05-11 22:52:15
  */
 
 /**
@@ -100,10 +100,12 @@ int main(int argc, char **argv)
         // Create global settings
         NSDictionary *global = [NSDictionary dictionaryWithObjectsAndKeys:
             [NSNumber numberWithInteger:BGBackgroundingMethodBackgrounder], kBackgroundingMethod,
+            [NSNumber numberWithBool:NO], kEnableAtLaunch,
+            [NSNumber numberWithBool:persistent], kPersistent,
             [NSNumber numberWithBool:badgeEnabled], kBadgeEnabled,
             [NSNumber numberWithBool:NO], kStatusBarIconEnabled,
-            [NSNumber numberWithBool:persistent], kPersistent,
-            [NSNumber numberWithBool:NO], kEnableAtLaunch,
+            [NSNumber numberWithBool:YES], kFallbackToNative,
+            [NSNumber numberWithBool:YES], kMinimizeOnToggle,
             nil];
 
         // Create overrides
