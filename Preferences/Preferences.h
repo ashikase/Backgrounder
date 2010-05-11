@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-05 01:49:43
+ * Last-modified: 2010-05-08 02:08:27
  */
 
 /**
@@ -52,6 +52,8 @@
 @property(nonatomic, readonly) BOOL needsRespring;
 
 + (Preferences *)sharedInstance;
+
+- (void)resetToDefaults;
 
 - (id)objectForKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId;
 - (BOOL)boolForKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId;

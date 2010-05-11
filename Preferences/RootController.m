@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-08 01:04:48
+ * Last-modified: 2010-05-08 02:36:32
  */
 
 /**
@@ -47,6 +47,7 @@
 #import "Constants.h"
 #import "DocumentationController.h"
 #import "OverridesController.h"
+#import "Preferences.h"
 #import "PreferencesController.h"
 
 
@@ -60,8 +61,11 @@
     self = [super initWithStyle:style];
     if (self) {
         self.title = @"Backgrounder";
-        self.navigationItem.backBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Back"
-            style:UIBarButtonItemStyleBordered target:nil action:nil];
+        self.navigationItem.backBarButtonItem = [[[UIBarButtonItem alloc] initWithTitle:@"Back"
+            style:UIBarButtonItemStyleBordered target:nil action:nil] autorelease];
+        self.navigationItem.rightBarButtonItem = [[[UIBarButtonItem alloc] initWithTitle:@"Reset"
+            style:UIBarButtonItemStyleDone target:self action:@selector(resetButtonTapped)] autorelease];
+
     }
     return self;
 }
@@ -203,6 +207,35 @@
 - (void)openDonationLink
 {
         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=gaizin%40gmail%2ecom&lc=US&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHostedGuest"]];
+}
+
+#pragma mark - Navigation bar button actions
+
+- (void)resetButtonTapped
+{
+    UIAlertView *alertView = [[[UIAlertView alloc]  initWithTitle:@"Reset to Defaults"
+        message:@"Are you sure you wish to reset all settings to their default values?"
+       delegate:self cancelButtonTitle:@"No" otherButtonTitles:@"Yes", nil] autorelease];
+    [alertView show];
+}
+
+#pragma mark - UIAlertView delegate methods
+
+- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+    if (buttonIndex == 1) {
+        // User pressed "Yes"; reset settings to default values
+        [[Preferences sharedInstance] resetToDefaults];
+
+        // Remove all currently-assigned Activator events
+        LAActivator *activator = [LAActivator sharedInstance];
+        NSArray *events = [activator eventsAssignedToListenerWithName:@APP_ID];
+        for (LAEvent *event in events)
+            [activator unassignEvent:event];
+
+        // Set default Activator event
+        [activator assignEvent:[LAEvent eventWithName:LAEventNameMenuHoldShort] toListenerWithName:@APP_ID];
+    }
 }
 
 @end
