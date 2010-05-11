@@ -6,12 +6,14 @@
 	<true/>
 	<key>global</key>
 	<dict>
-		<key>alwaysEnabled</key>
-		<false/>
 		<key>backgroundingMethod</key>
 		<integer>2</integer>
 		<key>badgeEnabled</key>
 		<false/>
+		<key>enableAtLaunch</key>
+		<false/>
+		<key>fallbackToNative</key>
+		<true/>
 		<key>minimizeOnToggle</key>
 		<true/>
 		<key>persistent</key>
@@ -23,81 +25,105 @@
 	<dict>
 		<key>com.apple.mobilemail</key>
 		<dict>
-			<key>alwaysEnabled</key>
-			<false/>
 			<key>backgroundingMethod</key>
 			<integer>1</integer>
-			<key>badgeEnabled</key>
-			<false/>
-			<key>persistent</key>
-			<true/>
-			<key>statusBarIconEnabled</key>
-			<false/>
+            <key>badgeEnabled</key>
+            <false/>
+            <key>enableAtLaunch</key>
+            <false/>
+            <key>fallbackToNative</key>
+            <true/>
+            <key>minimizeOnToggle</key>
+            <true/>
+            <key>persistent</key>
+            <true/>
+            <key>statusBarIconEnabled</key>
+            <false/>
 		</dict>
 		<key>com.apple.mobilephone</key>
 		<dict>
-			<key>alwaysEnabled</key>
-			<false/>
 			<key>backgroundingMethod</key>
 			<integer>1</integer>
-			<key>badgeEnabled</key>
-			<false/>
-			<key>persistent</key>
-			<true/>
-			<key>statusBarIconEnabled</key>
-			<false/>
+            <key>badgeEnabled</key>
+            <false/>
+            <key>enableAtLaunch</key>
+            <false/>
+            <key>fallbackToNative</key>
+            <true/>
+            <key>minimizeOnToggle</key>
+            <true/>
+            <key>persistent</key>
+            <true/>
+            <key>statusBarIconEnabled</key>
+            <false/>
 		</dict>
 		<key>com.apple.mobilesafari</key>
 		<dict>
-			<key>alwaysEnabled</key>
-			<false/>
 			<key>backgroundingMethod</key>
 			<integer>1</integer>
-			<key>badgeEnabled</key>
-			<false/>
-			<key>persistent</key>
-			<true/>
-			<key>statusBarIconEnabled</key>
-			<false/>
+            <key>badgeEnabled</key>
+            <false/>
+            <key>enableAtLaunch</key>
+            <false/>
+            <key>fallbackToNative</key>
+            <true/>
+            <key>minimizeOnToggle</key>
+            <true/>
+            <key>persistent</key>
+            <true/>
+            <key>statusBarIconEnabled</key>
+            <false/>
 		</dict>
 		<key>com.apple.mobileipod-MediaPlayer</key>
 		<dict>
-			<key>alwaysEnabled</key>
-			<false/>
 			<key>backgroundingMethod</key>
 			<integer>1</integer>
-			<key>badgeEnabled</key>
-			<false/>
-			<key>persistent</key>
-			<true/>
-			<key>statusBarIconEnabled</key>
-			<false/>
+            <key>badgeEnabled</key>
+            <false/>
+            <key>enableAtLaunch</key>
+            <false/>
+            <key>fallbackToNative</key>
+            <true/>
+            <key>minimizeOnToggle</key>
+            <true/>
+            <key>persistent</key>
+            <true/>
+            <key>statusBarIconEnabled</key>
+            <false/>
 		</dict>
 		<key>com.apple.mobileipod-AudioPlayer</key>
 		<dict>
-			<key>alwaysEnabled</key>
-			<false/>
 			<key>backgroundingMethod</key>
 			<integer>1</integer>
-			<key>badgeEnabled</key>
-			<false/>
-			<key>persistent</key>
-			<true/>
-			<key>statusBarIconEnabled</key>
-			<false/>
+            <key>badgeEnabled</key>
+            <false/>
+            <key>enableAtLaunch</key>
+            <false/>
+            <key>fallbackToNative</key>
+            <true/>
+            <key>minimizeOnToggle</key>
+            <true/>
+            <key>persistent</key>
+            <true/>
+            <key>statusBarIconEnabled</key>
+            <false/>
 		</dict>
 		<key>com.apple.mobileipod-VideoPlayer</key>
 		<dict>
-			<key>alwaysEnabled</key>
-			<false/>
 			<key>backgroundingMethod</key>
 			<integer>1</integer>
-			<key>badgeEnabled</key>
-			<false/>
-			<key>persistent</key>
-			<true/>
-			<key>statusBarIconEnabled</key>
-			<false/>
+            <key>badgeEnabled</key>
+            <false/>
+            <key>enableAtLaunch</key>
+            <false/>
+            <key>fallbackToNative</key>
+            <true/>
+            <key>minimizeOnToggle</key>
+            <true/>
+            <key>persistent</key>
+            <true/>
+            <key>statusBarIconEnabled</key>
+            <false/>
 		</dict>
 	</dict>
 </dict>
