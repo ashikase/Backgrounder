@@ -1,4 +1,25 @@
-> # Version svn.r337
+> # Version svn.r432
+> - - -
+> * MOD: Major reworking of preferences
+>    - All settings can now be set per-application (by creating an "override").
+>    - "Backgrounding Persists" has been renamed to "Stay Enabled".
+>    - The former blacklisting option is now acheived by creating an override and setting "Backgrounding method" to "Native".
+>    - The former always-enabled option is now acheived by creating an override and enabling both "Enable at Launch" and "Stay Enabled".
+> * MOD: Preferences app now supports iPad-mode (Portrait only).
+> * NEW: Prevent apps such as Safari from backgrounding by setting "backgrounding method" to Off.
+>    - Most people will want to do this via an override, as global settings would affect *all* apps.
+> * NEW: Button to reset settings to default values.
+> * NEW: Option to show a backgrounding status indicator in the status bar.
+> * NEW: "Minimize on Toggle" option; disable to prevent current app from minimizing when enabling/disabling backgrounding.
+> * NEW: "Fallback to Native" option; disable to force even apps such as Mail, Phone, Safari and iPod to quit on minimize when backgrounding state is disabled.
+> * FIX: Fixed support for modifying badge via WinterBoard.
+>    - File to theme is Backgrounder_Badge.png in the com.apple.springboard bundle.
+> * FIX: Fixed iPad badge position.
+>    - Badge origin is {-12, 39} for iPhone/iPod, {-12, 53} for iPad.
+
+- - -
+
+> # Version svn.r338
 > - - -
 > * FIX: Previous version introduced a bug that led to certain applications (e.g. Skype) pausing when backgrounded.
 

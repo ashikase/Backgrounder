@@ -24,7 +24,14 @@ blockquote > h2 {
     text-align: center;
     margin: 0;
     font-size: small;
-    color: #999;
+    color: #888;
+}
+
+blockquote > h3 {
+    text-align: center;
+    margin: 0;
+    font-size: small;
+    color: #900;
 }
 
 blockquote > hr {

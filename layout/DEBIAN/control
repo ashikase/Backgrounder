@@ -1,13 +1,13 @@
 Package: backgrounder
 Name: Backgrounder
-Version: svn.r338
+Version: svn.r432
 Architecture: iphoneos-arm
-Description: Run applications in the background
+Description: Enable and manage backgrounding
 Homepage: http://iphone-backgrounder.googlecode.com/
 Depiction: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=backgrounder3Data
 Maintainer: BigBoss <bigboss@thebigboss.org>
 Author: Lance Fetters (ashikase) <gaizin@gmail.com>
 Section: System
-Depends: firmware (>= 3.0), mobilesubstrate, libactivator (>= 1.3.1)
+Depends: firmware (>= 3.0), firmware (<< 4.0), mobilesubstrate, libactivator (>= 1.3.1)
 dev: ashikase
 Sponsor: thebigboss.org <http://thebigboss.org>

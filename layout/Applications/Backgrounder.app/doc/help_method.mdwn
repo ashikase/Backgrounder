@@ -1,17 +1,25 @@
 > # Backgrounding Method
 > ## (Default: Backgrounder)
 > - - -
+> This option determines whether or not an app is allowed to background, as well as how it should background.
+>
+> This is especially useful when Backgrounder is used with a task switcher such as Kirikae or ProSwitcher.
+>
 > * **Off**  
->     The application will quit running when minimized.
+>     The app will quit when minimized.
 > 
->     Applications normally quit when minimized. However, certain built-in applications, such as Phone and Mail, have built-in backgrounding support; when the "Off" method is set, such applications will be forcibly terminated when minimized.
+>     Apps with built-in backgrounding, such as Phone, Mail, Safari and iPod, will be forcibly terminated.
 > 
 > * **Native**  
->     The application will be backgrounded using the application's built-in backgrounding method, if available.
+>     The app will be backgrounded using the app's built-in backgrounding method, if available.
 > 
->     Certain built-in applications, such as Phone, Mail, iPod and Safari, as well as some 3rd-party jailbreak applications, such as MobileTerminal, include support for backgrounding. When backgrounding such applications, it is recommended to use this native support (via the "Native" method) instead of the "Backgrounder" method, as the native method normally requires less resources. Note that applications that do not include this built-in support will behave the same as with the "Off" method. 
+>     Certain Apple apps, such as Phone, Mail, iPod and Safari, as well as some 3rd-party jailbreak apps, such as MobileTerminal, include support for backgrounding. For such apps, it is recommended to use this "Native" method instead of the "Backgrounder" method, as the native method normally requires less resources.
+>
+>     Note that for apps that do not include this built-in support, this method is the same as the "Off" method.
 > 
 > * **Backgrounder**  
->     The application will continue to run as if it were still in the foreground.
+>     The app will continue to run as if it were still in the foreground.
 > 
->     Note that this is the most expensive method, memory and CPU-wise; the application does not know that it is not visible, and so it cannot release unneeded resources.
+>     Note that the app does not know that it is in the background, and so it cannot release unneeded resources. This can be quite expensive both CPU and memory-wise.
+>
+>     This method is not recommended for apps that have built-in backgrounding support, such as Phone, Mail, iPod and Safari.

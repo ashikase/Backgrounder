@@ -1,11 +1,7 @@
 > Backgrounder enables applications to continue running when minimized (i.e. to run in the background).
 > 
-> The long story:
+> The iPhone OS has always supported multitasking. However, only certain Apple applications, such as Phone, Mail, iPod and Safari, are officially able to run in the background. Backgrounder simply enables this capability for *all* applications.
 > 
-> Certain applications, such as Phone and Mail, can background without Backgrounder; support for this is built into SpringBoard (the iPhone OS home screen application). Backgrounder simply enables this functionality for *all* applications.
+> Note, thought, that since Phone, Mail, iPod and Safari officially support backgrounding, they are designed to use less resources when backgrounded. Most applications, though, are not designed for background use; even when backgrounded, they will continue to run as if they are in the foreground (and thus continue to unnecessarily update GUI elements, etc.). When memory becomes too low, the OS may force these applications to quit.
 > 
-> However...
-> 
-> As Phone and Mail officially support backgrounding, they are designed to use less resources when backgrounded. Other applications, though, are not designed for background use; even when backgrounded, they will continue to run as if they are in the foreground (and thus continue to update GUI elements, etc.). When memory becomes too low, the OS may force these applications to quit.
-> 
-> Simply having Backgrounder installed on a device will not slow it down or waste memory; running (processor/memory-intensive) applications in the background will.
+> Having Backgrounder installed on a device will not slow it down or waste memory; running (processor/memory-intensive) applications in the background will.
