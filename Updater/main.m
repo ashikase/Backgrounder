@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-12 03:47:09
+ * Last-modified: 2010-05-12 04:14:06
  */
 
 /**
@@ -114,56 +114,12 @@ int main(int argc, char **argv)
         // Create overrides
         NSMutableDictionary *overrides = [NSMutableDictionary dictionary];
 
-        // Old iPod entry did not include role IDs; fix by adding valid roles
-        if ([blacklistedApps containsObject:@"com.apple.mobileipod"]) {
-            NSMutableArray *mArray = [NSMutableArray arrayWithArray:blacklistedApps];
-            [mArray removeObject:@"com.apple.mobileipod"];
-
-            // List of possible display identifiers
-            NSArray *pArray = [NSArray arrayWithObjects:
-                @"com.apple.mobileipod-MediaPlayer", @"com.apple.mobileipod-AudioPlayer", @"com.apple.mobileipod-VideoPlayer", nil];
-
-            // Only add identifiers that are in use on this device
-            for (NSString *displayId in pArray) {
-                NSString *displayName = SBSCopyLocalizedApplicationNameForDisplayIdentifier(displayId);
-                if (displayName != nil) {
-                    [mArray addObject:displayId];
-                    [displayName release];
-                }
-            }
-
-            // Update the list of blacklisted apps
-            blacklistedApps = mArray;
-        }
-
         // Add entries for blacklisted applications (use "Native" method)
         for (NSString *displayId in blacklistedApps) {
             NSMutableDictionary *dict = [global mutableCopy];
             [dict setObject:[NSNumber numberWithInteger:BGBackgroundingMethodNative] forKey:kBackgroundingMethod];
             [overrides setObject:dict forKey:displayId];
             [dict release];
-        }
-
-        // Old iPod entry did not include role IDs; fix by adding valid roles
-        if ([enabledApps containsObject:@"com.apple.mobileipod"]) {
-            NSMutableArray *mArray = [NSMutableArray arrayWithArray:enabledApps];
-            [mArray removeObject:@"com.apple.mobileipod"];
-
-            // List of possible display identifiers
-            NSArray *pArray = [NSArray arrayWithObjects:
-                @"com.apple.mobileipod-MediaPlayer", @"com.apple.mobileipod-AudioPlayer", @"com.apple.mobileipod-VideoPlayer", nil];
-
-            // Only add identifiers that are in use on this device
-            for (NSString *displayId in pArray) {
-                NSString *displayName = SBSCopyLocalizedApplicationNameForDisplayIdentifier(displayId);
-                if (displayName != nil) {
-                    [mArray addObject:displayId];
-                    [displayName release];
-                }
-            }
-
-            // Update the list of always-enabled apps
-            enabledApps = mArray;
         }
 
         // Add entries for always-enabled applications
@@ -186,6 +142,42 @@ int main(int argc, char **argv)
             [NSNumber numberWithBool:NO], kFirstRun,
             global, kGlobal,
             overrides, kOverrides,
+            nil];
+
+        // Save updated preferences to disk, replacing old
+        [defaults setPersistentDomain:prefs forName:@APP_ID];
+        [defaults synchronize];
+    }
+
+
+    // Old iPod entry did not include role IDs; fix by adding valid roles
+    // NOTE: This is done here as the role ID check was missing in release 432,
+    //       causing some people to end up with invalid iPod settings.
+
+    NSDictionary *overrides = [prefs objectForKey:kOverrides];
+    NSDictionary *override = [overrides objectForKey:@"com.apple.mobileipod"];
+    if (override != nil) {
+        NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithDictionary:overrides];
+        [dict removeObjectForKey:@"com.apple.mobileipod"];
+
+        // List of possible display identifiers
+        NSArray *idArray = [NSArray arrayWithObjects:
+            @"com.apple.mobileipod-MediaPlayer", @"com.apple.mobileipod-AudioPlayer", @"com.apple.mobileipod-VideoPlayer", nil];
+
+        // Only add overrides for identifiers that are in use on this device
+        for (NSString *displayId in idArray) {
+            NSString *displayName = SBSCopyLocalizedApplicationNameForDisplayIdentifier(displayId);
+            if (displayName != nil) {
+                [dict setObject:override forKey:displayId];
+                [displayName release];
+            }
+        }
+
+        // Create structure for updated preferences
+        prefs = [NSDictionary dictionaryWithObjectsAndKeys:
+            [prefs objectForKey:kFirstRun], kFirstRun,
+            [prefs objectForKey:kGlobal], kGlobal,
+            dict, kOverrides,
             nil];
 
         // Save updated preferences to disk, replacing old
