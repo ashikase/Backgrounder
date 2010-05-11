@@ -1,0 +1,8 @@
+> # Minimize on Toggle
+> ## (Default: On)
+> - - -
+> * **Off:**  
+>   The application will remain open upon enabling/disabling backgrounding.
+>
+> * **On:**  
+>   The application will minimize upon enabling/disabling backgrounding.
