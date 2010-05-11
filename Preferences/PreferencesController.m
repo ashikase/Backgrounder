@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-09 03:11:49
+ * Last-modified: 2010-05-09 04:36:29
  */
 
 /**
@@ -186,14 +186,15 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
     // Determine size of application frame (iPad, iPhone differ)
     CGRect appFrame = [[UIScreen mainScreen] applicationFrame];
 
-    // Determine offset
+    // Determine offsets
     float topOffset = (section == 0) ? 10.0f : 0;
+    float indent = (appFrame.size.width == 320.0f) ? 19.0f : 54.0f;
 
     // Create a container view for the header
     UIView *view = [[[UIView alloc] initWithFrame:CGRectMake(0, 0.0f, appFrame.size.width, 36.0f + topOffset)] autorelease];;
 
     // Create the text label
-    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(19.0f, 7.0f + topOffset, appFrame.size.width - 19.0f, 21.0f)];
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(indent, 7.0f + topOffset, appFrame.size.width - indent, 21.0f)];
     label.font = [UIFont boldSystemFontOfSize:17.0f];
     label.text = titles[section];
     label.textColor = [UIColor colorWithRed:0.3f green:0.34f blue:0.42f alpha:1.0f];
@@ -204,7 +205,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
     // Create the info button
     UIButton *button = [UIButton buttonWithType:UIButtonTypeInfoDark];
-    button.center = CGPointMake(view.bounds.size.width - button.bounds.size.width - 1.0f, label.center.y);
+    button.center = CGPointMake(view.bounds.size.width - button.bounds.size.width / 2.0f - indent - 1.0f, label.center.y);
     button.tag = section;
     [button addTarget:self action:@selector(helpButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [view addSubview:button];
