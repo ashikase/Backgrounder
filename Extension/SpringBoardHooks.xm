@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-05 21:10:18
+ * Last-modified: 2010-05-08 04:05:59
  */
 
 /**
@@ -173,8 +173,8 @@ static NSInteger integerForKey(NSString *key, NSString *displayId)
 
 //==============================================================================
 
-@interface UIView (Private)
-- (void)setOrigin:(CGPoint)origin;
+@interface UIView (Geometry)
+@property(assign) CGPoint origin;
 @end
 
 static void showBadgeForDisplayIdentifier(NSString *identifier)
@@ -182,13 +182,27 @@ static void showBadgeForDisplayIdentifier(NSString *identifier)
     // Update the application's SpringBoard icon to indicate that it is running
     SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
     if (![icon viewWithTag:1000]) {
-        // Icon does not have a badge
+        // Icon does not yet have a badge
+
+        // Determine position for badge (relative to lower left corner of icon)
+        CGPoint point;
+        UIImageView *imageView = MSHookIvar<UIImageView *>(icon, "_image");
+        if (imageView != nil) {
+            CGRect frame = imageView.frame;
+            point = CGPointMake(frame.origin.x + -12.0f, frame.origin.y + frame.size.height - 21.0f);
+        } else {
+            // Fall back to hard-coded values
+            point = CGPointMake(-12.0f, 39.0f);
+        }
+
+        // Create and add badge
         UIImageView *badgeView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"Backgrounder_Badge.png"]];
-        [badgeView setOrigin:CGPointMake(-12.0f, 39.0f)];
-        [badgeView setTag:1000];
+        badgeView.tag = 1000;
+        badgeView.origin = point;
         [icon addSubview:badgeView];
         [badgeView release];
     }
+
 }
 
 //==============================================================================
