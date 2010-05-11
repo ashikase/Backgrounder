@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-09 01:48:59
+ * Last-modified: 2010-05-12 04:44:18
  */
 
 /**
@@ -91,7 +91,6 @@
     // Table height is app frame height - navigation bar height (44.0f)
     UIView *view = [[UIView alloc] initWithFrame:
         CGRectMake(0, 0, appFrame.size.width, appFrame.size.height - 44.0f - height)];
-    view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
     // Donation button
     UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
