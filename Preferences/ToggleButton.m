@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 22:06:24
+ * Last-modified: 2010-05-05 00:34:17
  */
 
 /**
@@ -55,6 +55,8 @@
         stretchableImageWithLeftCapWidth:5.0f topCapHeight:0] forState:UIControlStateSelected];
     [button setTitle:@"OFF" forState:UIControlStateNormal];
     [button setTitle:@"ON" forState:UIControlStateSelected];
+    [button setTitle:@"" forState:UIControlStateDisabled];
+    [button setTitle:@"" forState:UIControlStateDisabled|UIControlStateSelected];
     [button setTitleColor:[UIColor colorWithWhite:0.5f alpha:1.0f] forState:UIControlStateNormal];
     [button setTitleColor:[UIColor whiteColor] forState:UIControlStateSelected];
 

@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-04 12:59:19
+ * Last-modified: 2010-05-05 00:54:03
  */
 
 /**
@@ -102,6 +102,12 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
         {@"Mark the app's icon", @"Mark the app's status bar", nil}
     };
 
+    // All cells access preferences
+    Preferences *prefs = [Preferences sharedInstance];
+
+    // The availability of certain options depend on the backgrounding method in use
+    NSInteger backgroundingMethod = [prefs integerForKey:kBackgroundingMethod forDisplayIdentifier:displayIdentifier];
+
     UITableViewCell *cell = nil;
     if (indexPath.section == 0) {
         // Backgrounding method
@@ -113,9 +119,8 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
             cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:reuseIdSimple] autorelease];
             cell.selectionStyle = UITableViewCellSelectionStyleGray;
         }
-        cell.accessoryType = ([[Preferences sharedInstance] integerForKey:kBackgroundingMethod
-                forDisplayIdentifier:displayIdentifier] == indexPath.row) ?
-            UITableViewCellAccessoryCheckmark : UITableViewCellAccessoryNone;
+
+        cell.accessoryType = (backgroundingMethod == indexPath.row) ? UITableViewCellAccessoryCheckmark : UITableViewCellAccessoryNone;
     } else {
         // Backgrounding indicators, Other
 
@@ -124,26 +129,35 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
         if (cell == nil) {
             // Cell does not exist, create a new one
             cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:reuseIdToggle] autorelease];
-            [cell setSelectionStyle:0];
+            cell.selectionStyle = UITableViewCellSelectionStyleNone;
 
             ToggleButton *button = [ToggleButton button];
             [button addTarget:self action:@selector(buttonToggled:) forControlEvents:UIControlEventTouchUpInside];
             cell.accessoryView = button;
         }
+
         UIButton *button = (UIButton *)cell.accessoryView;
         if (indexPath.section == 1) {
             NSString *key = (indexPath.row == 0) ? kAlwaysEnabled : kPersistent;
-            button.selected = [[Preferences sharedInstance] boolForKey:key
-                forDisplayIdentifier:displayIdentifier];
+            button.selected = [prefs boolForKey:key forDisplayIdentifier:displayIdentifier];
         } else {
             if (indexPath.row == 0) {
-                    button.selected = [[Preferences sharedInstance] boolForKey:kBadgeEnabled
-                        forDisplayIdentifier:displayIdentifier];
-                    cell.imageView.image = [UIImage imageNamed:@"badge.png"];
+                button.selected = [prefs boolForKey:kBadgeEnabled forDisplayIdentifier:displayIdentifier];
+                cell.imageView.image = [UIImage imageNamed:@"badge.png"];
             } else {
-                    button.selected = [[Preferences sharedInstance] boolForKey:kStatusBarIconEnabled
-                        forDisplayIdentifier:displayIdentifier];
-                    cell.imageView.image = [UIImage imageNamed:@"status_bar_icon.png"];
+                button.selected = [prefs boolForKey:kStatusBarIconEnabled forDisplayIdentifier:displayIdentifier];
+                cell.imageView.image = [UIImage imageNamed:@"status_bar_icon.png"];
+            }
+        }
+
+        if (indexPath.section == 1 || indexPath.row == 1) {
+            // These options are only available for background method Backgrounder
+            if (backgroundingMethod == 2) {
+                cell.textLabel.textColor = [UIColor blackColor];
+                button.enabled = YES;
+            } else {
+                cell.textLabel.textColor = [UIColor grayColor];
+                button.enabled = NO;
             }
         }
     }
