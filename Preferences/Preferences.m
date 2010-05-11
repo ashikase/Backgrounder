@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-08 02:08:04
+ * Last-modified: 2010-05-11 23:28:21
  */
 
 /**
@@ -180,7 +180,12 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
     }
 
     // Retrieve the value for the specified key
-    return [dict objectForKey:defaultName];
+    id value = [dict objectForKey:defaultName];
+    if (value == nil)
+        // Key may not have existed in previous version; check default global values
+        value = [[[self defaults] objectForKey:kGlobal] objectForKey:defaultName];
+
+    return value;
 }
 
 - (BOOL)boolForKey:(NSString *)defaultName forDisplayIdentifier:(NSString *)displayId

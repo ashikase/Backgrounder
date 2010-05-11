@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-11 14:46:25
+ * Last-modified: 2010-05-11 23:32:13
  */
 
 /**
@@ -150,7 +150,16 @@ static id objectForKey(NSString *key, NSString *displayId)
         prefs = globalPrefs;
     }
 
-    return [prefs objectForKey:key];
+    // Retrieve the value for the specified key
+    id value = [prefs objectForKey:key];
+    if (value == nil) {
+        // Key may not have existed in previous version; check default global values
+        NSDictionary *defaults = [NSDictionary dictionaryWithContentsOfFile:
+            @"/Applications/Backgrounder.app/Defaults.plist"];
+        value = [[defaults objectForKey:kGlobal] objectForKey:key];
+    }
+
+    return value;
 }
 
 static BOOL boolForKey(NSString *key, NSString *displayId)
