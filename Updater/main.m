@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-05 01:49:50
+ * Last-modified: 2010-05-05 01:57:08
  */
 
 /**
@@ -103,7 +103,7 @@ int main(int argc, char **argv)
             [NSNumber numberWithBool:badgeEnabled], kBadgeEnabled,
             [NSNumber numberWithBool:NO], kStatusBarIconEnabled,
             [NSNumber numberWithBool:persistent], kPersistent,
-            [NSNumber numberWithBool:NO], kAlwaysEnabled,
+            [NSNumber numberWithBool:NO], kEnableAtLaunch,
             nil];
 
         // Create overrides
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
             if (dict == nil)
                 dict = (NSMutableDictionary *)global;
             dict = [dict mutableCopy];
-            [dict setObject:[NSNumber numberWithBool:YES] forKey:kAlwaysEnabled];
+            [dict setObject:[NSNumber numberWithBool:YES] forKey:kEnableAtLaunch];
             [overrides setObject:dict forKey:displayId];
             [dict release];
         }

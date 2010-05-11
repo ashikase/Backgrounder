@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-05 01:41:40
+ * Last-modified: 2010-05-05 01:57:21
  */
 
 /**
@@ -139,7 +139,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
         UIButton *button = (UIButton *)cell.accessoryView;
         if (indexPath.section == 1) {
-            NSString *key = (indexPath.row == 0) ? kAlwaysEnabled : kPersistent;
+            NSString *key = (indexPath.row == 0) ? kEnableAtLaunch : kPersistent;
             button.selected = [prefs boolForKey:key forDisplayIdentifier:displayIdentifier];
         } else {
             if (indexPath.row == 0) {
@@ -228,7 +228,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
 - (void)buttonToggled:(UIButton *)button
 {
-    static NSString *keys[][2] = {{kAlwaysEnabled, kPersistent}, {kBadgeEnabled, kStatusBarIconEnabled}};
+    static NSString *keys[][2] = {{kEnableAtLaunch, kPersistent}, {kBadgeEnabled, kStatusBarIconEnabled}};
 
     // Update selected state of button
     button.selected = !button.selected;
