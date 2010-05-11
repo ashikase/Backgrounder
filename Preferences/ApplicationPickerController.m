@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 22:06:02
+ * Last-modified: 2010-05-04 20:24:15
  */
 
 /**
@@ -48,6 +48,7 @@
 // SpringBoardServices
 extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
 extern NSString * SBSCopyIconImagePathForDisplayIdentifier(NSString *identifier);
+extern NSArray * SBSCopyApplicationDisplayIdentifiers(BOOL activeOnly, BOOL unknown);
 
 @interface UIProgressHUD : UIView
 
@@ -77,44 +78,34 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 
 static NSArray *applicationDisplayIdentifiers()
 {
-    // First, get a list of all possible application paths
-    NSMutableArray *paths = [NSMutableArray array];
+    // Get list of non-hidden applications
+    NSArray *nonhidden = SBSCopyApplicationDisplayIdentifiers(NO, NO);
 
-    // ... scan /Applications (System/Jailbreak applications)
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-    for (NSString *path in [fileManager directoryContentsAtPath:@"/Applications"]) {
-        if ([path hasSuffix:@".app"] && ![path hasPrefix:@"."])
-           [paths addObject:[NSString stringWithFormat:@"/Applications/%@", path]];
-    }
+    // Get list of hidden applications (assuming LibHide is installed)
+    NSArray *hidden = nil;
+    NSString *filePath = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/LibHide/hidden.plist"];
+    id value = [[NSDictionary dictionaryWithContentsOfFile:filePath] objectForKey:@"Hidden"];
+    if ([value isKindOfClass:[NSArray class]])
+        hidden = (NSArray *)value;
 
-    // ... scan /var/mobile/Applications (AppStore applications)
-    for (NSString *path in [fileManager directoryContentsAtPath:@"/var/mobile/Applications"]) {
-        for (NSString *subpath in [fileManager directoryContentsAtPath:
-                [NSString stringWithFormat:@"/var/mobile/Applications/%@", path]]) {
-            if ([subpath hasSuffix:@".app"])
-                [paths addObject:[NSString stringWithFormat:@"/var/mobile/Applications/%@/%@", path, subpath]];
-        }
-    }
-
-    // Then, go through paths and record valid application identifiers
+    // Record list of valid identifiers
     NSMutableArray *identifiers = [NSMutableArray array];
-
-    for (NSString *path in paths) {
-        NSBundle *bundle = [NSBundle bundleWithPath:path];
-        if (bundle) {
-            NSString *identifier = [bundle bundleIdentifier];
-
+    for (NSArray *array in [NSArray arrayWithObjects:nonhidden, hidden, nil]) {
+        for (NSString *identifier in array) {
             // Filter out non-apps and apps that are not executed directly
             // FIXME: Should Categories folders be in this list? Categories
             //        folders are apps, but when used with CategoriesSB they are
             //        non-apps.
-            if (identifier &&
-                ![identifier hasPrefix:@"jp.ashikase.springjumps."] &&
-                ![identifier isEqualToString:@"com.iptm.bigboss.sbsettings"] &&
-                ![identifier isEqualToString:@"com.apple.webapp"])
+            if (identifier
+                    && ![identifier hasPrefix:@"jp.ashikase.springjumps."]
+                    && ![identifier isEqualToString:@"com.iptm.bigboss.sbsettings"]
+                    && ![identifier isEqualToString:@"com.apple.webapp"])
             [identifiers addObject:identifier];
         }
     }
+
+    // Clean-up
+    [nonhidden release];
 
     return identifiers;
 }
