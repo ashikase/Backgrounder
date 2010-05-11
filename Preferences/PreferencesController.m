@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-09 01:39:13
+ * Last-modified: 2010-05-09 03:11:49
  */
 
 /**
@@ -98,10 +98,10 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
         {@"Minimize on Toggle", nil, nil}
     };
     static NSString *cellSubtitles[][3] = {
-        {@"App will terminate on minimize", @"Use native method, if supported", @"Run as if in foreground"},
+        {@"App will quit when minimized", @"Use native method, if supported", @"Run as if in foreground"},
         {@"No need to manually enable", @"Must be disabled manually", nil},
         {@"Mark the app's icon", @"Mark the app's status bar", nil},
-        {@"Minimize the app upon state toggle", nil, nil}
+        {@"Minimize app when toggling state", nil, nil}
     };
 
     // All cells access preferences
