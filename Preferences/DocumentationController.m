@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-09 01:45:13
+ * Last-modified: 2010-05-09 02:10:43
  */
 
 /**
@@ -69,7 +69,7 @@
 
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return 2;
+	return 3;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(int)section
@@ -79,7 +79,7 @@
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    static int rows[] = {5, 1};
+    static int rows[] = {2, 3, 1};
     return rows[section];
 }
 
@@ -90,7 +90,7 @@
 
     UITableViewCell *cell = nil;
 
-    if (indexPath.section == 1) {
+    if (indexPath.section == 2) {
         // Try to retrieve from the table view a now-unused cell with the given identifier
         cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSafari];
         if (cell == nil) {
@@ -101,7 +101,9 @@
             cell.detailTextLabel.text = @"(via Safari)";
         }
     } else {
-        static NSString *cellTitles[] = {@"About", @"How to Use", @"Release Notes", @"Known Issues", @"Todo"};
+        static NSString *cellTitles[][3] = {
+            {@"About", @"How to Use", nil},
+            {@"Release Notes", @"Known Issues", @"Todo"}};
 
         // Try to retrieve from the table view a now-unused cell with the given identifier
         cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSimple];
@@ -111,7 +113,7 @@
             cell.selectionStyle = UITableViewCellSelectionStyleGray;
             cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
         }
-        cell.textLabel.text = cellTitles[indexPath.row];
+        cell.textLabel.text = cellTitles[indexPath.section][indexPath.row];
     }
 
     return cell;
@@ -121,9 +123,11 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    static NSString *fileNames[] = {@"about.mdwn", @"usage.mdwn", @"release_notes.mdwn", @"known_issues.mdwn", @"todo.mdwn"};
+    static NSString *fileNames[][3] = {
+        {@"about.mdwn", @"usage.mdwn", nil},
+        {@"release_notes.mdwn", @"known_issues.mdwn", @"todo.mdwn"}};
 
-    if (indexPath.section == 1) {
+    if (indexPath.section == 2) {
         // Project Homepage
         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@DEVSITE_URL]];
     } else {
@@ -131,7 +135,7 @@
 
         // NOTE: Controller is released in delegate callback
         HtmlDocController *docCont = [[HtmlDocController alloc]
-            initWithContentsOfFile:fileNames[indexPath.row] templateFile:@"template.html" title:cell.textLabel.text];
+            initWithContentsOfFile:fileNames[indexPath.section][indexPath.row] templateFile:@"template.html" title:cell.textLabel.text];
         docCont.delegate = self;
     }
 }
