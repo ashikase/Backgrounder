@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-05 01:34:36
+ * Last-modified: 2010-05-05 01:50:08
  */
 
 /**
@@ -39,7 +39,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#import "PreferenceKeys.h"
+
+#import "PreferenceConstants.h"
 
 static BOOL backgroundingEnabled = NO;
 static BGBackgroundingMethod backgroundingMethod = BGBackgroundingMethodBackgrounder;

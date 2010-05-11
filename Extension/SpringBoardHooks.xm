@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-05 01:37:54
+ * Last-modified: 2010-05-05 01:49:59
  */
 
 /**
@@ -71,7 +71,7 @@ extern "C" {
 //==============================================================================
 
 // Import constants for preference keys
-#import "PreferenceKeys.h"
+#import "PreferenceConstants.h"
 
 // Store a copy of the global preferences in memory
 static NSDictionary *globalPrefs = nil;

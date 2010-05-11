@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-04 12:47:09
+ * Last-modified: 2010-05-05 01:49:43
  */
 
 /**
@@ -40,7 +40,7 @@
  */
 
 
-#import "PreferenceKeys.h"
+#import "PreferenceConstants.h"
 
 
 @interface Preferences : NSUserDefaults
