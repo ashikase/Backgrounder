@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-03 01:17:22
+ * Last-modified: 2010-05-04 23:47:02
  */
 
 /**
@@ -49,7 +49,6 @@ static int backgroundingMethod = 2;
 
 @interface UIApplication (Private)
 - (NSString *)displayIdentifier;
-- (void)terminateWithSuccess;
 @end
 
 #define kGlobal                  @"global"
@@ -80,6 +79,29 @@ static void toggleBackgrounding(int signal)
 }
 
 //==============================================================================
+
+// NOTE: This struct comes from UIApplication; note that this declaration is incomplete.
+//       These first few members are valid in firmwares 3.0 - 3.2.
+typedef struct {
+    unsigned isActive : 1;
+    unsigned isSuspended : 1;
+    unsigned isSuspendedEventsOnly : 1;
+    unsigned isLaunchedSuspended : 1;
+    unsigned isHandlingURL : 1;
+    unsigned isHandlingRemoteNotification : 1;
+    unsigned statusBarMode : 8;
+    unsigned statusBarShowsProgress : 1;
+    unsigned blockInteractionEvents : 4;
+    unsigned forceExit : 1;
+    unsigned receivesMemoryWarnings : 1;
+    unsigned showingProgress : 1;
+    unsigned receivesPowerMessages : 1;
+    unsigned launchEventReceived : 1;
+    unsigned isAnimatingSuspensionOrResumption : 1;
+    unsigned isSuspendedUnderLock : 1;
+    unsigned shouldExitAfterSendSuspend : 1;
+    // ...
+} UIApplicationFlags;
 
 %group GApplication
 
@@ -120,25 +142,37 @@ static void toggleBackgrounding(int signal)
 }
 
 // Overriding this method prevents the application from quitting on suspend
+// NOTE: UIApplication's default implementation of applicationSuspend: simply
+//       sets _applicationFlags.shouldExitAfterSendSuspend to YES
 - (void)applicationSuspend:(GSEventRef)event
 {
-    if (!backgroundingEnabled)
+    // NOTE: backgroundingEnabled will always be NO for backgroundingMethod == 0
+    if (!backgroundingEnabled) {
         %orig;
 
-    if (backgroundingMethod == 0)
         // Application should terminate on suspend; make certain that it does
-        [self performSelector:@selector(terminateWithSuccess) withObject:nil afterDelay:1.0f];
+        // FIXME: Determine if there is any benefit of using shouldExitAfterSendSuspend
+        //        over forceExit.
+        UIApplicationFlags &_applicationFlags = MSHookIvar<UIApplicationFlags>(self, "_applicationFlags");
+        _applicationFlags.shouldExitAfterSendSuspend = YES;
+    }
 }
 
 // Used by certain applications, such as Mail and Phone, instead of applicationSuspend:
 // NOTE: Only hooked when backgroundingMethod == 0
 - (void)applicationSuspend:(GSEventRef)event settings:(id)settings
 {
-    %orig;
+    // NOTE: backgroundingEnabled will always be NO for backgroundingMethod == 0
+    if (!backgroundingEnabled) {
+        %orig;
 
-    // Application should terminate on suspend; make certain that it does
-    // NOTE: Called with delay so that it is performed during next event loop
-    [self performSelector:@selector(terminateWithSuccess) withObject:nil afterDelay:0];
+        // Application should terminate on suspend; make certain that it does
+        // NOTE: The shouldExitAfterSendSuspend flag appears to be ignored when
+        //       this alternative method is called; resort to more "drastic"
+        //       measures.
+        UIApplicationFlags &_applicationFlags = MSHookIvar<UIApplicationFlags>(self, "_applicationFlags");
+        _applicationFlags.forceExit = YES;
+    }
 }
 
 %end
@@ -168,12 +202,11 @@ static void toggleBackgrounding(int signal)
     // NOTE: Application class may be a subclass of UIApplication (and not UIApplication itself)
     Class $$UIApplication = [self class];
     MSHookMessage($$UIApplication, @selector(applicationSuspend:), MSHake(GApplication$UIApplication$applicationSuspend$));
-
-    if (backgroundingMethod == 0) {
-        if (class_getInstanceMethod($$UIApplication, @selector(applicationSuspend:settings:)) != NULL)
+    if (class_getInstanceMethod($$UIApplication, @selector(applicationSuspend:settings:)) != NULL)
             MSHookMessage($$UIApplication, @selector(applicationSuspend:settings:),
                     MSHake(GApplication$UIApplication$applicationSuspend$settings$));
-    } else {
+
+    if (backgroundingMethod == 2) {
         MSHookMessage($$UIApplication, @selector(applicationWillSuspend), MSHake(GApplication$UIApplication$applicationWillSuspend));
         MSHookMessage($$UIApplication, @selector(applicationDidResume), MSHake(GApplication$UIApplication$applicationDidResume));
 
