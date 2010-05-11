@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-05 00:34:17
+ * Last-modified: 2010-05-08 18:53:35
  */
 
 /**
@@ -48,7 +48,7 @@
 {
     ToggleButton *button = [super buttonWithType:UIButtonTypeCustom];
     button.frame = CGRectMake(0, 0, 54.0f, 27.0f);
-    button.font = [UIFont boldSystemFontOfSize:17.0f];
+    button.titleLabel.font = [UIFont boldSystemFontOfSize:17.0f];
     [button setBackgroundImage:[[UIImage imageNamed:@"toggle_off.png"]
         stretchableImageWithLeftCapWidth:5.0f topCapHeight:0] forState:UIControlStateNormal];
     [button setBackgroundImage:[[UIImage imageNamed:@"toggle_on.png"]
