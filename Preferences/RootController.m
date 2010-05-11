@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 22:06:19
+ * Last-modified: 2010-05-08 01:02:21
  */
 
 /**
@@ -76,13 +76,10 @@
 {
     // Create and add footer view
 
-    // Determine footer height
+    // Determine height of table data
     int sections = [self.tableView numberOfSections];
-    // ... add height of spacing between sections
-    float height = 20.0f * sections;
-    for (int i = 0; i < sections; i++)
-        // ... add height of each section
-        height += 44.0f * [self.tableView numberOfRowsInSection:i] + 1.0f;
+    CGRect rect = [self.tableView rectForSection:(sections - 1)];
+    float height = rect.origin.y + rect.size.height;
 
     // NOTE: Height of table area is 416.0f (480.0f - status bar - navigation bar)
     UIView *view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320.0f, 416.0f - height)];
