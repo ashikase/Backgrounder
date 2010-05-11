@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-03 01:23:09
+ * Last-modified: 2010-05-09 00:41:30
  */
 
 /**
@@ -88,8 +88,11 @@ static NSString * contentsOfFile(NSString *path, NSString *name)
     if (self.navigationController == nil && self.tabBarController == nil) {
         // Being presented modally; add a title and a dismiss button
  
+        // Determine size of application frame (iPad, iPhone differ)
+        CGRect appFrame = [[UIScreen mainScreen] applicationFrame];
+
         // Create a navigation bar
-        UINavigationBar *navBar = [[UINavigationBar alloc] initWithFrame:CGRectMake(0, 0, 320.0f, 44.0f)];
+        UINavigationBar *navBar = [[UINavigationBar alloc] initWithFrame:CGRectMake(0, 0, appFrame.size.width, 44.0f)];
         navBar.barStyle = UIBarStyleBlackOpaque;
         navBar.tintColor = [UIColor colorWithWhite:0.23 alpha:1];
         navBar.delegate = self;
@@ -107,7 +110,7 @@ static NSString * contentsOfFile(NSString *path, NSString *name)
         [navBar release];
 
         // Adjust and add web view
-        webView.frame = CGRectMake(0, 44.0f, 320.0f, view.bounds.size.height - 44.0f);
+        webView.frame = CGRectMake(0, 44.0f, appFrame.size.width, view.bounds.size.height - 44.0f);
         [view addSubview:webView]; 
 
         self.view = view;

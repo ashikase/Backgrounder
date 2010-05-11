@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-08 06:06:58
+ * Last-modified: 2010-05-09 01:39:13
  */
 
 /**
@@ -183,14 +183,17 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 {
     static NSString *titles[] = {@"Backgrounding method", @"Backgrounding state", @"Indicate status via...", @"Miscellaneous"};
 
+    // Determine size of application frame (iPad, iPhone differ)
+    CGRect appFrame = [[UIScreen mainScreen] applicationFrame];
+
     // Determine offset
     float topOffset = (section == 0) ? 10.0f : 0;
 
     // Create a container view for the header
-    UIView *view = [[[UIView alloc] initWithFrame:CGRectMake(0, 0.0f, 320.0f, 36.0f + topOffset)] autorelease];;
+    UIView *view = [[[UIView alloc] initWithFrame:CGRectMake(0, 0.0f, appFrame.size.width, 36.0f + topOffset)] autorelease];;
 
     // Create the text label
-    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(19.0f, 7.0f + topOffset, 320.0f - 19.0f, 21.0f)];
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(19.0f, 7.0f + topOffset, appFrame.size.width - 19.0f, 21.0f)];
     label.font = [UIFont boldSystemFontOfSize:17.0f];
     label.text = titles[section];
     label.textColor = [UIColor colorWithRed:0.3f green:0.34f blue:0.42f alpha:1.0f];

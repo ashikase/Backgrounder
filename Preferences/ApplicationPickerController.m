@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-04 20:24:15
+ * Last-modified: 2010-05-09 00:40:41
  */
 
 /**
@@ -135,8 +135,11 @@ static NSArray *allApplications = nil;
 
 - (void)loadView
 {
+    // Determine size of application frame (iPad, iPhone differ)
+    CGRect appFrame = [[UIScreen mainScreen] applicationFrame];
+
 	// Create a navigation bar
-	UINavigationBar *navBar = [[UINavigationBar alloc] initWithFrame:CGRectMake(0, 0, 320.0f, 44.0f)];
+	UINavigationBar *navBar = [[UINavigationBar alloc] initWithFrame:CGRectMake(0, 0, appFrame.size.width, 44.0f)];
 	navBar.barStyle = UIBarStyleBlackOpaque;
     navBar.tintColor = [UIColor colorWithWhite:0.23 alpha:1];
 	navBar.delegate = self;
@@ -149,14 +152,15 @@ static NSArray *allApplications = nil;
 	[navItem release];
 
 	// Create a table
-	// NOTE: Height is screen height - nav bar
-	appsTableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 44.0f, 320.0f, 460.0f - 44.0f)];
+	// NOTE: Height is app frame height - nav bar height
+	appsTableView = [[UITableView alloc] initWithFrame:
+        CGRectMake(0, 44.0f, appFrame.size.width, appFrame.size.height - 44.0f)];
 	appsTableView.dataSource = self;
 	appsTableView.delegate = self;
 	//[appsTableView setSeparatorStyle:2]; /* 0 no lines, 1 thin lines, 2 bold lines */
 
 	// Create a view to hold the navigation bar and table
-    UIView *view = [[UIView alloc] initWithFrame:[[UIScreen mainScreen] applicationFrame]];
+    UIView *view = [[UIView alloc] initWithFrame:appFrame];
     [view addSubview:navBar]; 
     [view addSubview:appsTableView]; 
 	[navBar release];

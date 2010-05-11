@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-08 06:07:36
+ * Last-modified: 2010-05-09 01:48:59
  */
 
 /**
@@ -80,20 +80,25 @@
 {
     // Create and add footer view
 
+    // Determine size of application frame (iPad, iPhone differ)
+    CGRect appFrame = [[UIScreen mainScreen] applicationFrame];
+
     // Determine height of table data
     int sections = [self.tableView numberOfSections];
     CGRect rect = [self.tableView rectForSection:(sections - 1)];
     float height = rect.origin.y + rect.size.height;
 
-    // NOTE: Height of table area is 416.0f (480.0f - status bar - navigation bar)
-    UIView *view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320.0f, 416.0f - height)];
+    // Table height is app frame height - navigation bar height (44.0f)
+    UIView *view = [[UIView alloc] initWithFrame:
+        CGRectMake(0, 0, appFrame.size.width, appFrame.size.height - 44.0f - height)];
+    view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
     // Donation button
     UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
     [button addTarget:self action:@selector(openDonationLink) forControlEvents:UIControlEventTouchUpInside];
     UIImage *image = [UIImage imageNamed:@"donate.png"];
     [button setImage:image forState:UIControlStateNormal];
-    button.frame = CGRectMake((320.0f - image.size.width) / 2.0f, view.bounds.size.height - image.size.height - 10.0f,
+    button.frame = CGRectMake((appFrame.size.width - image.size.width) / 2.0f, view.bounds.size.height - image.size.height - 10.0f,
             image.size.width, image.size.height);
     [view addSubview:button];
 
@@ -109,7 +114,7 @@
     [label setBackgroundColor:[UIColor clearColor]];
     [label setFont:[UIFont systemFontOfSize:16.0f]];
     CGSize size = [label.text sizeWithFont:label.font];
-    [label setFrame:CGRectMake((320.0f - size.width) / 2.0f, view.bounds.size.height - donationHeight - size.height - 12.0f,
+    [label setFrame:CGRectMake((appFrame.size.width - size.width) / 2.0f, view.bounds.size.height - donationHeight - size.height - 12.0f,
             size.width, size.height)];
     [view addSubview:label];
     [label release];
