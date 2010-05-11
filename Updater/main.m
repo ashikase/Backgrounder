@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-11 22:52:15
+ * Last-modified: 2010-05-12 03:47:09
  */
 
 /**
@@ -41,6 +41,9 @@
 
 
 #import "PreferenceConstants.h"
+
+// SpringBoardServices
+extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
 
 
 int main(int argc, char **argv)
@@ -111,12 +114,56 @@ int main(int argc, char **argv)
         // Create overrides
         NSMutableDictionary *overrides = [NSMutableDictionary dictionary];
 
+        // Old iPod entry did not include role IDs; fix by adding valid roles
+        if ([blacklistedApps containsObject:@"com.apple.mobileipod"]) {
+            NSMutableArray *mArray = [NSMutableArray arrayWithArray:blacklistedApps];
+            [mArray removeObject:@"com.apple.mobileipod"];
+
+            // List of possible display identifiers
+            NSArray *pArray = [NSArray arrayWithObjects:
+                @"com.apple.mobileipod-MediaPlayer", @"com.apple.mobileipod-AudioPlayer", @"com.apple.mobileipod-VideoPlayer", nil];
+
+            // Only add identifiers that are in use on this device
+            for (NSString *displayId in pArray) {
+                NSString *displayName = SBSCopyLocalizedApplicationNameForDisplayIdentifier(displayId);
+                if (displayName != nil) {
+                    [mArray addObject:displayId];
+                    [displayName release];
+                }
+            }
+
+            // Update the list of blacklisted apps
+            blacklistedApps = mArray;
+        }
+
         // Add entries for blacklisted applications (use "Native" method)
         for (NSString *displayId in blacklistedApps) {
             NSMutableDictionary *dict = [global mutableCopy];
             [dict setObject:[NSNumber numberWithInteger:BGBackgroundingMethodNative] forKey:kBackgroundingMethod];
             [overrides setObject:dict forKey:displayId];
             [dict release];
+        }
+
+        // Old iPod entry did not include role IDs; fix by adding valid roles
+        if ([enabledApps containsObject:@"com.apple.mobileipod"]) {
+            NSMutableArray *mArray = [NSMutableArray arrayWithArray:enabledApps];
+            [mArray removeObject:@"com.apple.mobileipod"];
+
+            // List of possible display identifiers
+            NSArray *pArray = [NSArray arrayWithObjects:
+                @"com.apple.mobileipod-MediaPlayer", @"com.apple.mobileipod-AudioPlayer", @"com.apple.mobileipod-VideoPlayer", nil];
+
+            // Only add identifiers that are in use on this device
+            for (NSString *displayId in pArray) {
+                NSString *displayName = SBSCopyLocalizedApplicationNameForDisplayIdentifier(displayId);
+                if (displayName != nil) {
+                    [mArray addObject:displayId];
+                    [displayName release];
+                }
+            }
+
+            // Update the list of always-enabled apps
+            enabledApps = mArray;
         }
 
         // Add entries for always-enabled applications
