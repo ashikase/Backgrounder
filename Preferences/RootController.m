@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-08 02:36:32
+ * Last-modified: 2010-05-08 06:07:36
  */
 
 /**
@@ -148,7 +148,7 @@
 
     static NSString *cellSubtitles[][2] = {
         {@"Settings used by all apps", @"Override global settings for chosen apps"},
-        {@"Set action used to toggle backgrounding", nil},
+        {@"Set event used to toggle backgrounding", nil},
         {@"Usage, Issues, Todo, etc.", nil}};
 
     // Try to retrieve from the table view a now-unused cell with the given identifier
@@ -167,7 +167,7 @@
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section
 {
-    return (section == 1) ? @"* The Activator action is only for use with the \"Backgrounder\" backgrounding method." : nil;
+    return (section == 1) ? @"* The Activator event is only for use with the \"Backgrounder\" backgrounding method." : nil;
 }
 
 #pragma mark - UITableViewCellDelegate
