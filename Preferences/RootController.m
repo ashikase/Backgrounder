@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-08 01:02:21
+ * Last-modified: 2010-05-08 01:04:48
  */
 
 /**
@@ -139,7 +139,7 @@
 
     static NSString *cellTitles[][2] = {
         {@"Global", @"Overrides"},
-        {@"Control (via Activator)", nil},
+        {@"Control (via Activator) *", nil},
         {@"Documentation", nil}};
 
     static NSString *cellSubtitles[][2] = {
@@ -159,6 +159,11 @@
     cell.detailTextLabel.text = cellSubtitles[indexPath.section][indexPath.row];
 
     return cell;
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section
+{
+    return (section == 1) ? @"* The Activator action is only for use with the \"Backgrounder\" backgrounding method." : nil;
 }
 
 #pragma mark - UITableViewCellDelegate
