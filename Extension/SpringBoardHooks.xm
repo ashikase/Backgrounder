@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-05 02:02:56
+ * Last-modified: 2010-05-05 21:10:18
  */
 
 /**
@@ -88,10 +88,8 @@ static void loadPreferences()
     //       "unified iPod" capability. This capability cannot be determined 
     //       until after SBPlatformController is initialized, which happens in
     //       applicationDidFinishLaunching:.
-    NSString *filename = GSSystemHasCapability(kGSUnifiedIPodCapability) ?
-        @"Defaults-UnifiedIPod" : @"Defaults-NonunifiedIPod";
     NSDictionary *defaults = [NSDictionary dictionaryWithContentsOfFile:
-        [NSString stringWithFormat:@"/Applications/Backgrounder.app/%@.plist", filename]];
+        @"/Applications/Backgrounder.app/Defaults.plist"];
 
     // Try reading user's global preference settings
     CFPropertyListRef propList = CFPreferencesCopyAppValue((CFStringRef)kGlobal, appId);
@@ -114,8 +112,14 @@ static void loadPreferences()
     }
     if (appsWithOverrides == nil) {
         // Use default values
-        NSDictionary *dict = [defaults objectForKey:kOverrides];
-        appsWithOverrides = [dict allKeys];
+        NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithDictionary:
+            [defaults objectForKey:kOverrides]];
+
+        // Filter out applications that do not exist on this device
+        SBApplicationController *appCont = [objc_getClass("SBApplicationController") sharedInstance];
+        for (NSString *displayId in [dict allKeys])
+            if ([appCont applicationWithDisplayIdentifier:displayId] == nil)
+                [dict removeObjectForKey:displayId];
 
         // Write a copy of the default values to disk
         // NOTE: This is done as the values are not cached; they are later

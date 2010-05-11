@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-03 21:40:13
+ * Last-modified: 2010-05-05 21:39:02
  */
 
 /**
@@ -48,6 +48,8 @@
 extern CFStringRef kGSUnifiedIPodCapability;
 Boolean GSSystemHasCapability(CFStringRef capability);
 
+// SpringBoardServices
+extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
 
 @interface Preferences (Private)
 - (NSDictionary *)defaults;
@@ -93,14 +95,27 @@ Boolean GSSystemHasCapability(CFStringRef capability);
 
 - (NSDictionary *)defaults
 {
-    // NOTE: The set of defaults used depends on whether or not the device
-    //       has the unified iPod application. By default, iPhone does and
-    //       iPod Touch/iPad do not.
-    NSString *filename = GSSystemHasCapability(kGSUnifiedIPodCapability) ?
-        @"Defaults-UnifiedIPod" : @"Defaults-NonunifiedIPod";
+    // Read list of default values from disk
+    NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithContentsOfFile:
+        [[NSBundle mainBundle] pathForResource:@"Defaults" ofType:@"plist"]];
 
-    return [NSDictionary dictionaryWithContentsOfFile:
-        [[NSBundle mainBundle] pathForResource:filename ofType:@"plist"]];
+    // Get default values for overrides
+    NSMutableDictionary *overDict = [NSMutableDictionary dictionaryWithDictionary:
+        [dict objectForKey:kOverrides]];
+
+    // Filter out overrides for applications that do not exist on this device
+    for (NSString *displayId in [overDict allKeys]) {
+        NSString *displayName = SBSCopyLocalizedApplicationNameForDisplayIdentifier(displayId);
+        if (displayName == nil)
+            [overDict removeObjectForKey:displayId];
+        else
+            [displayName release];
+    }
+
+    // Update overrides
+    [dict setObject:overDict forKey:kOverrides];
+
+    return dict;
 }
 
 - (NSArray *)keysRequiringRespring

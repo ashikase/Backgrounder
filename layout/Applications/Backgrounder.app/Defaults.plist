@@ -58,6 +58,19 @@
 			<key>statusBarIconEnabled</key>
 			<false/>
 		</dict>
+		<key>com.apple.mobileipod-MediaPlayer</key>
+		<dict>
+			<key>alwaysEnabled</key>
+			<false/>
+			<key>backgroundingMethod</key>
+			<integer>1</integer>
+			<key>badgeEnabled</key>
+			<false/>
+			<key>persistent</key>
+			<true/>
+			<key>statusBarIconEnabled</key>
+			<false/>
+		</dict>
 		<key>com.apple.mobileipod-AudioPlayer</key>
 		<dict>
 			<key>alwaysEnabled</key>
