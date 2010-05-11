@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-05 01:57:21
+ * Last-modified: 2010-05-08 06:06:58
  */
 
 /**
@@ -77,12 +77,12 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return 3;
+	return 4;
 }
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    static int rows[] = {3, 2, 2};
+    static int rows[] = {3, 2, 2, 1};
     return rows[section];
 }
 
@@ -94,12 +94,14 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
     static NSString *cellTitles[][3] = {
         {@"Off", @"Native", @"Backgrounder"},
         {@"Enable at Launch", @"Stay Enabled", nil},
-        {@"Badge", @"Status Bar Icon", nil}
+        {@"Badge", @"Status Bar Icon", nil},
+        {@"Minimize on Toggle", nil, nil}
     };
     static NSString *cellSubtitles[][3] = {
         {@"App will terminate on minimize", @"Use native method, if supported", @"Run as if in foreground"},
         {@"No need to manually enable", @"Must be disabled manually", nil},
-        {@"Mark the app's icon", @"Mark the app's status bar", nil}
+        {@"Mark the app's icon", @"Mark the app's status bar", nil},
+        {@"Minimize the app upon state toggle", nil, nil}
     };
 
     // All cells access preferences
@@ -137,22 +139,20 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
             cell.accessoryView = button;
         }
 
-        UIButton *button = (UIButton *)cell.accessoryView;
-        if (indexPath.section == 1) {
-            NSString *key = (indexPath.row == 0) ? kEnableAtLaunch : kPersistent;
-            button.selected = [prefs boolForKey:key forDisplayIdentifier:displayIdentifier];
-        } else {
-            if (indexPath.row == 0) {
-                button.selected = [prefs boolForKey:kBadgeEnabled forDisplayIdentifier:displayIdentifier];
-                cell.imageView.image = [UIImage imageNamed:@"badge.png"];
-            } else {
-                button.selected = [prefs boolForKey:kStatusBarIconEnabled forDisplayIdentifier:displayIdentifier];
-                cell.imageView.image = [UIImage imageNamed:@"status_bar_icon.png"];
-            }
-        }
+        static NSString *keys[][2] = {
+            {kEnableAtLaunch, kPersistent},
+            {kBadgeEnabled, kStatusBarIconEnabled},
+            {kMinimizeOnToggle, nil}};
 
-        if (indexPath.section == 1 || indexPath.row == 1) {
-            // These options are only available for background method Backgrounder
+        UIButton *button = (UIButton *)cell.accessoryView;
+        button.selected = [prefs boolForKey:keys[indexPath.section - 1][indexPath.row] forDisplayIdentifier:displayIdentifier];
+
+        if (indexPath.section == 2)
+            // Set image for cell
+            cell.imageView.image = [UIImage imageNamed:((indexPath.row == 0) ? @"badge.png" : @"status_bar_icon.png")];
+
+        if (!(indexPath.section == 2 && indexPath.row == 0)) {
+            // Options other than "Badge" are only available for backgrounding method Backgrounder
             if (backgroundingMethod == BGBackgroundingMethodBackgrounder) {
                 cell.textLabel.textColor = [UIColor blackColor];
                 button.enabled = YES;
@@ -181,7 +181,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section
 {
-    static NSString *titles[] = {@"Backgrounding method", @"Backgrounding state", @"Indicate status via..."};
+    static NSString *titles[] = {@"Backgrounding method", @"Backgrounding state", @"Indicate status via...", @"Miscellaneous"};
 
     // Determine offset
     float topOffset = (section == 0) ? 10.0f : 0;
@@ -228,7 +228,10 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
 - (void)buttonToggled:(UIButton *)button
 {
-    static NSString *keys[][2] = {{kEnableAtLaunch, kPersistent}, {kBadgeEnabled, kStatusBarIconEnabled}};
+    static NSString *keys[][2] = {
+        {kEnableAtLaunch, kPersistent},
+        {kBadgeEnabled, kStatusBarIconEnabled},
+        {kMinimizeOnToggle, nil}};
 
     // Update selected state of button
     button.selected = !button.selected;
@@ -243,7 +246,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
 - (void)helpButtonTapped:(UIButton *)sender
 {
-    static NSString *helpFiles[] = {@"help_method.mdwn", @"help_state.mdwn", @"help_indicators.mdwn"};
+    static NSString *helpFiles[] = {@"help_method.mdwn", @"help_state.mdwn", @"help_indicators.mdwn", @"help_misc.mdwn"};
 
     // Create and show help page
     // NOTE: Controller is released in delegate callback
