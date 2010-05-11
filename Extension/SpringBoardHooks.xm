@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-08 05:21:48
+ * Last-modified: 2010-05-11 14:46:25
  */
 
 /**
@@ -55,6 +55,10 @@
 
 #import "BackgrounderActivator.h"
 #import "SimplePopup.h"
+
+@interface SBIcon (Firmware32x)
++ (CGSize)defaultIconImageSize;
+@end
 
 @interface UIModalView : UIView
 @property(nonatomic,copy) NSString *title;
@@ -184,14 +188,16 @@ static void showBadgeForDisplayIdentifier(NSString *identifier)
     if (![icon viewWithTag:1000]) {
         // Icon does not yet have a badge
 
-        // Determine position for badge (relative to lower left corner of icon)
+        // Determine origin for badge based on icon image size
+        // NOTE: Default icon image sizes: iPhone/iPod: 59x62, iPad: 74x76 
         CGPoint point;
-        UIImageView *imageView = MSHookIvar<UIImageView *>(icon, "_image");
-        if (imageView != nil) {
-            CGRect frame = imageView.frame;
-            point = CGPointMake(frame.origin.x + -12.0f, frame.origin.y + frame.size.height - 21.0f);
+        Class $SBIcon = objc_getClass("SBIcon");
+        if ([$SBIcon respondsToSelector:@selector(defaultIconImageSize)]) {
+            // Determine position for badge (relative to lower left corner of icon)
+            CGSize size = [$SBIcon defaultIconImageSize];
+            point = CGPointMake(-12.0f, size.height - 23.0f);
         } else {
-            // Fall back to hard-coded values
+            // Fall back to hard-coded values (for firmware < 3.2, iPhone/iPod only)
             point = CGPointMake(-12.0f, 39.0f);
         }
 
