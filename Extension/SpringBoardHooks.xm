@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-05 01:03:25
+ * Last-modified: 2010-05-05 01:37:54
  */
 
 /**
@@ -324,7 +324,7 @@ static BOOL shouldSuspend = NO;
 
     id app = [SBWActiveDisplayStack topApplication];
     NSString *identifier = [app displayIdentifier];
-    if (app && integerForKey(kBackgroundingMethod, identifier) == 2) {
+    if (app && integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder) {
         BOOL isEnabled = [bgEnabledApps containsObject:identifier];
         [self setBackgroundingEnabled:(!isEnabled) forDisplayIdentifier:identifier];
 
@@ -375,7 +375,7 @@ static BOOL shouldSuspend = NO;
 %new(v@:c@)
 - (void)setBackgroundingEnabled:(BOOL)enable forDisplayIdentifier:(NSString *)identifier
 {
-    if (integerForKey(kBackgroundingMethod, identifier) == 2) {
+    if (integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder) {
         BOOL isEnabled = [bgEnabledApps containsObject:identifier];
         if (isEnabled != enable) {
             // Tell the application to change its backgrounding status
@@ -561,7 +561,7 @@ static BOOL shouldSuspend = NO;
     // NOTE: Activation setting 0x10000 is firstLaunchAfterBoot
     if (self == SBWActiveDisplayStack
         && [display activationSetting:0x10000]
-        && integerForKey(kBackgroundingMethod, [display displayIdentifier]) != 1) {
+        && integerForKey(kBackgroundingMethod, [display displayIdentifier]) != BGBackgroundingMethodNative) {
         // Backgrounding method is set to off or manual; prevent auto-launch at boot
         // NOTE: Activation settings will remain if not manually cleared
         [display clearActivationSettings];
@@ -578,7 +578,8 @@ static BOOL shouldSuspend = NO;
 - (void)_relaunchAfterAbnormalExit:(BOOL)exitedAbnormally
 {
     // NOTE: This method gets called by both exitedNormally and exitedAbnormally
-    if (!exitedAbnormally && integerForKey(kBackgroundingMethod, [self displayIdentifier]) != 1) {
+    if (!exitedAbnormally
+            && integerForKey(kBackgroundingMethod, [self displayIdentifier]) != BGBackgroundingMethodNative) {
         // Backgrounding method is set to off or manual; prevent auto-relaunch
         // NOTE: Only Phone and Mail are known to auto-relaunch
 
@@ -607,7 +608,7 @@ static BOOL shouldSuspend = NO;
 
     // If backgrounding method is set to off or manual, prevent auto-(re)launch
     // NOTE: Only Phone and Mail are known to auto-(re)launch
-    return (integerForKey(kBackgroundingMethod, [self displayIdentifier]) != 1) ? NO : %orig;
+    return (integerForKey(kBackgroundingMethod, [self displayIdentifier]) != BGBackgroundingMethodNative) ? NO : %orig;
 }
 
 %end

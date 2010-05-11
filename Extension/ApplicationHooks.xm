@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-04 23:47:02
+ * Last-modified: 2010-05-05 01:34:36
  */
 
 /**
@@ -39,9 +39,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#import "PreferenceKeys.h"
 
 static BOOL backgroundingEnabled = NO;
-static int backgroundingMethod = 2;
+static BGBackgroundingMethod backgroundingMethod = BGBackgroundingMethodBackgrounder;
 
 #define GSEventRef void *
 
@@ -66,7 +67,7 @@ static void loadPreferences()
     
     id value = [prefs objectForKey:kBackgroundingMethod];
     if ([value isKindOfClass:[NSNumber class]])
-        backgroundingMethod = [value integerValue];
+        backgroundingMethod = (BGBackgroundingMethod)[value integerValue];
 }
 
 //==============================================================================
@@ -74,7 +75,7 @@ static void loadPreferences()
 // Callback
 static void toggleBackgrounding(int signal)
 {
-    if (backgroundingMethod == 2)
+    if (backgroundingMethod == BGBackgroundingMethodBackgrounder)
         backgroundingEnabled = !backgroundingEnabled;
 }
 
@@ -108,7 +109,7 @@ typedef struct {
 %hook UIApplication
 
 // Delegate method
-// NOTE: Only hooked when backgroundingMethod == 2
+// NOTE: Only hooked for BGBackgroundingMethodBackgrounder
 - (void)applicationWillResignActive:(id)application
 {
     if (!backgroundingEnabled)
@@ -116,7 +117,7 @@ typedef struct {
 }
 
 // Delegate method
-// NOTE: Only hooked when backgroundingMethod == 2
+// NOTE: Only hooked for BGBackgroundingMethodBackgrounder
 - (void)applicationDidBecomeActive:(id)application
 {
     if (!backgroundingEnabled)
@@ -125,7 +126,7 @@ typedef struct {
 
 // Prevent execution of application's on-suspend method
 // NOTE: Normally this method does nothing; only system apps can overrride
-// NOTE: Only hooked when backgroundingMethod == 2
+// NOTE: Only hooked for BGBackgroundingMethodBackgrounder
 - (void)applicationWillSuspend
 {
     if (!backgroundingEnabled)
@@ -134,7 +135,7 @@ typedef struct {
 
 // Prevent execution of application's on-resume methods
 // NOTE: Normally this method does nothing; only system apps can overrride
-// NOTE: Only hooked when backgroundingMethod == 2
+// NOTE: Only hooked for BGBackgroundingMethodBackgrounder
 - (void)applicationDidResume
 {
     if (!backgroundingEnabled)
@@ -146,7 +147,7 @@ typedef struct {
 //       sets _applicationFlags.shouldExitAfterSendSuspend to YES
 - (void)applicationSuspend:(GSEventRef)event
 {
-    // NOTE: backgroundingEnabled will always be NO for backgroundingMethod == 0
+    // NOTE: backgroundingEnabled will always be NO for BGBackgroundingMethodOff
     if (!backgroundingEnabled) {
         %orig;
 
@@ -159,10 +160,9 @@ typedef struct {
 }
 
 // Used by certain applications, such as Mail and Phone, instead of applicationSuspend:
-// NOTE: Only hooked when backgroundingMethod == 0
 - (void)applicationSuspend:(GSEventRef)event settings:(id)settings
 {
-    // NOTE: backgroundingEnabled will always be NO for backgroundingMethod == 0
+    // NOTE: backgroundingEnabled will always be NO for BGBackgroundingMethodOff
     if (!backgroundingEnabled) {
         %orig;
 
@@ -195,7 +195,7 @@ typedef struct {
     // Load preferences to determine backgrounding method to use
     loadPreferences();
 
-    if (backgroundingMethod == 1)
+    if (backgroundingMethod == BGBackgroundingMethodNative)
         // Backgrounding method is set to native; do not hook anything else
         return;
 
@@ -206,7 +206,7 @@ typedef struct {
             MSHookMessage($$UIApplication, @selector(applicationSuspend:settings:),
                     MSHake(GApplication$UIApplication$applicationSuspend$settings$));
 
-    if (backgroundingMethod == 2) {
+    if (backgroundingMethod == BGBackgroundingMethodBackgrounder) {
         MSHookMessage($$UIApplication, @selector(applicationWillSuspend), MSHake(GApplication$UIApplication$applicationWillSuspend));
         MSHookMessage($$UIApplication, @selector(applicationDidResume), MSHake(GApplication$UIApplication$applicationDidResume));
 
@@ -235,7 +235,7 @@ typedef struct {
 %new(v@:c)
 - (void)setBackgroundingEnabled:(BOOL)enable
 {
-    if (backgroundingMethod == 2)
+    if (backgroundingMethod == BGBackgroundingMethodBackgrounder)
         backgroundingEnabled = enable;
 }
 
