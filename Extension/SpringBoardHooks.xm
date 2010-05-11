@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-04 13:21:34
+ * Last-modified: 2010-05-04 18:18:28
  */
 
 /**
@@ -131,8 +131,12 @@ static id objectForKey(NSString *key, NSString *displayId)
     NSDictionary *prefs = nil;
     if ([appsWithOverrides containsObject:displayId]) {
         // This application does not use the default preferences
-        prefs = [[[[NSUserDefaults standardUserDefaults] persistentDomainForName:@APP_ID]
-            objectForKey:kOverrides] objectForKey:displayId];
+        CFPropertyListRef propList = CFPreferencesCopyAppValue((CFStringRef)kOverrides, CFSTR(APP_ID));
+        if (propList != NULL) {
+            if (CFGetTypeID(propList) == CFDictionaryGetTypeID())
+                prefs = [(NSDictionary *)propList objectForKey:displayId];
+            CFRelease(propList);
+        }
     } else {
         // Use the default preferences
         prefs = globalPrefs;
