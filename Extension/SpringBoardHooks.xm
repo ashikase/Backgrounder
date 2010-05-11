@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-05 01:58:39
+ * Last-modified: 2010-05-05 02:02:56
  */
 
 /**
@@ -449,7 +449,7 @@ static BOOL shouldSuspend = NO;
 
     if ([activeApps containsObject:identifier]) {
         // Was restored from backgrounded state
-        if (!boolForKey(kPersistent, identifier) && !boolForKey(kEnableAtLaunch, identifier)) {
+        if (!boolForKey(kPersistent, identifier)) {
             // Tell the application to disable backgrounding
             kill([self pid], SIGUSR1);
 
