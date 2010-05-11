@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-04 18:18:28
+ * Last-modified: 2010-05-04 23:31:59
  */
 
 /**
@@ -559,8 +559,8 @@ static BOOL shouldSuspend = NO;
     // NOTE: Activation setting 0x10000 is firstLaunchAfterBoot
     if (self == SBWActiveDisplayStack
         && [display activationSetting:0x10000]
-        && integerForKey(kBackgroundingMethod, [display displayIdentifier]) == 0) {
-        // Application has backgrounding disabled; prevent auto-launch at boot
+        && integerForKey(kBackgroundingMethod, [display displayIdentifier]) != 1) {
+        // Backgrounding method is set to off or manual; prevent auto-launch at boot
         // NOTE: Activation settings will remain if not manually cleared
         [display clearActivationSettings];
         return;
@@ -576,8 +576,8 @@ static BOOL shouldSuspend = NO;
 - (void)_relaunchAfterAbnormalExit:(BOOL)exitedAbnormally
 {
     // NOTE: This method gets called by both exitedNormally and exitedAbnormally
-    if (!exitedAbnormally && integerForKey(kBackgroundingMethod, [self displayIdentifier]) == 0) {
-        // Backgrounding is disabled for this app; prevent auto-relaunch
+    if (!exitedAbnormally && integerForKey(kBackgroundingMethod, [self displayIdentifier]) != 1) {
+        // Backgrounding method is set to off or manual; prevent auto-relaunch
         // NOTE: Only Phone and Mail are known to auto-relaunch
 
         // NOTE: Original method also calls _cancelAutoRelaunch, to cancel
@@ -603,9 +603,9 @@ static BOOL shouldSuspend = NO;
     //       launched at startup and whether it should be relaunched when
     //       terminated.
 
-    // If backgrounding is disabled for this app; prevent auto-(re)launch
+    // If backgrounding method is set to off or manual, prevent auto-(re)launch
     // NOTE: Only Phone and Mail are known to auto-(re)launch
-    return (integerForKey(kBackgroundingMethod, [self displayIdentifier]) == 0) ? NO : %orig;
+    return (integerForKey(kBackgroundingMethod, [self displayIdentifier]) != 1) ? NO : %orig;
 }
 
 %end
