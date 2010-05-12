@@ -1,3 +1,9 @@
+> # Version svn.r436
+> - - -
+> * FIX: Old iPod settings were not correctly converted to new format.
+
+- - -
+
 > # Version svn.r432
 > - - -
 > * MOD: Major reworking of preferences
