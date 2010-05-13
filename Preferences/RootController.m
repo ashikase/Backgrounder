@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-14 00:08:19
+ * Last-modified: 2010-05-14 00:41:22
  */
 
 /**
@@ -190,17 +190,14 @@
         // Determine size of application frame (iPad, iPhone differ)
         CGRect appFrame = [[UIScreen mainScreen] applicationFrame];
 
-        // Determine offsets
-        float topOffset = (section == 0) ? 10.0f : 0;
-        float indent = (appFrame.size.width == 320.0f) ? 19.0f : 54.0f;
-
         // Create a container view for the header
-        view = [[[UIView alloc] initWithFrame:CGRectMake(0, 0.0f, appFrame.size.width, 36.0f + topOffset)] autorelease];;
+        view = [[[UIView alloc] initWithFrame:CGRectMake(0, 0.0f, appFrame.size.width, 19.0f)] autorelease];;
 
         // Create the text label
-        UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(indent, 7.0f + topOffset, appFrame.size.width - indent, 21.0f)];
+        UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, 6.0f, appFrame.size.width, 19.0f)];
         label.font = [UIFont systemFontOfSize:15.0f];
-        label.text = @"Please read the FAQ before asking for help.";
+        label.text = @"Please read the FAQ before requesting help.";
+        label.textAlignment = UITextAlignmentCenter;
         label.textColor = [UIColor colorWithRed:0.6f green:0.34f blue:0.42f alpha:1.0f];
         label.backgroundColor = [UIColor clearColor];
         label.shadowColor = [UIColor whiteColor];
