@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-11 23:32:13
+ * Last-modified: 2010-05-13 16:39:46
  */
 
 /**
@@ -175,7 +175,7 @@ static BOOL boolForKey(NSString *key, NSString *displayId)
 
 static NSInteger integerForKey(NSString *key, NSString *displayId)
 {
-    NSInteger ret = NO;
+    NSInteger ret = 0;
 
     id value = objectForKey(key, displayId);
     if ([value isKindOfClass:[NSNumber class]])
@@ -217,7 +217,6 @@ static void showBadgeForDisplayIdentifier(NSString *identifier)
         [icon addSubview:badgeView];
         [badgeView release];
     }
-
 }
 
 //==============================================================================
