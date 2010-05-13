@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-13 22:48:43
+ * Last-modified: 2010-05-14 00:08:19
  */
 
 /**
@@ -173,6 +173,46 @@
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section
 {
     return (section == 1) ? @"* The Activator event is only for use with the \"Backgrounder\" backgrounding method." : nil;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section
+{
+    CGFloat heights[] = {0, 50.0f, 25.0f};
+    return heights[section];
+}
+
+- (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section
+{
+    // NOTE: Must create custom view in order to change the font color.
+ 
+    UIView *view = nil;
+    if (section == 2) {
+        // Determine size of application frame (iPad, iPhone differ)
+        CGRect appFrame = [[UIScreen mainScreen] applicationFrame];
+
+        // Determine offsets
+        float topOffset = (section == 0) ? 10.0f : 0;
+        float indent = (appFrame.size.width == 320.0f) ? 19.0f : 54.0f;
+
+        // Create a container view for the header
+        view = [[[UIView alloc] initWithFrame:CGRectMake(0, 0.0f, appFrame.size.width, 36.0f + topOffset)] autorelease];;
+
+        // Create the text label
+        UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(indent, 7.0f + topOffset, appFrame.size.width - indent, 21.0f)];
+        label.font = [UIFont systemFontOfSize:15.0f];
+        label.text = @"Please read the FAQ before asking for help.";
+        label.textColor = [UIColor colorWithRed:0.6f green:0.34f blue:0.42f alpha:1.0f];
+        label.backgroundColor = [UIColor clearColor];
+        label.shadowColor = [UIColor whiteColor];
+        label.shadowOffset = CGSizeMake(1.0, 1.0f);
+        label.numberOfLines = 0;
+        [view addSubview:label];
+
+        // Cleanup
+        [label release];
+    }
+
+    return view;
 }
 
 #pragma mark - UITableViewCellDelegate

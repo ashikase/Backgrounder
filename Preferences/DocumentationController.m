@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-13 20:58:01
+ * Last-modified: 2010-05-13 23:27:36
  */
 
 /**
@@ -102,7 +102,7 @@
         }
     } else {
         static NSString *cellTitles[][3] = {
-            {@"About", @"How to Use", @"FAQ"},
+            {@"About", @"How to Use", @"Frequently Asked Questions"},
             {@"Release Notes", @"Known Issues", @"Todo"}};
 
         // Try to retrieve from the table view a now-unused cell with the given identifier

@@ -1,3 +1,17 @@
+> # It doesn't work!
+> - - -
+> That... isn't a question.
+>
+> However, when all else fails:
+>
+> 1. On the main screen, tap the "**Reset to Defaults**" button.
+> 1. Close this preferences app.
+> 1. Wait for SpringBoard (the home screen app) to restart.
+>
+> ... and see if that resolves the issue.
+
+- - -
+
 > # Can I hide the badge on Phone/Mail/etc.?
 > - - -
 > If the Badge option is set to "ON" in the global settings, the badge will be enabled for all apps.
@@ -10,7 +24,8 @@
 > 1. On the Overrides screen, if the app is not already listed, tap Add, and select the app from the popup list.
 > 1. On the Overrides screen, tap the app to view its settings.
 > 1. Set the badge option to "OFF"
-> 1. To apply the new setting, close the Backgrounder preferences app, and wait for SpringBoard (the home screen app) to restart.
+> 1. Close this preferences app.
+> 1. Wait for SpringBoard (the home screen app) to restart.
 
 - - -
 
