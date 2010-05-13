@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-12 04:44:18
+ * Last-modified: 2010-05-13 20:16:52
  */
 
 /**
@@ -63,8 +63,9 @@
         self.title = @"Backgrounder";
         self.navigationItem.backBarButtonItem = [[[UIBarButtonItem alloc] initWithTitle:@"Back"
             style:UIBarButtonItemStyleBordered target:nil action:nil] autorelease];
-        self.navigationItem.rightBarButtonItem = [[[UIBarButtonItem alloc] initWithTitle:@"Reset"
-            style:UIBarButtonItemStyleDone target:self action:@selector(resetButtonTapped)] autorelease];
+        self.navigationItem.rightBarButtonItem = [[[UIBarButtonItem alloc]
+            initWithImage:[UIImage imageNamed:@"reset_defaults.png"] style:UIBarButtonItemStyleDone
+            target:self action:@selector(resetButtonTapped)] autorelease];
 
     }
     return self;
