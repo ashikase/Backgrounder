@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-09 00:40:41
+ * Last-modified: 2010-05-13 01:59:36
  */
 
 /**
@@ -186,9 +186,19 @@ static NSArray *allApplications = nil;
 
 - (void)enumerateApplications
 {
-    NSArray *array = applicationDisplayIdentifiers();
-    NSArray *sortedArray = [array sortedArrayUsingFunction:compareDisplayNames context:NULL];
+    // Get list of identifiers, store in set to filter duplicate entries
+
+    // Filter duplicate entries
+    // NOTE: This is necessary as libhide apparently does not prevent dupilcate entries
+    NSSet *set = [NSSet setWithArray:applicationDisplayIdentifiers()];
+
+    // Sort the list of identifiers by display name
+    NSArray *sortedArray = [[set allObjects] sortedArrayUsingFunction:compareDisplayNames context:NULL];
+
+    // Store the sorted list of identifiers
     allApplications = [sortedArray retain];
+
+    // Load the list and reload the table
     [self loadFilteredList];
     [appsTableView reloadData];
 
