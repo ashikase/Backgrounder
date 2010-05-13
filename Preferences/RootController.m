@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-13 20:16:52
+ * Last-modified: 2010-05-13 22:48:43
  */
 
 /**
@@ -154,7 +154,7 @@
     static NSString *cellSubtitles[][2] = {
         {@"Settings used by all apps", @"Override global settings for chosen apps"},
         {@"Set event used to toggle backgrounding", nil},
-        {@"Usage, Issues, Todo, etc.", nil}};
+        {@"Usage, FAQ, Release Notes, etc.", nil}};
 
     // Try to retrieve from the table view a now-unused cell with the given identifier
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdSubtitle];

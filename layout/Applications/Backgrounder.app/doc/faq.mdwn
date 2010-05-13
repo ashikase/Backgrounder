@@ -1,0 +1,41 @@
+> # Can I hide the badge on Phone/Mail/etc.?
+> - - -
+> If the Badge option is set to "ON" in the global settings, the badge will be enabled for all apps.
+>
+> To disable the badge for a given app, such as Phone, an "override" must be added.
+>
+> To add an override:
+>
+> 1. On the main screen, tap Overrides.
+> 1. On the Overrides screen, if the app is not already listed, tap Add, and select the app from the popup list.
+> 1. On the Overrides screen, tap the app to view its settings.
+> 1. Set the badge option to "OFF"
+> 1. To apply the new setting, close the Backgrounder preferences app, and wait for SpringBoard (the home screen app) to restart.
+
+- - -
+
+> # Why does the badge show briefly after closing an app?
+> - - -
+> The badge indicates that an app is running; it has nothing to do with backgrounding status.
+>
+> When an app is closed, even after the app's screen has disappeared, it may not have yet completely shutdown. Once the app actually quits, the badge will disappear.
+>
+> Note that this is the same behavior as for badges on Mac OS X.
+
+- - -
+
+> # Can I use my own badge image?
+> - - -
+> Yes. The badge image file is located at:
+>
+>         /System/Library/CoreServices/
+>             SpringBoard.app/
+>             Backgrounder_Badge.png
+>
+> Overwriting this file is **not** recommended, though, as it will be replaced with each Backgrounder upgrade.
+>
+> Instead, the recommended method is to use WinterBoard (by Jay Freeman, available for free via Cydia). The path to use with WinterBoard is:
+>
+>         Some.theme/Bundles/
+>             com.apple.springboard/
+>             Backgrounder_Badge.png
