@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-13 16:39:46
+ * Last-modified: 2010-05-13 16:58:44
  */
 
 /**
@@ -277,10 +277,9 @@ static BOOL shouldSuspend = NO;
     // Load extension preferences
     loadPreferences();
 
-    // NOTE: The initial capacity value was chosen to hold the default active
-    //       apps (MobilePhone and MobileMail) plus two others
-    activeApps = [[NSMutableArray alloc] initWithCapacity:4];
-    bgEnabledApps = [[NSMutableArray alloc] initWithCapacity:2];
+    // Create necessary arrays
+    activeApps = [[NSMutableArray alloc] init];
+    bgEnabledApps = [[NSMutableArray alloc] init];
 
     // Create the libactivator event listener
     [BackgrounderActivator load];
@@ -493,27 +492,29 @@ static BOOL shouldSuspend = NO;
 {
     NSString *identifier = [self displayIdentifier];
 
-    if ([activeApps containsObject:identifier]) {
-        // Was restored from backgrounded state
-        if (!boolForKey(kPersistent, identifier)) {
-            // Tell the application to disable backgrounding
-            kill([self pid], SIGUSR1);
+    if (integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder) {
+        if ([activeApps containsObject:identifier]) {
+            // Was restored from backgrounded state
+            if (!boolForKey(kPersistent, identifier)) {
+                // Tell the application to disable backgrounding
+                kill([self pid], SIGUSR1);
 
-            // Store the backgrounding status of the application
-            [bgEnabledApps removeObject:identifier];
-        } 
-    } else {
-        // Initial launch; check if this application is set to always background
-        if (boolForKey(kEnableAtLaunch, identifier)) {
-            // Tell the application to enable backgrounding
-            kill([self pid], SIGUSR1);
+                // Store the backgrounding status of the application
+                [bgEnabledApps removeObject:identifier];
+            } 
+        } else {
+            // Initial launch; check if this application is set to always background
+            if (boolForKey(kEnableAtLaunch, identifier)) {
+                // Tell the application to enable backgrounding
+                kill([self pid], SIGUSR1);
 
-            // Store the backgrounding status of the application
-            [bgEnabledApps addObject:identifier];
+                // Store the backgrounding status of the application
+                [bgEnabledApps addObject:identifier];
+            }
+
+            // Track active status of application
+            [activeApps addObject:identifier];
         }
-
-        // Track active status of application
-        [activeApps addObject:identifier];
     }
 
     if (boolForKey(kBadgeEnabled, identifier))
