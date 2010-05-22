@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-13 17:17:09
+ * Last-modified: 2010-05-23 02:41:53
  */
 
 /**
@@ -570,7 +570,7 @@ static BOOL shouldSuspend = NO;
     if (isBackgrounded) {
         // Temporarily enable the eventOnly flag to prevent the applications's views
         // from being deallocated.
-        // NOTE: Credit for this goes to phoenix3200 (author of Pandora Controls, http://phoenix-dev.com/)
+        // NOTE: Credit for this goes to phoenix3200 (author of Music Controls, http://phoenix-dev.com/)
         // FIXME: Run a trace on deactivate to determine why this works.
         flag = [self deactivationSetting:0x1];
         [self setDeactivationSetting:0x1 flag:YES];
@@ -584,6 +584,18 @@ static BOOL shouldSuspend = NO;
         // operating properly.
         // NOTE: This is the continuation of phoenix3200's fix
         [self setDeactivationSetting:0x1 flag:flag];
+}
+
+- (void)deactivated
+{
+    %orig;
+
+    if ([bgEnabledApps containsObject:[self displayIdentifier]])
+        // If a notification is received while the device is locked, the app's
+        // GUI will get "stuck" and will no longer respond to the home button.
+        // Prevent this by hiding the app's context view upon deactivation.
+        // NOTE: Credit for this one also goes to phoenix3200
+        [[self contextHostView] setHidden:YES];
 }
 
 // NOTE: Observed types:
