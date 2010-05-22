@@ -1,3 +1,11 @@
+> # Version svn.r445
+> - - -
+> * NEW: Added FAQ in Documentation (Please read!)
+> * FIX: Setting "Enable at Launch" globally would crash SBSettings' "More" app.
+> * MOD: In prefs app, changed "Reset" button to "Reset to Defaults" to clarify meaning.
+
+- - -
+
 > # Version svn.r436
 > - - -
 > * FIX: Old iPod settings were not correctly converted to new format.
