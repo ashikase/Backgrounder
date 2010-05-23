@@ -1,3 +1,10 @@
+> # Version svn.r447
+> - - -
+> * FIX: Prevent backgrounded apps from getting "stuck" upon receiving a notification while device is locked.
+>    - Credit for this goes to phoenix3200 (author of Music Controls, http://phoenix-dev.com/)
+
+- - -
+
 > # Version svn.r445
 > - - -
 > * NEW: Added FAQ in Documentation (Please read!)
