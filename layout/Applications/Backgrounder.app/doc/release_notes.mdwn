@@ -1,3 +1,9 @@
+> # Version svn.r450
+> - - -
+> * FIX: "Fallback to Native" option failed to actually fallback to native.
+
+- - -
+
 > # Version svn.r447
 > - - -
 > * FIX: Prevent backgrounded apps from getting "stuck" upon receiving a notification while device is locked.
