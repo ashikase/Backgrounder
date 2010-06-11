@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-23 02:41:53
+ * Last-modified: 2010-06-08 22:44:12
  */
 
 /**
@@ -217,7 +217,9 @@ static void showBadgeForDisplayIdentifier(NSString *identifier)
         }
 
         // Create and add badge
-        UIImageView *badgeView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"Backgrounder_Badge.png"]];
+        NSString *fileName = (integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder) ?
+            @"Backgrounder_Badge.png" : @"Backgrounder_NativeBadge.png";
+        UIImageView *badgeView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:fileName]];
         badgeView.tag = 1000;
         badgeView.origin = point;
         [icon addSubview:badgeView];

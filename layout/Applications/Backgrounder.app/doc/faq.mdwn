@@ -39,17 +39,25 @@
 
 - - -
 
-> # Can I use my own badge image?
+> # Can I use my own badge images?
 > - - -
-> Yes. The badge image file is located at:
+> Yes. The badge image files are located at:
 >
 >         /System/Library/CoreServices/
 >             SpringBoard.app/
->             Backgrounder_Badge.png
+>             Backgrounder_*Badge.png
 >
-> Overwriting this file is **not** recommended, though, as it will be replaced with each Backgrounder upgrade.
+> Overwriting these files is **not** recommended, though, as they will be replaced with each Backgrounder upgrade.
 >
-> Instead, the recommended method is to use WinterBoard (by Jay Freeman, available for free via Cydia). The path to use with WinterBoard is:
+> Instead, the recommended method is to use WinterBoard (by Jay Freeman, available for free via Cydia).
+>
+> The WinterBoard path for the "Native" badge is:
+>
+>         Some.theme/Bundles/
+>             com.apple.springboard/
+>             Backgrounder_NativeBadge.png
+>
+> The WinterBoard path for the "Backgrounder" badge is:
 >
 >         Some.theme/Bundles/
 >             com.apple.springboard/
