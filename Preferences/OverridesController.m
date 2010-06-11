@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-03 13:14:41
+ * Last-modified: 2010-06-11 14:28:47
  */
 
 /**
@@ -66,6 +66,10 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 
 //==============================================================================
 
+@interface OverridesController (Private)
+- (UIView *)tableHeaderView;
+@end
+
 @implementation OverridesController
 
 - (id)initWithStyle:(UITableViewStyle)style
@@ -73,10 +77,13 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
     self = [super initWithStyle:style];
     if (self) {
         self.title = @"Overrides";
+
         self.navigationItem.backBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Back"
             style:UIBarButtonItemStyleBordered target:nil action:nil];
         self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Add"
             style:UIBarButtonItemStyleBordered target:self action:@selector(addButtonTapped:)];
+
+        self.tableView.tableHeaderView = [self tableHeaderView];
     }
     return self;
 }
@@ -105,6 +112,32 @@ static NSInteger compareDisplayNames(NSString *a, NSString *b, void *context)
 
     // Refresh the table
     [self.tableView reloadData];
+}
+
+- (UIView *)tableHeaderView
+{
+    // Determine size of application frame (iPad, iPhone differ)
+    CGRect appFrame = [[UIScreen mainScreen] applicationFrame];
+
+    // Create a container view for the header
+    UIView *view = [[[UIView alloc] initWithFrame:CGRectMake(0, 0.0f, appFrame.size.width, 29.0f)] autorelease];;
+
+    // Create the text label
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, 10.0f, appFrame.size.width, 19.0f)];
+    label.font = [UIFont systemFontOfSize:15.0f];
+    label.text = @"Tap an override to modify its settings.";
+    label.textAlignment = UITextAlignmentCenter;
+    label.textColor = [UIColor colorWithRed:0.3f green:0.34f blue:0.42f alpha:1.0f];
+    label.shadowColor = [UIColor whiteColor];
+    label.shadowOffset = CGSizeMake(1.0, 1.0f);
+    label.backgroundColor = [UIColor clearColor];
+    label.numberOfLines = 0;
+    [view addSubview:label];
+
+    // Cleanup
+    [label release];
+
+    return view;
 }
 
 #pragma mark - UITableViewDataSource
