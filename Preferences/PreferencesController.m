@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-11 14:32:43
+ * Last-modified: 2010-06-11 14:46:32
  */
 
 /**
@@ -98,7 +98,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
     label.numberOfLines = 2;
     label.textColor = [UIColor whiteColor];
     label.textAlignment = UITextAlignmentCenter;
-    label.backgroundColor = [UIColor colorWithWhite:0 alpha:0.5f];
+    label.backgroundColor = [UIColor colorWithRed:0.35f green:0.36f blue:0.38f alpha:1.0f];
     label.layer.cornerRadius = 5.0f;
     label.layer.borderColor = [[UIColor blackColor] CGColor];
     label.layer.borderWidth = 1.0f;
