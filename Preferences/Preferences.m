@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-11 23:28:21
+ * Last-modified: 2010-06-12 03:47:05
  */
 
 /**
@@ -51,11 +51,30 @@ Boolean GSSystemHasCapability(CFStringRef capability);
 // SpringBoardServices
 extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
 
+//==============================================================================
+
+// Filter out overrides for apps that do not or no longer exist on this device
+NSDictionary * filterNotInstalled(NSDictionary *apps)
+{
+    NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithDictionary:apps];
+
+    for (NSString *displayId in [dict allKeys]) {
+        NSString *displayName = SBSCopyLocalizedApplicationNameForDisplayIdentifier(displayId);
+        if (displayName == nil)
+            // App has no display name; assume not installed
+            [dict removeObjectForKey:displayId];
+        else
+            [displayName release];
+    }
+
+    return dict;
+}
+
+//==============================================================================
+
 @interface Preferences (Private)
 - (NSDictionary *)defaults;
 @end;
-
-//==============================================================================
 
 @implementation Preferences
 
@@ -82,6 +101,10 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
         // Create an array to hold requests for respring
         respringRequestors = [[NSMutableArray alloc] init];
+
+        // Filter out overrides for apps that are no longer installed
+        NSDictionary *dict = filterNotInstalled([initialValues objectForKey:kOverrides]);
+        [self setObject:dict forKey:kOverrides];
     }
     return self;
 }
@@ -99,18 +122,10 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
     NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithContentsOfFile:
         [[NSBundle mainBundle] pathForResource:@"Defaults" ofType:@"plist"]];
 
-    // Get default values for overrides
-    NSMutableDictionary *overDict = [NSMutableDictionary dictionaryWithDictionary:
-        [dict objectForKey:kOverrides]];
-
-    // Filter out overrides for applications that do not exist on this device
-    for (NSString *displayId in [overDict allKeys]) {
-        NSString *displayName = SBSCopyLocalizedApplicationNameForDisplayIdentifier(displayId);
-        if (displayName == nil)
-            [overDict removeObjectForKey:displayId];
-        else
-            [displayName release];
-    }
+    // Filter out overrides for apps that do not exist on this device
+    // NOTE: Cannot rely on filter in init, as this this method is also called
+    //       by resetToDefaults.
+    NSDictionary *overDict = filterNotInstalled([dict objectForKey:kOverrides]);
 
     // Update overrides
     [dict setObject:overDict forKey:kOverrides];
