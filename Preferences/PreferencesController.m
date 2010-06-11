@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-08 23:00:01
+ * Last-modified: 2010-06-11 14:38:52
  */
 
 /**
@@ -42,6 +42,8 @@
 
 #import "PreferencesController.h"
 
+#import <QuartzCore/QuartzCore.h>
+
 #import "Constants.h"
 #import "HtmlDocController.h"
 #import "Preferences.h"
@@ -49,6 +51,10 @@
 
 extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
 
+
+@interface PreferencesController (Private)
+- (UIView *)tableHeaderView;
+@end
 
 @implementation PreferencesController
 
@@ -63,6 +69,8 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
         self.navigationItem.backBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Back"
             style:UIBarButtonItemStyleBordered target:nil action:nil];
+
+        self.tableView.tableHeaderView = [self tableHeaderView];
     }
     return self;
 }
@@ -71,6 +79,42 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 {
     [displayIdentifier release];
     [super dealloc];
+}
+
+- (UIView *)tableHeaderView
+{
+    // Determine size of application frame (iPad, iPhone differ)
+    CGRect appFrame = [[UIScreen mainScreen] applicationFrame];
+
+    // Create table header
+    UIView *view = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, appFrame.size.width, 60.0f)] autorelease];
+
+    // Create label
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
+    label.text = (displayIdentifier == nil) ?
+        @"These settings will apply to all apps,\nexcept those with overrides." :
+        [@"These settings will apply only to\n" stringByAppendingString:self.title];
+
+    label.numberOfLines = 2;
+    label.textColor = [UIColor whiteColor];
+    label.textAlignment = UITextAlignmentCenter;
+    label.backgroundColor = [UIColor colorWithWhite:0 alpha:0.5f];
+    label.layer.cornerRadius = 5.0f;
+    label.layer.borderColor = [[UIColor blackColor] CGColor];
+    label.layer.borderWidth = 1.0f;
+
+    // Resize label to fit text
+    // NOTE: Add 10 pixels to each dimension for padding.
+    const float height = 40.0f + 10.0f;
+    CGSize size = [label.text sizeWithFont:label.font constrainedToSize:CGSizeMake(CGFLOAT_MAX, height)
+        lineBreakMode:UILineBreakModeWordWrap];
+    float width = size.width + 10.0f;
+    label.frame = CGRectMake((appFrame.size.width - width) / 2.0f, 10.0f, width, height);
+
+    [view addSubview:label];
+    [label release];
+
+    return view;
 }
 
 #pragma mark - UITableViewDataSource
@@ -154,7 +198,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
         button.selected = [prefs boolForKey:keys[indexPath.section - 1][indexPath.row] forDisplayIdentifier:displayIdentifier];
 
         if (indexPath.section == 2)
-            // Set image for cell
+        // Set image for cell
             cell.imageView.image = [UIImage imageNamed:((indexPath.row == 0) ? @"badge.png" : @"status_bar_icon.png")];
 
         // Cell may have been disabled; enable it
@@ -250,7 +294,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
     // Update preference
     NSIndexPath *indexPath = [self.tableView indexPathForCell:(UITableViewCell *)[button superview]];
     [[Preferences sharedInstance] setBool:button.selected forKey:keys[indexPath.section - 1][indexPath.row]
-        forDisplayIdentifier:displayIdentifier];
+            forDisplayIdentifier:displayIdentifier];
 }
 
 #pragma mark - Navigation bar delegates
