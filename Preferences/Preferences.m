@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-12 03:47:05
+ * Last-modified: 2010-06-12 03:49:53
  */
 
 /**
@@ -43,10 +43,6 @@
 #import "Preferences.h"
 
 #import <notify.h>
-
-// GraphicsServices
-extern CFStringRef kGSUnifiedIPodCapability;
-Boolean GSSystemHasCapability(CFStringRef capability);
 
 // SpringBoardServices
 extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
