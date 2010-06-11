@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-11 14:38:52
+ * Last-modified: 2010-06-11 14:32:43
  */
 
 /**
@@ -169,11 +169,22 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
         cell.accessoryType = (backgroundingMethod == indexPath.row) ? UITableViewCellAccessoryCheckmark : UITableViewCellAccessoryNone;
 
-        if (indexPath.row != 0)
             // Set image for cell
-            cell.imageView.image = [UIImage imageNamed:((indexPath.row == 1) ? @"method_native.png" : @"method_backgrounder.png")];
-        else
-            cell.imageView.image = nil;
+        NSString *name = nil;
+        switch (indexPath.row != 0) {
+            case 0:
+                name = @"method_off.png";
+                break;
+            case 1:
+                name = @"method_native.png";
+                break;
+            case 2:
+                name = @"method_backgrounder.png";
+                break;
+            default:
+                break;
+        }
+        cell.imageView.image = [UIImage imageNamed:name];
     } else {
         // Backgrounding indicators, Other
 
