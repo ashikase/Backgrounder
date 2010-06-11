@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-05-14 00:41:22
+ * Last-modified: 2010-06-11 15:05:01
  */
 
 /**
@@ -42,6 +42,7 @@
 
 #import "RootController.h"
 
+#import <QuartzCore/QuartzCore.h>
 #import <libactivator/libactivator.h>
 
 #import "Constants.h"
@@ -194,18 +195,26 @@
         view = [[[UIView alloc] initWithFrame:CGRectMake(0, 0.0f, appFrame.size.width, 19.0f)] autorelease];;
 
         // Create the text label
-        UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, 6.0f, appFrame.size.width, 19.0f)];
+        UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(5.0f, 6.0f, appFrame.size.width - 10.0f, 19.0f)];
         label.font = [UIFont systemFontOfSize:15.0f];
         label.text = @"Please read the FAQ before requesting help.";
+        label.textColor = [UIColor whiteColor];
         label.textAlignment = UITextAlignmentCenter;
-        label.textColor = [UIColor colorWithRed:0.6f green:0.34f blue:0.42f alpha:1.0f];
-        label.backgroundColor = [UIColor clearColor];
-        label.shadowColor = [UIColor whiteColor];
-        label.shadowOffset = CGSizeMake(1.0, 1.0f);
-        label.numberOfLines = 0;
-        [view addSubview:label];
+        label.backgroundColor = [UIColor colorWithRed:0.6f green:0.1f blue:0.2f alpha:1.0f];
+        label.layer.cornerRadius = 5.0f;
+        label.layer.borderColor = [[UIColor colorWithRed:0.9f green:0.1f blue:0.2f alpha:1.0f] CGColor];
+        label.layer.borderWidth = 1.0f;
 
-        // Cleanup
+        // Resize label to fit text
+        // NOTE: Add 10 pixels to width for padding.
+        const float height = 19.0f;
+        CGSize size = [label.text sizeWithFont:label.font constrainedToSize:CGSizeMake(CGFLOAT_MAX, height)
+            lineBreakMode:UILineBreakModeWordWrap];
+        float width = size.width + 10.0f;
+        label.frame = CGRectMake((appFrame.size.width - width) / 2.0f, 10.0f, width, height);
+
+        // Add the label to the view
+        [view addSubview:label];
         [label release];
     }
 
