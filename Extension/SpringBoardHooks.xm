@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-08 22:44:12
+ * Last-modified: 2010-06-18 01:03:31
  */
 
 /**
@@ -363,7 +363,7 @@ static BOOL shouldSuspend = NO;
 
     id app = [SBWActiveDisplayStack topApplication];
     NSString *identifier = [app displayIdentifier];
-    if (app && integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder) {
+    if (app && integerForKey(kBackgroundingMethod, identifier) != BGBackgroundingMethodOff) {
         BOOL isEnabled = [bgEnabledApps containsObject:identifier];
         [self setBackgroundingEnabled:(!isEnabled) forDisplayIdentifier:identifier];
 
@@ -415,7 +415,7 @@ static BOOL shouldSuspend = NO;
 %new(v@:c@)
 - (void)setBackgroundingEnabled:(BOOL)enable forDisplayIdentifier:(NSString *)identifier
 {
-    if (integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder) {
+    if (integerForKey(kBackgroundingMethod, identifier) != BGBackgroundingMethodOff) {
         BOOL isEnabled = [bgEnabledApps containsObject:identifier];
         if (isEnabled != enable) {
             // Tell the application to change its backgrounding status
@@ -500,12 +500,12 @@ static BOOL shouldSuspend = NO;
 {
     NSString *identifier = [self displayIdentifier];
 
-    if (integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder) {
+    if (integerForKey(kBackgroundingMethod, identifier) != BGBackgroundingMethodOff) {
         if ([activeApps containsObject:identifier]) {
             // Was restored from backgrounded state
             if (!boolForKey(kPersistent, identifier)) {
-                // Tell the application to disable backgrounding
-                kill([self pid], SIGUSR1);
+                    // Tell the application to disable backgrounding
+                    kill([self pid], SIGUSR1);
 
                 // Store the backgrounding status of the application
                 [bgEnabledApps removeObject:identifier];
@@ -513,8 +513,8 @@ static BOOL shouldSuspend = NO;
         } else {
             // Initial launch; check if this application is set to always background
             if (boolForKey(kEnableAtLaunch, identifier)) {
-                // Tell the application to enable backgrounding
-                kill([self pid], SIGUSR1);
+                    // Tell the application to enable backgrounding
+                    kill([self pid], SIGUSR1);
 
                 // Store the backgrounding status of the application
                 [bgEnabledApps addObject:identifier];
@@ -645,9 +645,8 @@ static BOOL shouldSuspend = NO;
 - (void)_relaunchAfterAbnormalExit:(BOOL)exitedAbnormally
 {
     // NOTE: This method gets called by both exitedNormally and exitedAbnormally
-    if (!exitedAbnormally
-            && integerForKey(kBackgroundingMethod, [self displayIdentifier]) != BGBackgroundingMethodNative) {
-        // Backgrounding method is set to off or manual; prevent auto-relaunch
+    if (!exitedAbnormally) {
+        // Application exited normally (presumably by user); prevent auto-relaunch
         // NOTE: Only Phone and Mail are known to auto-relaunch
 
         // NOTE: Original method also calls _cancelAutoRelaunch, to cancel
@@ -675,7 +674,10 @@ static BOOL shouldSuspend = NO;
 
     // If backgrounding method is set to off or manual, prevent auto-(re)launch
     // NOTE: Only Phone and Mail are known to auto-(re)launch
-    return (integerForKey(kBackgroundingMethod, [self displayIdentifier]) != BGBackgroundingMethodNative) ? NO : %orig;
+    // NOTE: 0x10 is statusBarMode; this value is only set on relaunched items.
+    // FIXME: Support for auto-boot flag.
+    return (integerForKey(kBackgroundingMethod, [self displayIdentifier]) != BGBackgroundingMethodNative
+            || [self displayValue:0x10] != nil) ? NO : %orig;
 }
 
 %end

@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-17 23:25:14
+ * Last-modified: 2010-06-18 00:08:05
  */
 
 /**
@@ -83,7 +83,7 @@ static void loadPreferences()
 // Callback
 static void toggleBackgrounding(int signal)
 {
-    if (backgroundingMethod == BGBackgroundingMethodBackgrounder)
+    if (backgroundingMethod != BGBackgroundingMethodOff)
         backgroundingEnabled = !backgroundingEnabled;
 }
 
@@ -121,11 +121,11 @@ typedef struct {
 //       sets _applicationFlags.shouldExitAfterSendSuspend to YES
 - (void)applicationSuspend:(GSEventRef)event
 {
-    // NOTE: backgroundingEnabled will always be NO for BGBackgroundingMethodOff
-    if (!backgroundingEnabled) {
+    if (!backgroundingEnabled || backgroundingMethod != BGBackgroundingMethodBackgrounder) {
         %orig;
 
-        if (backgroundingMethod == BGBackgroundingMethodOff || !fallbackToNative) {
+        if (!backgroundingEnabled
+                && (backgroundingMethod != BGBackgroundingMethodBackgrounder || !fallbackToNative)) {
             // Application should terminate on suspend; make certain that it does
             // FIXME: Determine if there is any benefit of using shouldExitAfterSendSuspend
             //        over forceExit.
@@ -138,11 +138,11 @@ typedef struct {
 // Used by certain applications, such as Mail and Phone, instead of applicationSuspend:
 - (void)applicationSuspend:(GSEventRef)event settings:(id)settings
 {
-    // NOTE: backgroundingEnabled will always be NO for BGBackgroundingMethodOff
-    if (!backgroundingEnabled) {
+    if (!backgroundingEnabled || backgroundingMethod != BGBackgroundingMethodBackgrounder) {
         %orig;
 
-        if (backgroundingMethod == BGBackgroundingMethodOff || !fallbackToNative) {
+        if (!backgroundingEnabled
+                && (backgroundingMethod != BGBackgroundingMethodBackgrounder || !fallbackToNative)) {
             // Application should terminate on suspend; make certain that it does
             // NOTE: The shouldExitAfterSendSuspend flag appears to be ignored when
             //       this alternative method is called; resort to more "drastic"
@@ -213,10 +213,6 @@ typedef struct {
 
     // Load preferences to determine backgrounding method to use
     loadPreferences();
-
-    if (backgroundingMethod == BGBackgroundingMethodNative)
-        // Backgrounding method is set to native; do not hook anything else
-        return;
 
     // NOTE: Application class may be a subclass of UIApplication (and not UIApplication itself)
     Class $$UIApplication = [self class];
