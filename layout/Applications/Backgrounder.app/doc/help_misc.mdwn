@@ -1,4 +1,4 @@
-> # Fallback to Native
+> # Fall Back to Native
 > ## (Default: On)
 > ### "Backgrounder" method only
 > - - -

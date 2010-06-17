@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-18 01:26:09
+ * Last-modified: 2010-06-18 01:27:54
  */
 
 /**
@@ -139,7 +139,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
         {@"Off", @"Native", @"Backgrounder"},
         {@"Enable at Launch", @"Stay Enabled", nil},
         {@"Badge", @"Status Bar Icon", nil},
-        {@"Fallback to Native", @"Minimize on Toggle", nil}
+        {@"Fall Back to Native", @"Minimize on Toggle", nil}
     };
     static NSString *cellSubtitles[][3] = {
         {@"App will quit when minimized", @"Use native method, if supported", @"Run as if in foreground"},
@@ -215,7 +215,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
         if (backgroundingMethod == BGBackgroundingMethodOff
                 || (indexPath.section == 3 && indexPath.row == 0 && backgroundingMethod == BGBackgroundingMethodNative)) {
-            // Native backgrounding method cannot "fallback" to native.
+            // Native backgrounding method cannot "fall back" to native.
             cell.textLabel.textColor = [UIColor grayColor];
             button.enabled = NO;
         } else {
