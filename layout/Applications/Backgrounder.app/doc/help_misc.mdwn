@@ -14,7 +14,6 @@
 
 > # Minimize on Toggle
 > ## (Default: On)
-> ### "Backgrounder" method only
 > - - -
 > * **Off:**  
 >   The app will remain open upon enabling/disabling backgrounding.

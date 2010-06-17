@@ -13,7 +13,6 @@
 
 > # Status Bar Icon
 > ## (Default: Off)
-> ### "Backgrounder" method only
 > - - -
 > * **Off:**  
 >     No status bar icon will be shown.
