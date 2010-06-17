@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-18 01:27:54
+ * Last-modified: 2010-06-18 01:50:06
  */
 
 /**
@@ -285,8 +285,19 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 {
     if (indexPath.section == 0) {
         // Store the selected option
-        [[Preferences sharedInstance] setInteger:indexPath.row forKey:kBackgroundingMethod
+        Preferences *prefs = [Preferences sharedInstance];
+        [prefs setInteger:indexPath.row forKey:kBackgroundingMethod
             forDisplayIdentifier:displayIdentifier];
+
+        if (indexPath.row == 1) {
+            // "Native" backgrounding method selected; set certain other options
+            // NOTE: This is done so that, by default, app will behave the same
+            // as it would if Backgrounder were not installed.
+            [prefs setBool:YES forKey:kEnableAtLaunch forDisplayIdentifier:displayIdentifier];
+            [prefs setBool:YES forKey:kPersistent forDisplayIdentifier:displayIdentifier];
+        }
+
+        // Update the table
         [tableView reloadData];
     }
 }

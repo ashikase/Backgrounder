@@ -17,6 +17,8 @@
 >
 >     Note that for apps that do not include this built-in support, this method is the same as the "Off" method.
 > 
+>     Also note that selecting this method will also enable the "Enable at Launch" and "Stay Enabled" options. This is done so that, by default, the app will behave the same as it would if Backgrounder were not installed.
+>
 > * **Backgrounder**  
 >     The app will continue to run as if it were still in the foreground.
 > 
