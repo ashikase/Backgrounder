@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-17 23:01:57
+ * Last-modified: 2010-06-17 23:25:14
  */
 
 /**
@@ -246,19 +246,6 @@ typedef struct {
         %init(GMethodAll);
         %init(GMethodBackgrounder);
     }
-}
-
-%new(c@:)
-- (BOOL)isBackgroundingEnabled
-{
-    return backgroundingEnabled;
-}
-
-%new(v@:c)
-- (void)setBackgroundingEnabled:(BOOL)enable
-{
-    if (backgroundingMethod == BGBackgroundingMethodBackgrounder)
-        backgroundingEnabled = enable;
 }
 
 %end
