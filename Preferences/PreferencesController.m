@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-11 14:46:32
+ * Last-modified: 2010-06-12 03:54:27
  */
 
 /**
@@ -171,7 +171,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
             // Set image for cell
         NSString *name = nil;
-        switch (indexPath.row != 0) {
+        switch (indexPath.row) {
             case 0:
                 name = @"method_off.png";
                 break;
