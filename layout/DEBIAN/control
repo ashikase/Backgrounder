@@ -1,6 +1,6 @@
 Package: backgrounder
 Name: Backgrounder
-Version: svn.r450
+Version: svn.r461
 Architecture: iphoneos-arm
 Description: Enable and manage backgrounding
 Homepage: http://iphone-backgrounder.googlecode.com/

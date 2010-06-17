@@ -1,3 +1,12 @@
+> # Version svn.r461
+> - - -
+> * MOD: The "Native" backgrounding method now uses a separate badge image.
+>    - See FAQ for details.
+> * MOD: Various minor changes to the preferences app (informational tips).
+> * FIX: Preferences app now automatically removes overrides for apps that are no longer installed.
+
+- - -
+
 > # Version svn.r450
 > - - -
 > * FIX: "Fallback to Native" option failed to actually fallback to native.
