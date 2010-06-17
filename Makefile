@@ -6,4 +6,4 @@ include framework/makefiles/aggregate.mk
 
 after-stage::
 	# Convert Info.plist and Defaults.plist to binary
-	- find $(FW_PACKAGE_STAGING_DIR)/Applications -iname '*.plist' -exec plutil -convert binary1 {} \;
+	- find $(FW_STAGING_DIR)/Applications -iname '*.plist' -exec plutil -convert binary1 {} \;
