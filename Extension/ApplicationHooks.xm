@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-19 23:58:10
+ * Last-modified: 2010-06-20 03:08:17
  */
 
 /**
@@ -53,10 +53,6 @@ static BOOL fallbackToNative_ = YES;
 @interface UIApplication (Private)
 - (NSString *)displayIdentifier;
 @end
-
-#define kGlobal                  @"global"
-#define kOverrides               @"overrides"
-#define kBackgroundingMethod     @"backgroundingMethod"
 
 static void loadPreferences()
 {
