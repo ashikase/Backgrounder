@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-20 01:33:34
+ * Last-modified: 2010-06-20 02:43:17
  */
 
 /**
@@ -225,36 +225,53 @@ static NSMutableArray *enabledApps_ = nil;
 @property(assign) CGPoint origin;
 @end
 
-static void showBadgeForDisplayIdentifier(NSString *identifier)
+static void setBadgeVisible(SBApplication *app, BOOL visible)
 {
-    // Update the application's SpringBoard icon to indicate that it is running
+    NSString *identifier = [app displayIdentifier];
+
+    // Update the app's SpringBoard icon to indicate if backgrounding is enabled
     SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
 
-    // Icon may already have a badge (due to fallback to native option); remove
+    // Remove any existing badge
+    // NOTE: Icon may already have a badge due to fallback to native option
     [[icon viewWithTag:1000] removeFromSuperview];
 
-    // Determine origin for badge based on icon image size
-    // NOTE: Default icon image sizes: iPhone/iPod: 59x62, iPad: 74x76 
-    CGPoint point;
-    Class $SBIcon = objc_getClass("SBIcon");
-    if ([$SBIcon respondsToSelector:@selector(defaultIconImageSize)]) {
-        // Determine position for badge (relative to lower left corner of icon)
-        CGSize size = [$SBIcon defaultIconImageSize];
-        point = CGPointMake(-12.0f, size.height - 23.0f);
-    } else {
-        // Fall back to hard-coded values (for firmware < 3.2, iPhone/iPod only)
-        point = CGPointMake(-12.0f, 39.0f);
-    }
+    if (visible) {
+        // Determine origin for badge based on icon image size
+        // NOTE: Default icon image sizes: iPhone/iPod: 59x62, iPad: 74x76 
+        CGPoint point;
+        Class $SBIcon = objc_getClass("SBIcon");
+        if ([$SBIcon respondsToSelector:@selector(defaultIconImageSize)]) {
+            // Determine position for badge (relative to lower left corner of icon)
+            CGSize size = [$SBIcon defaultIconImageSize];
+            point = CGPointMake(-12.0f, size.height - 23.0f);
+        } else {
+            // Fall back to hard-coded values (for firmware < 3.2, iPhone/iPod only)
+            point = CGPointMake(-12.0f, 39.0f);
+        }
 
-    // Create and add badge
-    BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
-        && [enabledApps_ containsObject:identifier];
-    NSString *fileName = isBackgrounderMethod ? @"Backgrounder_Badge.png" : @"Backgrounder_NativeBadge.png";
-    UIImageView *badgeView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:fileName]];
-    badgeView.tag = 1000;
-    badgeView.origin = point;
-    [icon addSubview:badgeView];
-    [badgeView release];
+        // Create and add badge
+        BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
+            && [enabledApps_ containsObject:identifier];
+        NSString *fileName = isBackgrounderMethod ? @"Backgrounder_Badge.png" : @"Backgrounder_NativeBadge.png";
+        UIImageView *badgeView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:fileName]];
+        badgeView.tag = 1000;
+        badgeView.origin = point;
+        [icon addSubview:badgeView];
+        [badgeView release];
+    }
+}
+
+static void setStatusBarIndicatorVisible(SBApplication *app, BOOL visible)
+{
+    if (app == [SBWActiveDisplayStack topApplication]) {
+        // Remove any existing indicator
+        SBStatusBarController *sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
+        [sbCont removeStatusBarItem:@"Backgrounder"];
+
+        if (visible)
+            [sbCont addStatusBarItem:@"Backgrounder"];
+    }
 }
 
 // NOTE: Validity of parameters are not checked; use with caution.
@@ -266,33 +283,24 @@ static void setBackgroundingEnabled(SBApplication *app, BOOL enable)
     //        hooks enabled, this will cause it to exit abnormally
     kill([app pid], SIGUSR1);
 
-    // Prepare to update status bar icon, if necessary and enabled
-    SBStatusBarController *sbCont = nil;
-    if (app == [SBWActiveDisplayStack topApplication] && boolForKey(kStatusBarIconEnabled, identifier))
-        sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
-
-    // Store the new backgrounding status of the application and
-    // optionally update the status bar indicator and badge
-    if (enable) {
+    // Store the new backgrounding status of the application
+    if (enable)
         [enabledApps_ addObject:identifier];
-        [sbCont addStatusBarItem:@"Backgrounder"];
-
-        if (boolForKey(kBadgeEnabled, identifier))
-            showBadgeForDisplayIdentifier(identifier);
-    } else {
+    else
         [enabledApps_ removeObject:identifier];
-        [sbCont removeStatusBarItem:@"Backgrounder"];
 
-        if (boolForKey(kBadgeEnabled, identifier)) {
-            SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
-            [[icon viewWithTag:1000] removeFromSuperview];
+    // NOTE: Indicators will also be shown if fallback to native option is enabled
+    BOOL showIndicator = enable
+        || (integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
+                && boolForKey(kFallbackToNative, identifier));
 
-            // If fallback to native option is enabled, show native badge
-            if (integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
-                    && boolForKey(kFallbackToNative, identifier))
-                showBadgeForDisplayIdentifier(identifier);
-        }
-    }
+    // Update badge (if necessary)
+    if (boolForKey(kBadgeEnabled, identifier))
+        setBadgeVisible(app, showIndicator);
+
+    // Update status bar indicator (if necessary)
+    if (boolForKey(kStatusBarIconEnabled, identifier))
+        setStatusBarIndicatorVisible(app, showIndicator);
 }
 
 //==============================================================================
@@ -371,17 +379,9 @@ static BOOL shouldSuspend_ = NO;
 {
     %orig;
 
-    // NOTE: Always first try removing status bar indicator, as previous
-    //       application may have had it enabled even if the current does not.
-    SBStatusBarController *sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
-    [sbCont removeStatusBarItem:@"Backgrounder"];
-
-    id app = [SBWActiveDisplayStack topApplication];
-    if (app != nil) {
-        NSString *identifier = [app displayIdentifier];
-        if (boolForKey(kStatusBarIconEnabled, identifier) && [enabledApps_ containsObject:identifier])
-            [sbCont addStatusBarItem:@"Backgrounder"];
-    }
+    if ([SBWActiveDisplayStack topApplication] == nil)
+        // SpringBoard is visible; remove any status bar indicator
+        setStatusBarIndicatorVisible(nil, NO);
 }
 
 %new(v@:)
@@ -525,6 +525,10 @@ static BOOL shouldSuspend_ = NO;
             // Was restored from backgrounded state
             if (!boolForKey(kPersistent, identifier))
                 setBackgroundingEnabled(self, NO);
+            else if (boolForKey(kStatusBarIconEnabled, identifier)) {
+                // Must re-add the indicator on resume
+                setStatusBarIndicatorVisible(self, YES);
+            }
         } else {
             // Initial launch; check if this application is set to background at launch
             if (boolForKey(kEnableAtLaunch, identifier))
