@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-20 01:34:57
+ * Last-modified: 2010-06-20 01:33:34
  */
 
 /**
@@ -192,43 +192,6 @@ static NSInteger integerForKey(NSString *key, NSString *displayId)
 
 //==============================================================================
 
-@interface UIView (Geometry)
-@property(assign) CGPoint origin;
-@end
-
-static void showBadgeForDisplayIdentifier(NSString *identifier)
-{
-    // Update the application's SpringBoard icon to indicate that it is running
-    SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
-    if (![icon viewWithTag:1000]) {
-        // Icon does not yet have a badge
-
-        // Determine origin for badge based on icon image size
-        // NOTE: Default icon image sizes: iPhone/iPod: 59x62, iPad: 74x76 
-        CGPoint point;
-        Class $SBIcon = objc_getClass("SBIcon");
-        if ([$SBIcon respondsToSelector:@selector(defaultIconImageSize)]) {
-            // Determine position for badge (relative to lower left corner of icon)
-            CGSize size = [$SBIcon defaultIconImageSize];
-            point = CGPointMake(-12.0f, size.height - 23.0f);
-        } else {
-            // Fall back to hard-coded values (for firmware < 3.2, iPhone/iPod only)
-            point = CGPointMake(-12.0f, 39.0f);
-        }
-
-        // Create and add badge
-        NSString *fileName = (integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder) ?
-            @"Backgrounder_Badge.png" : @"Backgrounder_NativeBadge.png";
-        UIImageView *badgeView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:fileName]];
-        badgeView.tag = 1000;
-        badgeView.origin = point;
-        [icon addSubview:badgeView];
-        [badgeView release];
-    }
-}
-
-//==============================================================================
-
 NSMutableArray *displayStacks = nil;
 
 // Display stack names
@@ -258,6 +221,42 @@ NSMutableArray *displayStacks = nil;
 
 static NSMutableArray *enabledApps_ = nil;
 
+@interface UIView (Geometry)
+@property(assign) CGPoint origin;
+@end
+
+static void showBadgeForDisplayIdentifier(NSString *identifier)
+{
+    // Update the application's SpringBoard icon to indicate that it is running
+    SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
+
+    // Icon may already have a badge (due to fallback to native option); remove
+    [[icon viewWithTag:1000] removeFromSuperview];
+
+    // Determine origin for badge based on icon image size
+    // NOTE: Default icon image sizes: iPhone/iPod: 59x62, iPad: 74x76 
+    CGPoint point;
+    Class $SBIcon = objc_getClass("SBIcon");
+    if ([$SBIcon respondsToSelector:@selector(defaultIconImageSize)]) {
+        // Determine position for badge (relative to lower left corner of icon)
+        CGSize size = [$SBIcon defaultIconImageSize];
+        point = CGPointMake(-12.0f, size.height - 23.0f);
+    } else {
+        // Fall back to hard-coded values (for firmware < 3.2, iPhone/iPod only)
+        point = CGPointMake(-12.0f, 39.0f);
+    }
+
+    // Create and add badge
+    BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
+        && [enabledApps_ containsObject:identifier];
+    NSString *fileName = isBackgrounderMethod ? @"Backgrounder_Badge.png" : @"Backgrounder_NativeBadge.png";
+    UIImageView *badgeView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:fileName]];
+    badgeView.tag = 1000;
+    badgeView.origin = point;
+    [icon addSubview:badgeView];
+    [badgeView release];
+}
+
 // NOTE: Validity of parameters are not checked; use with caution.
 static void setBackgroundingEnabled(SBApplication *app, BOOL enable)
 {
@@ -273,13 +272,26 @@ static void setBackgroundingEnabled(SBApplication *app, BOOL enable)
         sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
 
     // Store the new backgrounding status of the application and
-    // optionally update the status bar icon
+    // optionally update the status bar indicator and badge
     if (enable) {
         [enabledApps_ addObject:identifier];
         [sbCont addStatusBarItem:@"Backgrounder"];
+
+        if (boolForKey(kBadgeEnabled, identifier))
+            showBadgeForDisplayIdentifier(identifier);
     } else {
         [enabledApps_ removeObject:identifier];
         [sbCont removeStatusBarItem:@"Backgrounder"];
+
+        if (boolForKey(kBadgeEnabled, identifier)) {
+            SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
+            [[icon viewWithTag:1000] removeFromSuperview];
+
+            // If fallback to native option is enabled, show native badge
+            if (integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
+                    && boolForKey(kFallbackToNative, identifier))
+                showBadgeForDisplayIdentifier(identifier);
+        }
     }
 }
 
@@ -520,10 +532,6 @@ static BOOL shouldSuspend_ = NO;
         }
     }
 
-    if (boolForKey(kBadgeEnabled, identifier))
-        // NOTE: This is mainly to catch applications that start in the background
-        showBadgeForDisplayIdentifier(identifier);
-
     %orig;
 }
 
@@ -551,11 +559,6 @@ static BOOL shouldSuspend_ = NO;
 {
     NSString *identifier = [self displayIdentifier];
     BOOL isEnabled = [enabledApps_ containsObject:identifier];
-
-    if (boolForKey(kBadgeEnabled, identifier) && isEnabled)
-        // In case badge has not been added yet, add now
-        // FIXME: Confirm if this is still needed
-        showBadgeForDisplayIdentifier(identifier);
 
     BOOL flag;
     if (isEnabled) {
