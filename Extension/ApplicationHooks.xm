@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-18 00:08:05
+ * Last-modified: 2010-06-19 23:40:34
  */
 
 /**
@@ -112,9 +112,9 @@ typedef struct {
     // ...
 } UIApplicationFlags;
 
-%group GMethodAll
-
 %hook UIApplication
+
+%group GMethodAll
 
 // Overriding this method prevents the application from quitting on suspend
 // NOTE: UIApplication's default implementation of applicationSuspend: simply
@@ -134,6 +134,10 @@ typedef struct {
         }
     }
 }
+
+%end
+
+%group GMethodAll_SuspendSettings
 
 // Used by certain applications, such as Mail and Phone, instead of applicationSuspend:
 - (void)applicationSuspend:(GSEventRef)event settings:(id)settings
@@ -155,7 +159,7 @@ typedef struct {
 
 %end
 
-%end // GMethodAll
+%end // UIApplication
 
 //==============================================================================
 
@@ -163,20 +167,6 @@ typedef struct {
 // NOTE: Only hooked for BGBackgroundingMethodBackgrounder
 
 %hook UIApplication
-
-// Delegate method
-- (void)applicationWillResignActive:(id)application
-{
-    if (!backgroundingEnabled)
-        %orig;
-}
-
-// Delegate method
-- (void)applicationDidBecomeActive:(id)application
-{
-    if (!backgroundingEnabled)
-        %orig;
-}
 
 // Prevent execution of application's on-suspend method
 // NOTE: Normally this method does nothing; only system apps can overrride
@@ -200,6 +190,35 @@ typedef struct {
 
 //==============================================================================
 
+%hook AppDelegate
+// NOTE: Only hooked for BGBackgroundingMethodBackgrounder
+
+%group GMethodBackgrounder_Resign
+
+// Delegate method
+- (void)applicationWillResignActive:(id)application
+{
+    if (!backgroundingEnabled)
+        %orig;
+}
+
+%end
+
+%group GMethodBackgrounder_Become
+
+// Delegate method
+- (void)applicationDidBecomeActive:(id)application
+{
+    if (!backgroundingEnabled)
+        %orig;
+}
+
+%end
+
+%end // AppDelegate
+
+//==============================================================================
+
 %hook UIApplication
 
 - (void)_loadMainNibFile
@@ -215,32 +234,21 @@ typedef struct {
     loadPreferences();
 
     // NOTE: Application class may be a subclass of UIApplication (and not UIApplication itself)
-    Class $$UIApplication = [self class];
-    MSHookMessage($$UIApplication, @selector(applicationSuspend:), MSHake(GMethodAll$UIApplication$applicationSuspend$));
-    if (class_getInstanceMethod($$UIApplication, @selector(applicationSuspend:settings:)) != NULL)
-            MSHookMessage($$UIApplication, @selector(applicationSuspend:settings:),
-                    MSHake(GMethodAll$UIApplication$applicationSuspend$settings$));
+    Class $UIApplication = [self class];
+    %init(GMethodAll, UIApplication = $UIApplication);
+    if ([self respondsToSelector:@selector(applicationSuspend:settings:)])
+        %init(GMethodAll_SuspendSettings, UIApplication = $UIApplication);
 
     if (backgroundingMethod == BGBackgroundingMethodBackgrounder) {
-        MSHookMessage($$UIApplication, @selector(applicationWillSuspend), MSHake(GMethodBackgrounder$UIApplication$applicationWillSuspend));
-        MSHookMessage($$UIApplication, @selector(applicationDidResume), MSHake(GMethodBackgrounder$UIApplication$applicationDidResume));
-
-        // NOTE: Not every app implements the following two methods
         id delegate = [self delegate];
         Class $AppDelegate = delegate ? [delegate class] : [self class];
-        if (class_getInstanceMethod($AppDelegate, @selector(applicationWillResignActive:)) != NULL)
-            MSHookMessage($AppDelegate, @selector(applicationWillResignActive:),
-                    MSHake(GMethodBackgrounder$UIApplication$applicationWillResignActive$));
-        if (class_getInstanceMethod($AppDelegate, @selector(applicationDidBecomeActive:)) != NULL)
-            MSHookMessage($AppDelegate, @selector(applicationDidBecomeActive:),
-                    MSHake(GMethodBackgrounder$UIApplication$applicationDidBecomeActive$));
-    }
+        %init(GMethodBackgrounder, UIApplication = $UIApplication);
 
-    if (NO) {
-        // FIXME: This is needed to prevent Logos from complaining about an unused
-        //        hook group.
-        %init(GMethodAll);
-        %init(GMethodBackgrounder);
+        // NOTE: Not every app implements the following two methods
+        if ([delegate respondsToSelector:@selector(applicationWillResignActive:)])
+            %init(GMethodBackgrounder_Resign, AppDelegate = $AppDelegate);
+        if ([delegate respondsToSelector:@selector(applicationDidBecomeActive:)])
+            %init(GMethodBackgrounder_Become, AppDelegate = $AppDelegate);
     }
 }
 
