@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-18 01:03:31
+ * Last-modified: 2010-06-19 23:55:38
  */
 
 /**
@@ -78,10 +78,10 @@ extern "C" {
 #import "PreferenceConstants.h"
 
 // Store a copy of the global preferences in memory
-static NSDictionary *globalPrefs = nil;
+static NSDictionary *globalPrefs_ = nil;
 
 // Store a list of apps that override the default preferences
-static NSArray *appsWithOverrides = nil;
+static NSArray *appsWithOverrides_ = nil;
 
 static void loadPreferences()
 {
@@ -99,22 +99,22 @@ static void loadPreferences()
     CFPropertyListRef propList = CFPreferencesCopyAppValue((CFStringRef)kGlobal, appId);
     if (propList != NULL) {
         if (CFGetTypeID(propList) == CFDictionaryGetTypeID())
-            globalPrefs = [NSDictionary dictionaryWithDictionary:(NSDictionary *)propList];
+            globalPrefs_ = [NSDictionary dictionaryWithDictionary:(NSDictionary *)propList];
         CFRelease(propList);
     }
-    if (globalPrefs == nil)
+    if (globalPrefs_ == nil)
         // Use default values
-        globalPrefs = [defaults objectForKey:kGlobal];
-    [globalPrefs retain];
+        globalPrefs_ = [defaults objectForKey:kGlobal];
+    [globalPrefs_ retain];
 
     // Try reading user's overrides preference settings
     propList = CFPreferencesCopyAppValue((CFStringRef)kOverrides, appId);
     if (propList != NULL) {
         if (CFGetTypeID(propList) == CFDictionaryGetTypeID())
-            appsWithOverrides = [(NSDictionary *)propList allKeys];
+            appsWithOverrides_ = [(NSDictionary *)propList allKeys];
         CFRelease(propList);
     }
-    if (appsWithOverrides == nil) {
+    if (appsWithOverrides_ == nil) {
         // Use default values
         NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithDictionary:
             [defaults objectForKey:kOverrides]];
@@ -131,13 +131,13 @@ static void loadPreferences()
         CFPreferencesSetAppValue((CFStringRef)kOverrides, dict, appId);
         CFPreferencesSynchronize(appId, kCFPreferencesCurrentUser, kCFPreferencesCurrentHost);
     }
-    [appsWithOverrides retain];
+    [appsWithOverrides_ retain];
 }
 
 static id objectForKey(NSString *key, NSString *displayId)
 {
     NSDictionary *prefs = nil;
-    if ([appsWithOverrides containsObject:displayId]) {
+    if ([appsWithOverrides_ containsObject:displayId]) {
         // This application does not use the default preferences
         CFPropertyListRef propList = CFPreferencesCopyAppValue((CFStringRef)kOverrides, CFSTR(APP_ID));
         if (propList != NULL) {
@@ -147,7 +147,7 @@ static id objectForKey(NSString *key, NSString *displayId)
         }
     } else {
         // Use the default preferences
-        prefs = globalPrefs;
+        prefs = globalPrefs_;
     }
 
     // Retrieve the value for the specified key
@@ -257,7 +257,7 @@ NSMutableArray *displayStacks = nil;
 //==============================================================================
 
 // The alert window displays instructions when the home button is held down
-static BackgrounderAlertItem *alert = nil;
+static BackgrounderAlertItem *alert_ = nil;
 
 //==============================================================================
 
@@ -266,11 +266,11 @@ static BackgrounderAlertItem *alert = nil;
 - (void)dismissBackgrounderFeedback;
 @end
 
-static NSMutableArray *activeApps = nil;
-static NSMutableArray *bgEnabledApps = nil;
+static NSMutableArray *activeApps_ = nil;
+static NSMutableArray *enabledApps_ = nil;
 
-static NSString *displayIdToSuspend = nil;
-static BOOL shouldSuspend = NO;
+static NSString *displayIdToSuspend_ = nil;
+static BOOL shouldSuspend_ = NO;
 
 %hook SpringBoard
 
@@ -286,8 +286,8 @@ static BOOL shouldSuspend = NO;
     loadPreferences();
 
     // Create necessary arrays
-    activeApps = [[NSMutableArray alloc] init];
-    bgEnabledApps = [[NSMutableArray alloc] init];
+    activeApps_ = [[NSMutableArray alloc] init];
+    enabledApps_ = [[NSMutableArray alloc] init];
 
     // Create the libactivator event listener
     [BackgrounderActivator load];
@@ -295,9 +295,9 @@ static BOOL shouldSuspend = NO;
 
 - (void)dealloc
 {
-    [displayIdToSuspend release];
-    [bgEnabledApps release];
-    [activeApps release];
+    [displayIdToSuspend_ release];
+    [enabledApps_ release];
+    [activeApps_ release];
     [displayStacks release];
 
     %orig;
@@ -307,17 +307,17 @@ static BOOL shouldSuspend = NO;
 {
     %orig;
 
-    if (shouldSuspend) {
+    if (shouldSuspend_) {
         // Dismiss backgrounder message and suspend the application
         // NOTE: Only used when invocation method is MenuHoldShort
         [self performSelector:@selector(dismissBackgrounderFeedbackAndSuspend) withObject:nil];
-        shouldSuspend = NO;
+        shouldSuspend_ = NO;
     }
 }
 
 - (void)lockButtonUp:(GSEventRef)event
 {
-    if (shouldSuspend) {
+    if (shouldSuspend_) {
         // Reset the lock button state
         [self _unsetLockButtonBearTrap];
         [self _setLockButtonTimer:nil];
@@ -325,7 +325,7 @@ static BOOL shouldSuspend = NO;
         // Dismiss backgrounder message and suspend the application
         // NOTE: Only used when invocation method is LockHoldShort
         [self performSelector:@selector(dismissBackgrounderFeedbackAndSuspend) withObject:nil];
-        shouldSuspend = NO;
+        shouldSuspend_ = NO;
     } else {
         %orig;
     }
@@ -343,7 +343,7 @@ static BOOL shouldSuspend = NO;
     id app = [SBWActiveDisplayStack topApplication];
     if (app != nil) {
         NSString *identifier = [app displayIdentifier];
-        if (boolForKey(kStatusBarIconEnabled, identifier) && [bgEnabledApps containsObject:identifier])
+        if (boolForKey(kStatusBarIconEnabled, identifier) && [enabledApps_ containsObject:identifier])
             [sbCont addStatusBarItem:@"Backgrounder"];
     }
 }
@@ -357,55 +357,55 @@ static BOOL shouldSuspend = NO;
 %new(v@:)
 - (void)invokeBackgrounderAndAutoSuspend:(BOOL)autoSuspend
 {
-    if (displayIdToSuspend != nil)
+    if (displayIdToSuspend_ != nil)
         // Previous invocation has not finished
         return;
 
     id app = [SBWActiveDisplayStack topApplication];
     NSString *identifier = [app displayIdentifier];
     if (app && integerForKey(kBackgroundingMethod, identifier) != BGBackgroundingMethodOff) {
-        BOOL isEnabled = [bgEnabledApps containsObject:identifier];
+        BOOL isEnabled = [enabledApps_ containsObject:identifier];
         [self setBackgroundingEnabled:(!isEnabled) forDisplayIdentifier:identifier];
 
         // Create a simple popup message
         NSString *status = [NSString stringWithFormat:@"Backgrounding %s", (isEnabled ? "Disabled" : "Enabled")];
-        alert = [[objc_getClass("BackgrounderAlertItem") alloc] initWithTitle:status message:nil];
+        alert_ = [[objc_getClass("BackgrounderAlertItem") alloc] initWithTitle:status message:nil];
 
         // ... and display it
         SBAlertItemsController *controller = [objc_getClass("SBAlertItemsController") sharedInstance];
-        [controller activateAlertItem:alert];
+        [controller activateAlertItem:alert_];
 
         if (boolForKey(kMinimizeOnToggle, identifier))
             // Record identifer of application for suspension later
-            displayIdToSuspend = [identifier copy];
+            displayIdToSuspend_ = [identifier copy];
 
         if (autoSuspend)
             // After delay, simulate menu button tap to suspend current app
             [self performSelector:@selector(dismissBackgrounderFeedbackAndSuspend) withObject:nil afterDelay:0.7f];
         else
             // NOTE: Only used when invocation method is MenuHoldShort or LockHoldShort
-            shouldSuspend = YES;
+            shouldSuspend_ = YES;
     }
 }
 
 %new(v@:)
 - (void)cancelPreviousBackgrounderInvocation
 {
-    if (alert != nil) {
+    if (alert_ != nil) {
         // Backgrounder was invoked (feedback exists)
-        alert.alertSheet.title = @"Cancelled!";
+        alert_.alertSheet.title = @"Cancelled!";
 
         // Undo change to backgrounding status of current application
         id app = [SBWActiveDisplayStack topApplication];
         if (app) {
             NSString *identifier = [app displayIdentifier];
-            BOOL isEnabled = [bgEnabledApps containsObject:identifier];
+            BOOL isEnabled = [enabledApps_ containsObject:identifier];
             [self setBackgroundingEnabled:(!isEnabled) forDisplayIdentifier:identifier];
         }
 
         // Reset related variables
-        [displayIdToSuspend release];
-        displayIdToSuspend = nil;
+        [displayIdToSuspend_ release];
+        displayIdToSuspend_ = nil;
 
         // Dismiss feedback after short delay (else cancellation message will not be seen)
         [self performSelector:@selector(dismissBackgrounderFeedback) withObject:nil afterDelay:1.0f];
@@ -416,7 +416,7 @@ static BOOL shouldSuspend = NO;
 - (void)setBackgroundingEnabled:(BOOL)enable forDisplayIdentifier:(NSString *)identifier
 {
     if (integerForKey(kBackgroundingMethod, identifier) != BGBackgroundingMethodOff) {
-        BOOL isEnabled = [bgEnabledApps containsObject:identifier];
+        BOOL isEnabled = [enabledApps_ containsObject:identifier];
         if (isEnabled != enable) {
             // Tell the application to change its backgrounding status
             SBApplication *app = [[objc_getClass("SBApplicationController") sharedInstance]
@@ -433,10 +433,10 @@ static BOOL shouldSuspend = NO;
             // Store the new backgrounding status of the application and
             // optionally update the status bar icon
             if (enable) {
-                [bgEnabledApps addObject:identifier];
+                [enabledApps_ addObject:identifier];
                 [sbCont addStatusBarItem:@"Backgrounder"];
             } else {
-                [bgEnabledApps removeObject:identifier];
+                [enabledApps_ removeObject:identifier];
                 [sbCont removeStatusBarItem:@"Backgrounder"];
             }
         }
@@ -469,9 +469,9 @@ static BOOL shouldSuspend = NO;
 - (void)dismissBackgrounderFeedback
 {
     // Hide and release alert window (may be nil)
-    [alert dismiss];
-    [alert release];
-    alert = nil;
+    [alert_ dismiss];
+    [alert_ release];
+    alert_ = nil;
 }
 
 %new(v@:)
@@ -480,13 +480,13 @@ static BOOL shouldSuspend = NO;
     // Dismiss the message and suspend the application
     [self dismissBackgrounderFeedback];
 
-    if (displayIdToSuspend != nil) {
+    if (displayIdToSuspend_ != nil) {
         // Suspend the specified application
-        [self suspendAppWithDisplayIdentifier:displayIdToSuspend];
+        [self suspendAppWithDisplayIdentifier:displayIdToSuspend_];
 
         // Reset related variables
-        [displayIdToSuspend release];
-        displayIdToSuspend = nil;
+        [displayIdToSuspend_ release];
+        displayIdToSuspend_ = nil;
     }
 }
 
@@ -501,14 +501,14 @@ static BOOL shouldSuspend = NO;
     NSString *identifier = [self displayIdentifier];
 
     if (integerForKey(kBackgroundingMethod, identifier) != BGBackgroundingMethodOff) {
-        if ([activeApps containsObject:identifier]) {
+        if ([activeApps_ containsObject:identifier]) {
             // Was restored from backgrounded state
             if (!boolForKey(kPersistent, identifier)) {
                     // Tell the application to disable backgrounding
                     kill([self pid], SIGUSR1);
 
                 // Store the backgrounding status of the application
-                [bgEnabledApps removeObject:identifier];
+                [enabledApps_ removeObject:identifier];
             } 
         } else {
             // Initial launch; check if this application is set to always background
@@ -517,11 +517,11 @@ static BOOL shouldSuspend = NO;
                     kill([self pid], SIGUSR1);
 
                 // Store the backgrounding status of the application
-                [bgEnabledApps addObject:identifier];
+                [enabledApps_ addObject:identifier];
             }
 
             // Track active status of application
-            [activeApps addObject:identifier];
+            [activeApps_ addObject:identifier];
         }
     }
 
@@ -536,7 +536,7 @@ static BOOL shouldSuspend = NO;
 {
     // NOTE: The only time an application would exit while backgrounding is
     //       enabled is if it exited abnormally (e.g. crash).
-    [bgEnabledApps removeObject:[self displayIdentifier]];
+    [enabledApps_ removeObject:[self displayIdentifier]];
 
     %orig;
 }
@@ -546,7 +546,7 @@ static BOOL shouldSuspend = NO;
     // Application has exited (either normally or abnormally);
     // remove from active applications list
     NSString *identifier = [self displayIdentifier];
-    [activeApps removeObject:identifier];
+    [activeApps_ removeObject:identifier];
 
     if (boolForKey(kBadgeEnabled, identifier)) {
         // Update the SpringBoard icon to indicate that the app is not running
@@ -561,7 +561,7 @@ static BOOL shouldSuspend = NO;
 - (void)deactivate
 {
     NSString *identifier = [self displayIdentifier];
-    BOOL isBackgrounded = [bgEnabledApps containsObject:identifier];
+    BOOL isBackgrounded = [enabledApps_ containsObject:identifier];
 
     if (boolForKey(kBadgeEnabled, identifier) && isBackgrounded)
         // In case badge has not been added yet, add now
@@ -592,7 +592,7 @@ static BOOL shouldSuspend = NO;
 {
     %orig;
 
-    if ([bgEnabledApps containsObject:[self displayIdentifier]])
+    if ([enabledApps_ containsObject:[self displayIdentifier]])
         // If a notification is received while the device is locked, the app's
         // GUI will get "stuck" and will no longer respond to the home button.
         // Prevent this by hiding the app's context view upon deactivation.
@@ -607,7 +607,7 @@ static BOOL shouldSuspend = NO;
 //         3: Termination
 - (void)_startWatchdogTimerType:(int)type
 {
-    if (type != 3 || ![bgEnabledApps containsObject:[self displayIdentifier]])
+    if (type != 3 || ![enabledApps_ containsObject:[self displayIdentifier]])
         %orig;
 }
 

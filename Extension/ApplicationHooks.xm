@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-19 23:40:34
+ * Last-modified: 2010-06-19 23:58:10
  */
 
 /**
@@ -42,9 +42,9 @@
 
 #import "PreferenceConstants.h"
 
-static BOOL backgroundingEnabled = NO;
-static BGBackgroundingMethod backgroundingMethod = BGBackgroundingMethodBackgrounder;
-static BOOL fallbackToNative = YES;
+static BOOL backgroundingEnabled_ = NO;
+static BGBackgroundingMethod backgroundingMethod_ = BGBackgroundingMethodBackgrounder;
+static BOOL fallbackToNative_ = YES;
 
 #define GSEventRef void *
 
@@ -70,12 +70,12 @@ static void loadPreferences()
     // Backgrounding method
     id value = [prefs objectForKey:kBackgroundingMethod];
     if ([value isKindOfClass:[NSNumber class]])
-        backgroundingMethod = (BGBackgroundingMethod)[value integerValue];
+        backgroundingMethod_ = (BGBackgroundingMethod)[value integerValue];
 
     // Fallback to native
     value = [prefs objectForKey:kFallbackToNative];
     if ([value isKindOfClass:[NSNumber class]])
-        fallbackToNative = [value boolValue];
+        fallbackToNative_ = [value boolValue];
 }
 
 //==============================================================================
@@ -83,8 +83,8 @@ static void loadPreferences()
 // Callback
 static void toggleBackgrounding(int signal)
 {
-    if (backgroundingMethod != BGBackgroundingMethodOff)
-        backgroundingEnabled = !backgroundingEnabled;
+    if (backgroundingMethod_ != BGBackgroundingMethodOff)
+        backgroundingEnabled_ = !backgroundingEnabled_;
 }
 
 //==============================================================================
@@ -121,11 +121,11 @@ typedef struct {
 //       sets _applicationFlags.shouldExitAfterSendSuspend to YES
 - (void)applicationSuspend:(GSEventRef)event
 {
-    if (!backgroundingEnabled || backgroundingMethod != BGBackgroundingMethodBackgrounder) {
+    if (!backgroundingEnabled_ || backgroundingMethod_ != BGBackgroundingMethodBackgrounder) {
         %orig;
 
-        if (!backgroundingEnabled
-                && (backgroundingMethod != BGBackgroundingMethodBackgrounder || !fallbackToNative)) {
+        if (!backgroundingEnabled_
+                && (backgroundingMethod_ != BGBackgroundingMethodBackgrounder || !fallbackToNative_)) {
             // Application should terminate on suspend; make certain that it does
             // FIXME: Determine if there is any benefit of using shouldExitAfterSendSuspend
             //        over forceExit.
@@ -142,11 +142,11 @@ typedef struct {
 // Used by certain applications, such as Mail and Phone, instead of applicationSuspend:
 - (void)applicationSuspend:(GSEventRef)event settings:(id)settings
 {
-    if (!backgroundingEnabled || backgroundingMethod != BGBackgroundingMethodBackgrounder) {
+    if (!backgroundingEnabled_ || backgroundingMethod_ != BGBackgroundingMethodBackgrounder) {
         %orig;
 
-        if (!backgroundingEnabled
-                && (backgroundingMethod != BGBackgroundingMethodBackgrounder || !fallbackToNative)) {
+        if (!backgroundingEnabled_
+                && (backgroundingMethod_ != BGBackgroundingMethodBackgrounder || !fallbackToNative_)) {
             // Application should terminate on suspend; make certain that it does
             // NOTE: The shouldExitAfterSendSuspend flag appears to be ignored when
             //       this alternative method is called; resort to more "drastic"
@@ -172,7 +172,7 @@ typedef struct {
 // NOTE: Normally this method does nothing; only system apps can overrride
 - (void)applicationWillSuspend
 {
-    if (!backgroundingEnabled)
+    if (!backgroundingEnabled_)
         %orig;
 }
 
@@ -180,7 +180,7 @@ typedef struct {
 // NOTE: Normally this method does nothing; only system apps can overrride
 - (void)applicationDidResume
 {
-    if (!backgroundingEnabled)
+    if (!backgroundingEnabled_)
         %orig;
 }
 
@@ -198,7 +198,7 @@ typedef struct {
 // Delegate method
 - (void)applicationWillResignActive:(id)application
 {
-    if (!backgroundingEnabled)
+    if (!backgroundingEnabled_)
         %orig;
 }
 
@@ -209,7 +209,7 @@ typedef struct {
 // Delegate method
 - (void)applicationDidBecomeActive:(id)application
 {
-    if (!backgroundingEnabled)
+    if (!backgroundingEnabled_)
         %orig;
 }
 
@@ -239,7 +239,7 @@ typedef struct {
     if ([self respondsToSelector:@selector(applicationSuspend:settings:)])
         %init(GMethodAll_SuspendSettings, UIApplication = $UIApplication);
 
-    if (backgroundingMethod == BGBackgroundingMethodBackgrounder) {
+    if (backgroundingMethod_ == BGBackgroundingMethodBackgrounder) {
         id delegate = [self delegate];
         Class $AppDelegate = delegate ? [delegate class] : [self class];
         %init(GMethodBackgrounder, UIApplication = $UIApplication);
