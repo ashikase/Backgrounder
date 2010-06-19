@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-20 00:06:23
+ * Last-modified: 2010-06-20 00:08:31
  */
 
 /**
@@ -558,15 +558,15 @@ static BOOL shouldSuspend_ = NO;
 - (void)deactivate
 {
     NSString *identifier = [self displayIdentifier];
-    BOOL isBackgrounded = [enabledApps_ containsObject:identifier];
+    BOOL isEnabled = [enabledApps_ containsObject:identifier];
 
-    if (boolForKey(kBadgeEnabled, identifier) && isBackgrounded)
+    if (boolForKey(kBadgeEnabled, identifier) && isEnabled)
         // In case badge has not been added yet, add now
         // FIXME: Confirm if this is still needed
         showBadgeForDisplayIdentifier(identifier);
 
     BOOL flag;
-    if (isBackgrounded) {
+    if (isEnabled) {
         // Temporarily enable the eventOnly flag to prevent the applications's views
         // from being deallocated.
         // NOTE: Credit for this goes to phoenix3200 (author of Music Controls, http://phoenix-dev.com/)
@@ -577,7 +577,7 @@ static BOOL shouldSuspend_ = NO;
 
     %orig;
 
-    if (isBackgrounded)
+    if (isEnabled)
         // Must disable the eventOnly flag before returning, or else the application
         // will remain in the event-only display stack and prevent SpringBoard from
         // operating properly.
