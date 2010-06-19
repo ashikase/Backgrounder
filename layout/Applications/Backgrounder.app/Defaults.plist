@@ -30,7 +30,7 @@
             <key>badgeEnabled</key>
             <false/>
             <key>enableAtLaunch</key>
-            <false/>
+            <true/>
             <key>fallbackToNative</key>
             <true/>
             <key>minimizeOnToggle</key>
@@ -47,7 +47,7 @@
             <key>badgeEnabled</key>
             <false/>
             <key>enableAtLaunch</key>
-            <false/>
+            <true/>
             <key>fallbackToNative</key>
             <true/>
             <key>minimizeOnToggle</key>
@@ -64,7 +64,7 @@
             <key>badgeEnabled</key>
             <false/>
             <key>enableAtLaunch</key>
-            <false/>
+            <true/>
             <key>fallbackToNative</key>
             <true/>
             <key>minimizeOnToggle</key>
@@ -81,7 +81,7 @@
             <key>badgeEnabled</key>
             <false/>
             <key>enableAtLaunch</key>
-            <false/>
+            <true/>
             <key>fallbackToNative</key>
             <true/>
             <key>minimizeOnToggle</key>
@@ -98,7 +98,7 @@
             <key>badgeEnabled</key>
             <false/>
             <key>enableAtLaunch</key>
-            <false/>
+            <true/>
             <key>fallbackToNative</key>
             <true/>
             <key>minimizeOnToggle</key>
@@ -115,7 +115,7 @@
             <key>badgeEnabled</key>
             <false/>
             <key>enableAtLaunch</key>
-            <false/>
+            <true/>
             <key>fallbackToNative</key>
             <true/>
             <key>minimizeOnToggle</key>
