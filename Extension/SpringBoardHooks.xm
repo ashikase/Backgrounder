@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-20 02:43:17
+ * Last-modified: 2010-06-20 03:08:52
  */
 
 /**
@@ -305,15 +305,13 @@ static void setBackgroundingEnabled(SBApplication *app, BOOL enable)
 
 //==============================================================================
 
-// The alert window displays instructions when the home button is held down
-static BackgrounderAlertItem *alert_ = nil;
-
-//==============================================================================
-
 @interface SpringBoard (BackgrounderInternal)
 - (void)suspendAppWithDisplayIdentifier:(NSString *)displayId;
 - (void)dismissBackgrounderFeedback;
 @end
+
+// The alert window displays instructions when the home button is held down
+static BackgrounderAlertItem *alert_ = nil;
 
 static NSString *displayIdToSuspend_ = nil;
 static BOOL shouldSuspend_ = NO;
