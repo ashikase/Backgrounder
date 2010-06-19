@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-20 00:08:31
+ * Last-modified: 2010-06-20 00:12:05
  */
 
 /**
@@ -266,7 +266,6 @@ static BackgrounderAlertItem *alert_ = nil;
 - (void)dismissBackgrounderFeedback;
 @end
 
-static NSMutableArray *activeApps_ = nil;
 static NSMutableArray *enabledApps_ = nil;
 
 static NSString *displayIdToSuspend_ = nil;
@@ -285,8 +284,7 @@ static BOOL shouldSuspend_ = NO;
     // Load extension preferences
     loadPreferences();
 
-    // Create necessary arrays
-    activeApps_ = [[NSMutableArray alloc] init];
+    // Create array to track apps with backgrounding enabled
     enabledApps_ = [[NSMutableArray alloc] init];
 
     // Create the libactivator event listener
@@ -297,7 +295,6 @@ static BOOL shouldSuspend_ = NO;
 {
     [displayIdToSuspend_ release];
     [enabledApps_ release];
-    [activeApps_ release];
     [displayStacks release];
 
     %orig;
@@ -501,7 +498,7 @@ static BOOL shouldSuspend_ = NO;
     NSString *identifier = [self displayIdentifier];
 
     if (integerForKey(kBackgroundingMethod, identifier) != BGBackgroundingMethodOff) {
-        if ([activeApps_ containsObject:identifier]) {
+        if ([enabledApps_ containsObject:identifier]) {
             // Was restored from backgrounded state
             if (!boolForKey(kPersistent, identifier)) {
                     // Tell the application to disable backgrounding
@@ -519,9 +516,6 @@ static BOOL shouldSuspend_ = NO;
                 // Store the backgrounding status of the application
                 [enabledApps_ addObject:identifier];
             }
-
-            // Track active status of application
-            [activeApps_ addObject:identifier];
         }
     }
 
@@ -541,9 +535,6 @@ static BOOL shouldSuspend_ = NO;
     //       is if it exited abnormally (e.g. crash) or if the "Native" method
     //       was in use and the app doesn't natively support backgrounding.
     [enabledApps_ removeObject:identifier];
-
-    // Remove from active applications list
-    [activeApps_ removeObject:identifier];
 
     if (boolForKey(kBadgeEnabled, identifier)) {
         // Update the SpringBoard icon to indicate that the app is not running
