@@ -5,9 +5,7 @@
 >     No badge will be shown.
 >
 > * **On:**  
->     If the app is currently loaded, a badge will be displayed on the app's icon on the home screen (SpringBoard).
-> 
->     The badge will be displayed regardless of backgrounding method/state.
+>     If the app has backgrounding enabled, a badge will be displayed on the app's icon on the home screen (SpringBoard).
 
 - - -
 
@@ -19,5 +17,3 @@
 >
 > * **On:**  
 >     If the app has backgrounding enabled, an icon will be displayed in the status bar when the app is the current app.
->
->     In other words, the presence of this icon indicates that the current app will continue to run in the background when minimized. 
