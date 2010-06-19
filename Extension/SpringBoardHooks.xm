@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-20 00:12:05
+ * Last-modified: 2010-06-20 00:35:31
  */
 
 /**
@@ -256,6 +256,35 @@ NSMutableArray *displayStacks = nil;
 
 //==============================================================================
 
+static NSMutableArray *enabledApps_ = nil;
+
+// NOTE: Validity of parameters are not checked; use with caution.
+static void setBackgroundingEnabled(SBApplication *app, BOOL enable)
+{
+    NSString *identifier = [app displayIdentifier];
+
+    // FIXME: If the target application does not have the Backgrounder
+    //        hooks enabled, this will cause it to exit abnormally
+    kill([app pid], SIGUSR1);
+
+    // Prepare to update status bar icon, if necessary and enabled
+    SBStatusBarController *sbCont = nil;
+    if (app == [SBWActiveDisplayStack topApplication] && boolForKey(kStatusBarIconEnabled, identifier))
+        sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
+
+    // Store the new backgrounding status of the application and
+    // optionally update the status bar icon
+    if (enable) {
+        [enabledApps_ addObject:identifier];
+        [sbCont addStatusBarItem:@"Backgrounder"];
+    } else {
+        [enabledApps_ removeObject:identifier];
+        [sbCont removeStatusBarItem:@"Backgrounder"];
+    }
+}
+
+//==============================================================================
+
 // The alert window displays instructions when the home button is held down
 static BackgrounderAlertItem *alert_ = nil;
 
@@ -265,8 +294,6 @@ static BackgrounderAlertItem *alert_ = nil;
 - (void)suspendAppWithDisplayIdentifier:(NSString *)displayId;
 - (void)dismissBackgrounderFeedback;
 @end
-
-static NSMutableArray *enabledApps_ = nil;
 
 static NSString *displayIdToSuspend_ = nil;
 static BOOL shouldSuspend_ = NO;
@@ -418,24 +445,7 @@ static BOOL shouldSuspend_ = NO;
             // Tell the application to change its backgrounding status
             SBApplication *app = [[objc_getClass("SBApplicationController") sharedInstance]
                 applicationWithDisplayIdentifier:identifier];
-            // FIXME: If the target application does not have the Backgrounder
-            //        hooks enabled, this will cause it to exit abnormally
-            kill([app pid], SIGUSR1);
-
-            // Prepare to update status bar icon, if necessary and enabled
-            SBStatusBarController *sbCont = nil;
-            if (app == [SBWActiveDisplayStack topApplication] && boolForKey(kStatusBarIconEnabled, identifier))
-                sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
-
-            // Store the new backgrounding status of the application and
-            // optionally update the status bar icon
-            if (enable) {
-                [enabledApps_ addObject:identifier];
-                [sbCont addStatusBarItem:@"Backgrounder"];
-            } else {
-                [enabledApps_ removeObject:identifier];
-                [sbCont removeStatusBarItem:@"Backgrounder"];
-            }
+            setBackgroundingEnabled(app, enable);
         }
     }
 }
@@ -500,22 +510,12 @@ static BOOL shouldSuspend_ = NO;
     if (integerForKey(kBackgroundingMethod, identifier) != BGBackgroundingMethodOff) {
         if ([enabledApps_ containsObject:identifier]) {
             // Was restored from backgrounded state
-            if (!boolForKey(kPersistent, identifier)) {
-                    // Tell the application to disable backgrounding
-                    kill([self pid], SIGUSR1);
-
-                // Store the backgrounding status of the application
-                [enabledApps_ removeObject:identifier];
-            } 
+            if (!boolForKey(kPersistent, identifier))
+                setBackgroundingEnabled(self, NO);
         } else {
-            // Initial launch; check if this application is set to always background
-            if (boolForKey(kEnableAtLaunch, identifier)) {
-                    // Tell the application to enable backgrounding
-                    kill([self pid], SIGUSR1);
-
-                // Store the backgrounding status of the application
-                [enabledApps_ addObject:identifier];
-            }
+            // Initial launch; check if this application is set to background at launch
+            if (boolForKey(kEnableAtLaunch, identifier))
+                setBackgroundingEnabled(self, YES);
         }
     }
 
