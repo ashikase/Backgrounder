@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-20 03:08:52
+ * Last-modified: 2010-06-20 03:45:04
  */
 
 /**
@@ -279,9 +279,12 @@ static void setBackgroundingEnabled(SBApplication *app, BOOL enable)
 {
     NSString *identifier = [app displayIdentifier];
 
-    // FIXME: If the target application does not have the Backgrounder
-    //        hooks enabled, this will cause it to exit abnormally
-    kill([app pid], SIGUSR1);
+    // NOTE: Passing 0 or -1 to kill could be potentially disastrous.
+    int pid = [app pid];
+    if (pid > 0)
+        // FIXME: If the target application does not have the Backgrounder
+        //        hooks enabled, this will cause it to exit abnormally
+        kill(pid, SIGUSR1);
 
     // Store the new backgrounding status of the application
     if (enable)
