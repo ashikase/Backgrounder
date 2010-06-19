@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-19 23:55:38
+ * Last-modified: 2010-06-20 00:06:23
  */
 
 /**
@@ -532,20 +532,17 @@ static BOOL shouldSuspend_ = NO;
     %orig;
 }
 
-- (void)exitedAbnormally
-{
-    // NOTE: The only time an application would exit while backgrounding is
-    //       enabled is if it exited abnormally (e.g. crash).
-    [enabledApps_ removeObject:[self displayIdentifier]];
-
-    %orig;
-}
-
 - (void)exitedCommon
 {
     // Application has exited (either normally or abnormally);
-    // remove from active applications list
     NSString *identifier = [self displayIdentifier];
+
+    // NOTE: The only time an app would exit while backgrounding is enabled
+    //       is if it exited abnormally (e.g. crash) or if the "Native" method
+    //       was in use and the app doesn't natively support backgrounding.
+    [enabledApps_ removeObject:identifier];
+
+    // Remove from active applications list
     [activeApps_ removeObject:identifier];
 
     if (boolForKey(kBadgeEnabled, identifier)) {
