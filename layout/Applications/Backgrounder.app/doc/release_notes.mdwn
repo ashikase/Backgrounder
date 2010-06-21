@@ -1,3 +1,13 @@
+> # Version svn.r492
+> - - -
+> * MOD: The "Native" backgrounding method is now manually controllable.
+> * MOD: The meaning of the "badge" option has changed.
+>    - Due to numerous complaints, the badge now is used to indicate backgrounding state, not whether or not an app is running.
+>    - Most users will not notice a major difference.
+> * MOD: Added a separate status bar icon image for the "Native" backgrounding method.
+
+- - -
+
 > # Version svn.r461
 > - - -
 > * MOD: The "Native" backgrounding method now uses a separate badge image.
