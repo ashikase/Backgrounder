@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-20 03:52:59
+ * Last-modified: 2010-06-20 14:45:02
  */
 
 /**
@@ -233,7 +233,7 @@ static void setBadgeVisible(SBApplication *app, BOOL visible)
     SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
 
     // Remove any existing badge
-    // NOTE: Icon may already have a badge due to fallback to native option
+    // NOTE: Icon may already have a badge due to fall back to native option
     [[icon viewWithTag:1000] removeFromSuperview];
 
     if (visible) {
@@ -292,10 +292,11 @@ static void setBackgroundingEnabled(SBApplication *app, BOOL enable)
     else
         [enabledApps_ removeObject:identifier];
 
-    // NOTE: Indicators will also be shown if fallback to native option is enabled
+    // NOTE: Indicators will also be shown if fall back to native option is enabled
     BOOL showIndicator = enable
         || (integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
-                && boolForKey(kFallbackToNative, identifier));
+                && boolForKey(kFallbackToNative, identifier)
+                && pid > 0);
 
     // Update badge (if necessary)
     if (boolForKey(kBadgeEnabled, identifier))
@@ -576,6 +577,15 @@ static BOOL shouldSuspend_ = NO;
         // operating properly.
         // NOTE: This is the continuation of phoenix3200's fix
         [self setDeactivationSetting:0x1 flag:flag];
+
+    // NOTE: For apps set to fall back to native, the native badge will not be
+    //       displayed until the backgrounding state of the app has been toggled
+    //       on and off. This workaround ensures that a native badge is added.
+    // FIXME: Find a better way to do this.
+    if (!isEnabled
+            && integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
+            && boolForKey(kFallbackToNative, identifier))
+        setBadgeVisible(self, YES);
 }
 
 - (void)deactivated
