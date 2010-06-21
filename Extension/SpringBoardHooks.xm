@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-20 14:45:02
+ * Last-modified: 2010-06-20 17:53:30
  */
 
 /**
@@ -268,9 +268,15 @@ static void setStatusBarIndicatorVisible(SBApplication *app, BOOL visible)
         // Remove any existing indicator
         SBStatusBarController *sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
         [sbCont removeStatusBarItem:@"Backgrounder"];
+        [sbCont removeStatusBarItem:@"Backgrounder_Native"];
 
-        if (visible)
-            [sbCont addStatusBarItem:@"Backgrounder"];
+        if (visible) {
+            NSString *identifier = [app displayIdentifier];
+            BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
+                && [enabledApps_ containsObject:identifier];
+            NSString *itemName = isBackgrounderMethod ? @"Backgrounder" : @"Backgrounder_Native";
+            [sbCont addStatusBarItem:itemName];
+        }
     }
 }
 
@@ -521,7 +527,8 @@ static BOOL shouldSuspend_ = NO;
 {
     NSString *identifier = [self displayIdentifier];
 
-    if (integerForKey(kBackgroundingMethod, identifier) != BGBackgroundingMethodOff) {
+    NSInteger backgroundingMethod = integerForKey(kBackgroundingMethod, identifier);
+    if (backgroundingMethod != BGBackgroundingMethodOff) {
         // NOTE: Display setting 0x2 is resume
         if ([self displaySetting:0x2]) {
             // Was restored from backgrounded state
@@ -535,6 +542,11 @@ static BOOL shouldSuspend_ = NO;
             // Initial launch; check if this application is set to background at launch
             if (boolForKey(kEnableAtLaunch, identifier))
                 setBackgroundingEnabled(self, YES);
+            else if (boolForKey(kStatusBarIconEnabled, identifier)
+                    && backgroundingMethod == BGBackgroundingMethodBackgrounder
+                    && boolForKey(kFallbackToNative, identifier))
+                // Must add the initial indicator for "Native"
+                setStatusBarIndicatorVisible(self, YES);
         }
     }
 
