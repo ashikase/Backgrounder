@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-21 15:15:30
+ * Last-modified: 2010-06-22 00:32:33
  */
 
 /**
@@ -582,12 +582,15 @@ static BOOL shouldSuspend_ = NO;
 {
     NSString *identifier = [self displayIdentifier];
     BOOL isEnabled = [enabledApps_ containsObject:identifier];
+    BOOL isBackgrounderMethod =
+        (integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder);
 
     BOOL flag;
-    if (isEnabled) {
+    if (isEnabled && isBackgrounderMethod) {
         // Temporarily enable the eventOnly flag to prevent the applications's views
         // from being deallocated.
         // NOTE: Credit for this goes to phoenix3200 (author of Music Controls, http://phoenix-dev.com/)
+        // NOTE: This prevents applicationSuspend: from being called.
         // FIXME: Run a trace on deactivate to determine why this works.
         flag = [self deactivationSetting:0x1];
         [self setDeactivationSetting:0x1 flag:YES];
@@ -595,7 +598,7 @@ static BOOL shouldSuspend_ = NO;
 
     %orig;
 
-    if (isEnabled)
+    if (isEnabled && isBackgrounderMethod)
         // Must disable the eventOnly flag before returning, or else the application
         // will remain in the event-only display stack and prevent SpringBoard from
         // operating properly.
@@ -607,9 +610,7 @@ static BOOL shouldSuspend_ = NO;
     //       displayed until the backgrounding state of the app has been toggled
     //       on and off. This workaround ensures that a native badge is added.
     // FIXME: Find a better way to do this.
-    if (!isEnabled
-            && integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
-            && boolForKey(kFallbackToNative, identifier))
+    if (!isEnabled && isBackgrounderMethod && boolForKey(kFallbackToNative, identifier))
         setBadgeVisible(self, YES);
 #endif
 }
