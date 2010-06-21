@@ -31,11 +31,9 @@
 
 > # Why does the badge show briefly after closing an app?
 > - - -
-> The badge indicates that an app is running; it has nothing to do with backgrounding status.
+> This can happen when using the "Native" backgrounding method.
 >
-> When an app is closed, even after the app's screen has disappeared, it may not have yet completely shutdown. Once the app actually quits, the badge will disappear.
->
-> Note that this is the same behavior as for badges on Mac OS X.
+> Not all apps support native backgrounding. For those apps, the badge will be displayed on the icon, but then removed shortly after when the app fails to background (i.e. when it quits).
 
 - - -
 
@@ -44,8 +42,8 @@
 > Yes. The badge image files are located at:
 >
 >         /System/Library/CoreServices/
->             SpringBoard.app/
->             Backgrounder_*Badge.png
+>            SpringBoard.app/
+>            Backgrounder_*Badge.png
 >
 > Overwriting these files is **not** recommended, though, as they will be replaced with each Backgrounder upgrade.
 >
@@ -54,11 +52,39 @@
 > The WinterBoard path for the "Native" badge is:
 >
 >         Some.theme/Bundles/
->             com.apple.springboard/
->             Backgrounder_NativeBadge.png
+>            com.apple.springboard/
+>            Backgrounder_NativeBadge.png
 >
 > The WinterBoard path for the "Backgrounder" badge is:
 >
 >         Some.theme/Bundles/
->             com.apple.springboard/
->             Backgrounder_Badge.png
+>            com.apple.springboard/
+>            Backgrounder_Badge.png
+
+- - -
+
+> # Can I use my own status bar icon images?
+> - - -
+> Yes. As with badges, the recommended method is to use WinterBoard.
+>
+> Note that each icon actually requires two images; one for the gray status bar (Default), and one for the black status bar (FSO).
+>
+> The WinterBoard path for the "Native" status bar icon is:
+>
+>         Some.theme/Bundles/
+>            com.apple.springboard/
+>            Default_Backgrounder_Native.png
+>
+>         Some.theme/Bundles/
+>            com.apple.springboard/
+>            FSO_Backgrounder_Native.png
+>
+> The WinterBoard path for the "Backgrounder" status bar icon is:
+>
+>         Some.theme/Bundles/
+>            com.apple.springboard/
+>            Default_Backgrounder.png
+>
+>         Some.theme/Bundles/
+>            com.apple.springboard/
+>            FSO_Backgrounder.png
