@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-20 17:53:30
+ * Last-modified: 2010-06-21 15:15:30
  */
 
 /**
@@ -272,8 +272,12 @@ static void setStatusBarIndicatorVisible(SBApplication *app, BOOL visible)
 
         if (visible) {
             NSString *identifier = [app displayIdentifier];
+#ifdef FALLBACK_INDICATORS
             BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
                 && [enabledApps_ containsObject:identifier];
+#else
+            BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder;
+#endif
             NSString *itemName = isBackgrounderMethod ? @"Backgrounder" : @"Backgrounder_Native";
             [sbCont addStatusBarItem:itemName];
         }
@@ -298,11 +302,15 @@ static void setBackgroundingEnabled(SBApplication *app, BOOL enable)
     else
         [enabledApps_ removeObject:identifier];
 
+#ifdef FALLBACK_INDICATORS
     // NOTE: Indicators will also be shown if fall back to native option is enabled
     BOOL showIndicator = enable
         || (integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
                 && boolForKey(kFallbackToNative, identifier)
                 && pid > 0);
+#else
+    BOOL showIndicator = enable;
+#endif
 
     // Update badge (if necessary)
     if (boolForKey(kBadgeEnabled, identifier))
@@ -534,19 +542,23 @@ static BOOL shouldSuspend_ = NO;
             // Was restored from backgrounded state
             if (!boolForKey(kPersistent, identifier))
                 setBackgroundingEnabled(self, NO);
-            else if (boolForKey(kStatusBarIconEnabled, identifier)) {
+            else if (boolForKey(kStatusBarIconEnabled, identifier))
+#ifndef FALLBACK_INDICATORS
+                if ([enabledApps_ containsObject:identifier])
+#endif
                 // Must re-add the indicator on resume
                 setStatusBarIndicatorVisible(self, YES);
-            }
         } else {
             // Initial launch; check if this application is set to background at launch
             if (boolForKey(kEnableAtLaunch, identifier))
                 setBackgroundingEnabled(self, YES);
+#ifdef FALLBACK_INDICATORS
             else if (boolForKey(kStatusBarIconEnabled, identifier)
                     && backgroundingMethod == BGBackgroundingMethodBackgrounder
                     && boolForKey(kFallbackToNative, identifier))
                 // Must add the initial indicator for "Native"
                 setStatusBarIndicatorVisible(self, YES);
+#endif
         }
     }
 
@@ -590,6 +602,7 @@ static BOOL shouldSuspend_ = NO;
         // NOTE: This is the continuation of phoenix3200's fix
         [self setDeactivationSetting:0x1 flag:flag];
 
+#ifdef FALLBACK_INDICATORS
     // NOTE: For apps set to fall back to native, the native badge will not be
     //       displayed until the backgrounding state of the app has been toggled
     //       on and off. This workaround ensures that a native badge is added.
@@ -598,6 +611,7 @@ static BOOL shouldSuspend_ = NO;
             && integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
             && boolForKey(kFallbackToNative, identifier))
         setBadgeVisible(self, YES);
+#endif
 }
 
 - (void)deactivated
