@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 22:06:47
+ * Last-modified: 2010-06-23 22:52:26
  */
 
 /**
@@ -90,7 +90,7 @@
 {
     if ([[Preferences sharedInstance] needsRespring])
         // Respring SpringBoard
-        notify_post("com.apple.language.changed");
+        system("/usr/bin/killall SpringBoard");
 }
 
 @end
