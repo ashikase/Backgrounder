@@ -1,3 +1,9 @@
+> # Version svn.r494
+> - - -
+> * FIX: Normally Safari should quit if all pages are closed. A bug in the Native method prevented it from doing so.
+
+- - -
+
 > # Version svn.r492
 > - - -
 > * MOD: The "Native" backgrounding method is now manually controllable.
