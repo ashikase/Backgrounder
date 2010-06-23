@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 22:06:51
+ * Last-modified: 2010-06-21 00:16:38
  */
 
 /**
@@ -42,14 +42,31 @@
 
 #import "ApplicationCell.h"
 
+#include <dlfcn.h>
+
 // SpringBoardServices
 extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
 extern NSString * SBSCopyIconImagePathForDisplayIdentifier(NSString *identifier);
+
+// Firmware 4.x
+// NOTE: The SBS method actually returns CFData; taking advantage of toll-free bridging
+static BOOL isFirmware3x = NO;
+static NSData * (*SBSCopyIconImagePNGDataForDisplayIdentifier)(NSString *identifier) = NULL;
 
 
 @implementation ApplicationCell
 
 @synthesize displayId;
+
++ (void)initialize
+{
+    // Determine firmware version
+    isFirmware3x = [[[UIDevice currentDevice] systemVersion] hasPrefix:@"3"];
+    if (!isFirmware3x) {
+        // Firmware >= 4.0
+        SBSCopyIconImagePNGDataForDisplayIdentifier = dlsym(RTLD_DEFAULT, "SBSCopyIconImagePNGDataForDisplayIdentifier");
+    }
+}
 
 - (void)setDisplayId:(NSString *)identifier
 {
@@ -62,10 +79,22 @@ extern NSString * SBSCopyIconImagePathForDisplayIdentifier(NSString *identifier)
         [displayName release];
 
         UIImage *icon = nil;
-        NSString *iconPath = SBSCopyIconImagePathForDisplayIdentifier(identifier);
-        if (iconPath != nil) {
-            icon = [UIImage imageWithContentsOfFile:iconPath];
-            [iconPath release];
+        if (isFirmware3x) {
+            // Firmware < 4.0
+            NSString *iconPath = SBSCopyIconImagePathForDisplayIdentifier(identifier);
+            if (iconPath != nil) {
+                icon = [UIImage imageWithContentsOfFile:iconPath];
+                [iconPath release];
+            }
+        } else {
+            // Firmware >= 4.0
+            if (SBSCopyIconImagePNGDataForDisplayIdentifier != NULL) {
+                NSData *data = (*SBSCopyIconImagePNGDataForDisplayIdentifier)(identifier);
+                if (data != nil) {
+                    icon = [UIImage imageWithData:data];
+                    [data release];
+                }
+            }
         }
         self.imageView.image = icon;
     }
