@@ -1,7 +1,6 @@
 > # Todo
 > ## (These *might* be implemented)
 > - - -
-> * Add support for iPhone OS 4.0.
 
 - - -
 

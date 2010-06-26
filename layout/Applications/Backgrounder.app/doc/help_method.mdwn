@@ -13,15 +13,17 @@
 > * **Native**  
 >     The app will be backgrounded using the app's built-in backgrounding method, if available.
 > 
->     Certain Apple apps, such as Phone, Mail, iPod and Safari, as well as some 3rd-party jailbreak apps, such as MobileTerminal, include support for backgrounding. For such apps, it is recommended to use this "Native" method instead of the "Backgrounder" method, as the native method normally requires less resources.
+>     Certain Apple apps, such as Phone, Mail, iPod and Safari, as well as some 3rd-party jailbreak apps, such as MobileTerminal, include support for true backgrounding. For such apps, it is recommended to use this "Native" method instead of the "Backgrounder" method, as the native method normally requires less resources.
 >
->     Note that for apps that do not include this built-in support, this method is the same as the "Off" method.
+>     As of iOS 4.0, App Store apps are allowed to take advantage of various methods of pseudo-backgrounding (audio, gps, voip functionality, freeze in memory). It is recommended to use the "Native" method for these apps as well.
+>
+>     Note that for apps that do not include true or pseudo-backgrounding support built-in, the "Native" method is the same as the "Off" method.
 > 
->     Also note that selecting this method will also enable the "Enable at Launch" and "Stay Enabled" options. This is done so that, by default, the app will behave the same as it would if Backgrounder were not installed.
+>     Also note that selecting this method will automatically enable the "Enable at Launch" and "Stay Enabled" options. This is done so that, by default, the app will behave the same as it would if Backgrounder were not installed.
 >
 > * **Backgrounder**  
 >     The app will continue to run as if it were still in the foreground.
 > 
 >     Note that the app does not know that it is in the background, and so it cannot release unneeded resources. This can be quite expensive both CPU and memory-wise.
 >
->     This method is not recommended for apps that have built-in backgrounding support, such as Phone, Mail, iPod and Safari.
+>     This method is not recommended for apps that have true backgrounding support built-in, such as Phone, Mail, iPod and Safari.

@@ -11,6 +11,8 @@
 
 > # Status Bar Icon
 > ## (Default: Off)
+> ### Does not work on iOS 4.0
+> 
 > - - -
 > * **Off:**  
 >     No status bar icon will be shown.
