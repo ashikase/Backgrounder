@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-26 03:42:09
+j* Last-modified: 2010-06-27 03:51:00
  */
 
 /**
@@ -62,7 +62,11 @@ static void loadPreferences()
 {
     NSString *displayId = [[UIApplication sharedApplication] displayIdentifier];
 
-    NSDictionary *defaults = [[NSUserDefaults standardUserDefaults] persistentDomainForName:@APP_ID];
+    // NOTE: System preferences are not accessible from App Store apps.
+    //       A symlink to the preferences file is stored in /var/mobile,
+    //       which *can* be accessed.
+    NSDictionary *defaults = [NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/.backgrounderrc"];
+
     NSDictionary *prefs = [[defaults objectForKey:kOverrides] objectForKey:displayId];
     if (prefs == nil)
         prefs = [defaults objectForKey:kGlobal];

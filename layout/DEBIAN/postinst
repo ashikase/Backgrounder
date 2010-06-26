@@ -2,5 +2,9 @@
 
 if [ -f "/var/mobile/Library/Preferences/jp.ashikase.backgrounder.plist" ]; then
     # Run updater application to convert old settings to new per-app format
-    su -l mobile -c /Applications/Backgrounder.app/Updater
+    /bin/su -l mobile -c /Applications/Backgrounder.app/Updater
 fi
+
+# System preferences are not accessible within App Store apps (thanks to the sandbox).
+# A symlink to the preferences file is stored in /var/mobile, which *can* be accessed.
+/bin/su -l mobile -c "/bin/ln -snf /var/mobile/Library/Preferences/jp.ashikase.backgrounder.plist /var/mobile/.backgrounderrc"
