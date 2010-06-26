@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-26 18:21:54
+ * Last-modified: 2010-06-26 22:09:25
  */
 
 /**
@@ -239,6 +239,7 @@ NSMutableArray *displayStacks = nil;
 //==============================================================================
 
 static NSMutableArray *enabledApps_ = nil;
+static NSMutableArray *appsPermittedToRelaunch_ = nil;
 
 @interface UIView (Geometry)
 @property(assign) CGPoint origin;
@@ -373,6 +374,9 @@ static BOOL shouldSuspend_ = NO;
     // Create array to track apps with backgrounding enabled
     enabledApps_ = [[NSMutableArray alloc] init];
 
+    // Create array to mark apps that are allowed to auto-relaunch
+    appsPermittedToRelaunch_ = [[NSMutableArray alloc] init];
+
     // Create the libactivator event listener
     [BackgrounderActivator load];
 }
@@ -380,6 +384,7 @@ static BOOL shouldSuspend_ = NO;
 - (void)dealloc
 {
     [displayIdToSuspend_ release];
+    [appsPermittedToRelaunch_ release];
     [enabledApps_ release];
     [displayStacks release];
 
@@ -589,6 +594,18 @@ static BOOL shouldSuspend_ = NO;
     %orig;
 }
 
+- (void)exitedAbnormally
+{
+    NSString *identifier = [self displayIdentifier];
+    if ([enabledApps_ containsObject:identifier]
+            || (integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
+                && boolForKey(kFallbackToNative, identifier)))
+        // Allow app to relaunch (if it supports relaunching)
+        [appsPermittedToRelaunch_ addObject:identifier];
+
+    %orig;
+}
+
 - (void)exitedCommon
 {
     // Application has exited (either normally or abnormally);
@@ -727,28 +744,66 @@ static BOOL shouldSuspend_ = NO;
 
 %end // GFirmware30x
 
-// NOTE: Only hooked for firmware >= 3.1
-%group GFirmware31x
-
-%hook SBApplication
-
-- (BOOL)_shouldAutoLaunchOnBoot:(BOOL)boot
+static BOOL shouldAutoLaunch(NSString *identifier, BOOL initialCheck, BOOL origValue)
 {
     // NOTE: This method determines both whether an application should be
     //       launched at startup and whether it should be relaunched when
     //       terminated.
-
-    // If backgrounding method is set to off or manual, prevent auto-(re)launch
-    // NOTE: Only Phone and Mail are known to auto-(re)launch
-    // NOTE: 0x10 is statusBarMode; this value is only set on relaunched items.
     // FIXME: Support for auto-boot flag.
-    return (integerForKey(kBackgroundingMethod, [self displayIdentifier]) != BGBackgroundingMethodNative
-            || [self displayValue:0x10] != nil) ? NO : %orig;
+
+    BOOL ret = NO;
+
+    if (initialCheck) {
+        NSInteger backgroundingMethod = integerForKey(kBackgroundingMethod, identifier);
+        if (backgroundingMethod == BGBackgroundingMethodNative
+            || (backgroundingMethod == BGBackgroundingMethodBackgrounder && boolForKey(kFallbackToNative, identifier)))
+            // Allow launch at boot
+            ret = origValue;
+    } else {
+        if ([appsPermittedToRelaunch_ containsObject:identifier]) {
+            // Allow relaunch
+            ret = origValue;
+
+    NSLog(@"=== abnormal 02");
+            // Remove from list
+            [appsPermittedToRelaunch_ removeObject:identifier];
+        }
+    }
+
+    return ret;
+}
+
+// NOTE: Only hooked for firmware 3.1 - 3.2
+%group GFirmware31x
+
+%hook SBApplication
+
+- (BOOL)_shouldAutoLaunchOnBoot:(BOOL)initialCheck
+{
+    // NOTE: Meaning of passed parameter is a guess, based on disassembly.
+    // FIXME: Confirm meaning.
+    return shouldAutoLaunch([self displayIdentifier], initialCheck, %orig);
 }
 
 %end
 
 %end // GFirmware31x
+
+// NOTE: Only hooked for firmware >= 4.0
+%group GFirmware4x
+
+%hook SBApplication
+
+- (BOOL)_shouldAutoLaunchOnBootOrInstall:(BOOL)initialCheck
+{
+    // NOTE: Meaning of passed parameter is a guess, based on disassembly.
+    // FIXME: Confirm meaning.
+    return shouldAutoLaunch([self displayIdentifier], initialCheck, %orig);
+}
+
+%end
+
+%end // GFirmware4x
 
 //==============================================================================
 
@@ -756,17 +811,22 @@ void initSpringBoardHooks()
 {
     %init;
 
-    // Load firmware-specific hooks
-    Class $SBApplication = objc_getClass("SBApplication");
-    if (class_getInstanceMethod($SBApplication, @selector(_shouldAutoLaunchOnBoot:)) == NULL)
-        // Firmware < 3.1
-        %init(GFirmware30x);
-    else
-        // Firmware >= 3.1
-        %init(GFirmware31x);
-
     // Determine firmware version
+    Class $SBApplication = objc_getClass("SBApplication");
     isFirmware3x = (class_getInstanceMethod($SBApplication, @selector(pid)) != NULL);
+
+    // Load firmware-specific hooks
+    if (isFirmware3x) {
+        if (class_getInstanceMethod($SBApplication, @selector(_shouldAutoLaunchOnBoot:)) == NULL)
+            // Firmware < 3.1
+            %init(GFirmware30x);
+        else
+            // Firmware 3.1 - 3.2
+            %init(GFirmware31x);
+    } else {
+        // Firmware >= 4.0
+        %init(GFirmware4x);
+    }
 
     // Initialize simple notification popup
     initSimplePopup();
