@@ -1,3 +1,12 @@
+> # Version svn.r502
+> - - -
+> * NEW: Initial iOS 4.0 support
+>    - Status bar icon does not yet work in iOS 4.0.
+>    - Disabling backgrounding for AppStore *may* prevent it from working properly when agreeing to a new license.  (Please report.)
+> * MOD: Updated handling of auto-(re)launching of apps.
+
+- - -
+
 > # Version svn.r494
 > - - -
 > * FIX: Normally Safari should quit if all pages are closed. A bug in the Native method prevented it from doing so.
