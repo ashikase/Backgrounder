@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-20 03:08:17
+ * Last-modified: 2010-06-26 03:42:09
  */
 
 /**
@@ -42,6 +42,9 @@
 
 #import "PreferenceConstants.h"
 
+
+static BOOL isFirmware3x = NO;
+
 static BOOL backgroundingEnabled_ = NO;
 static BGBackgroundingMethod backgroundingMethod_ = BGBackgroundingMethodBackgrounder;
 static BOOL fallbackToNative_ = YES;
@@ -52,6 +55,7 @@ static BOOL fallbackToNative_ = YES;
 
 @interface UIApplication (Private)
 - (NSString *)displayIdentifier;
+- (void)terminateWithSuccess;
 @end
 
 static void loadPreferences()
@@ -86,7 +90,8 @@ static void toggleBackgrounding(int signal)
 //==============================================================================
 
 // NOTE: This struct comes from UIApplication; note that this declaration is incomplete.
-//       These first few members are valid in firmwares 3.0 - 3.2.
+
+// // Firmware 3.0 - 3.2.
 typedef struct {
     unsigned isActive : 1;
     unsigned isSuspended : 1;
@@ -106,7 +111,34 @@ typedef struct {
     unsigned isSuspendedUnderLock : 1;
     unsigned shouldExitAfterSendSuspend : 1;
     // ...
-} UIApplicationFlags;
+} UIApplicationFlags3x;
+
+// Firmware 4.0
+typedef struct {
+    unsigned isActive : 1;
+    unsigned isSuspended : 1;
+    unsigned isSuspendedEventsOnly : 1;
+    unsigned isLaunchedSuspended : 1;
+    unsigned calledNonSuspendedLaunchDelegate : 1;
+    unsigned isHandlingURL : 1;
+    unsigned isHandlingRemoteNotification : 1;
+    unsigned isHandlingLocalNotification : 1;
+    unsigned statusBarShowsProgress : 1;
+    unsigned statusBarRequestedStyle : 4;
+    unsigned statusBarHidden : 1;
+    unsigned blockInteractionEvents : 4;
+    unsigned receivesMemoryWarnings : 1;
+    unsigned showingProgress : 1;
+    unsigned receivesPowerMessages : 1;
+    unsigned launchEventReceived : 1;
+    unsigned isAnimatingSuspensionOrResumption : 1;
+    unsigned isResuming : 1;
+    unsigned isSuspendedUnderLock : 1;
+    unsigned isRunningInTaskSwitcher : 1;
+    unsigned shouldExitAfterSendSuspend : 1;
+    // ...
+} UIApplicationFlags4x;
+
 
 %hook UIApplication
 
@@ -125,8 +157,13 @@ typedef struct {
             // Application should terminate on suspend; make certain that it does
             // FIXME: Determine if there is any benefit of using shouldExitAfterSendSuspend
             //        over forceExit.
-            UIApplicationFlags &_applicationFlags = MSHookIvar<UIApplicationFlags>(self, "_applicationFlags");
-            _applicationFlags.shouldExitAfterSendSuspend = YES;
+            if (isFirmware3x) {
+                UIApplicationFlags3x &_applicationFlags = MSHookIvar<UIApplicationFlags3x>(self, "_applicationFlags");
+                _applicationFlags.shouldExitAfterSendSuspend = YES;
+            } else {
+                UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
+                _applicationFlags.shouldExitAfterSendSuspend = YES;
+            }
         }
     }
 }
@@ -136,21 +173,33 @@ typedef struct {
 %group GMethodAll_SuspendSettings
 
 // Used by certain applications, such as Mail and Phone, instead of applicationSuspend:
-- (void)applicationSuspend:(GSEventRef)event settings:(id)settings
+- (BOOL)applicationSuspend:(GSEventRef)event settings:(id)settings
 {
+    // NOTE: The return value for this method appears to not be used;
+    //       perhaps a leftover from 1.x/2.x?
+    // FIXME: Confirm this.
+    BOOL ret = NO;
+
     if (!backgroundingEnabled_ || backgroundingMethod_ != BGBackgroundingMethodBackgrounder) {
-        %orig;
+        ret = %orig;
 
         if (!backgroundingEnabled_
                 && (backgroundingMethod_ != BGBackgroundingMethodBackgrounder || !fallbackToNative_)) {
             // Application should terminate on suspend; make certain that it does
-            // NOTE: The shouldExitAfterSendSuspend flag appears to be ignored when
-            //       this alternative method is called; resort to more "drastic"
-            //       measures.
-            UIApplicationFlags &_applicationFlags = MSHookIvar<UIApplicationFlags>(self, "_applicationFlags");
-            _applicationFlags.forceExit = YES;
+            if (isFirmware3x) {
+                // NOTE: The shouldExitAfterSendSuspend flag appears to be ignored when
+                //       this alternative method is called; resort to more "drastic"
+                //       measures.
+                UIApplicationFlags3x &_applicationFlags = MSHookIvar<UIApplicationFlags3x>(self, "_applicationFlags");
+                _applicationFlags.forceExit = YES;
+            } else {
+                // FIXME: Not certain if this is the best method for forcing termination.
+                [self terminateWithSuccess];
+            }
         }
     }
+
+    return ret;
 }
 
 %end
@@ -236,11 +285,11 @@ typedef struct {
         %init(GMethodAll_SuspendSettings, UIApplication = $UIApplication);
 
     if (backgroundingMethod_ == BGBackgroundingMethodBackgrounder) {
-        id delegate = [self delegate];
-        Class $AppDelegate = delegate ? [delegate class] : [self class];
         %init(GMethodBackgrounder, UIApplication = $UIApplication);
 
         // NOTE: Not every app implements the following two methods
+        id delegate = [self delegate];
+        Class $AppDelegate = delegate ? [delegate class] : [self class];
         if ([delegate respondsToSelector:@selector(applicationWillResignActive:)])
             %init(GMethodBackgrounder_Resign, AppDelegate = $AppDelegate);
         if ([delegate respondsToSelector:@selector(applicationDidBecomeActive:)])
@@ -254,6 +303,9 @@ typedef struct {
 
 void initApplicationHooks()
 {
+    Class $UIApplication = objc_getClass("UIApplication");
+    isFirmware3x = (class_getInstanceMethod($UIApplication, @selector(applicationState)) == NULL);
+
     %init;
 
     // Setup action to take upon receiving toggle signal from SpringBoard
