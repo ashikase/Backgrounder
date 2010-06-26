@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-22 00:32:33
+ * Last-modified: 2010-06-26 18:21:54
  */
 
 /**
@@ -60,6 +60,23 @@
 + (CGSize)defaultIconImageSize;
 @end
 
+// Firmware >= 4.0
+@interface SBProcess : NSObject
+@property(readonly, assign) int pid;
+@end
+
+// Firmware >= 4.0
+@interface SBApplication (Firmware4x)
+@property(retain) SBProcess *process;
+- (void)setSuspendType:(int)type;
+- (int)_suspensionType;
+@end
+
+// Firmware >= 4.0
+@interface SBIconModel (Firmware4x)
+- (id)leafIconForIdentifier:(id)identifier; 
+@end
+
 @interface UIModalView : UIView
 @property(nonatomic,copy) NSString *title;
 @end
@@ -71,6 +88,8 @@ extern "C" {
     extern CFStringRef kGSUnifiedIPodCapability;
     Boolean GSSystemHasCapability(CFStringRef capability);
 }
+
+static BOOL isFirmware3x = NO;
 
 //==============================================================================
 
@@ -230,7 +249,9 @@ static void setBadgeVisible(SBApplication *app, BOOL visible)
     NSString *identifier = [app displayIdentifier];
 
     // Update the app's SpringBoard icon to indicate if backgrounding is enabled
-    SBApplicationIcon *icon = [[objc_getClass("SBIconModel") sharedInstance] iconForDisplayIdentifier:identifier];
+    SBIconModel *iconModel = [objc_getClass("SBIconModel") sharedInstance];
+    SBApplicationIcon *icon = isFirmware3x ?
+        [iconModel iconForDisplayIdentifier:identifier] : [iconModel leafIconForIdentifier:identifier];
 
     // Remove any existing badge
     // NOTE: Icon may already have a badge due to fall back to native option
@@ -265,21 +286,23 @@ static void setBadgeVisible(SBApplication *app, BOOL visible)
 static void setStatusBarIndicatorVisible(SBApplication *app, BOOL visible)
 {
     if (app == [SBWActiveDisplayStack topApplication]) {
-        // Remove any existing indicator
-        SBStatusBarController *sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
-        [sbCont removeStatusBarItem:@"Backgrounder"];
-        [sbCont removeStatusBarItem:@"Backgrounder_Native"];
+        if (isFirmware3x) {
+            // Remove any existing indicator
+            SBStatusBarController *sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
+            [sbCont removeStatusBarItem:@"Backgrounder"];
+            [sbCont removeStatusBarItem:@"Backgrounder_Native"];
 
-        if (visible) {
-            NSString *identifier = [app displayIdentifier];
+            if (visible) {
+                NSString *identifier = [app displayIdentifier];
 #ifdef FALLBACK_INDICATORS
-            BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
-                && [enabledApps_ containsObject:identifier];
+                BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
+                    && [enabledApps_ containsObject:identifier];
 #else
-            BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder;
+                BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder;
 #endif
-            NSString *itemName = isBackgrounderMethod ? @"Backgrounder" : @"Backgrounder_Native";
-            [sbCont addStatusBarItem:itemName];
+                NSString *itemName = isBackgrounderMethod ? @"Backgrounder" : @"Backgrounder_Native";
+                [sbCont addStatusBarItem:itemName];
+            }
         }
     }
 }
@@ -290,7 +313,7 @@ static void setBackgroundingEnabled(SBApplication *app, BOOL enable)
     NSString *identifier = [app displayIdentifier];
 
     // NOTE: Passing 0 or -1 to kill could be potentially disastrous.
-    int pid = [app pid];
+    int pid = isFirmware3x ? [app pid] : [[app process] pid];
     if (pid > 0)
         // FIXME: If the target application does not have the Backgrounder
         //        hooks enabled, this will cause it to exit abnormally
@@ -379,7 +402,8 @@ static BOOL shouldSuspend_ = NO;
 {
     if (shouldSuspend_) {
         // Reset the lock button state
-        [self _unsetLockButtonBearTrap];
+        if (isFirmware3x)
+            [self _unsetLockButtonBearTrap];
         [self _setLockButtonTimer:nil];
 
         // Dismiss backgrounder message and suspend the application
@@ -584,8 +608,9 @@ static BOOL shouldSuspend_ = NO;
     BOOL isEnabled = [enabledApps_ containsObject:identifier];
     BOOL isBackgrounderMethod =
         (integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder);
+    BOOL shouldFallback = isBackgrounderMethod && boolForKey(kFallbackToNative, identifier);
 
-    BOOL flag;
+    BOOL flag = NO;
     if (isEnabled && isBackgrounderMethod) {
         // Temporarily enable the eventOnly flag to prevent the applications's views
         // from being deallocated.
@@ -596,7 +621,21 @@ static BOOL shouldSuspend_ = NO;
         [self setDeactivationSetting:0x1 flag:YES];
     }
 
+    // Firmware 4.0
+    BOOL shouldQuit = !isFirmware3x && !isEnabled && !shouldFallback;
+    int suspendType = 0;
+    if (shouldQuit) {
+        // App should quit
+        suspendType = [self _suspensionType];
+        [self setSuspendType:0];
+    }
+
     %orig;
+
+    // Firmware 4.0
+    if (shouldQuit)
+        // Restore suspension type
+        [self setSuspendType:suspendType];
 
     if (isEnabled && isBackgrounderMethod)
         // Must disable the eventOnly flag before returning, or else the application
@@ -610,7 +649,7 @@ static BOOL shouldSuspend_ = NO;
     //       displayed until the backgrounding state of the app has been toggled
     //       on and off. This workaround ensures that a native badge is added.
     // FIXME: Find a better way to do this.
-    if (!isEnabled && isBackgrounderMethod && boolForKey(kFallbackToNative, identifier))
+    if (!isEnabled && shouldFallback)
         setBadgeVisible(self, YES);
 #endif
 }
@@ -725,6 +764,9 @@ void initSpringBoardHooks()
     else
         // Firmware >= 3.1
         %init(GFirmware31x);
+
+    // Determine firmware version
+    isFirmware3x = (class_getInstanceMethod($SBApplication, @selector(pid)) != NULL);
 
     // Initialize simple notification popup
     initSimplePopup();
