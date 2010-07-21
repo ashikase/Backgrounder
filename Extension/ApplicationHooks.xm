@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-j* Last-modified: 2010-07-21 12:10:08
+j* Last-modified: 2010-07-18 22:55:01
  */
 
 /**
@@ -74,8 +74,11 @@ static void loadPreferences()
     
     // Backgrounding method
     id value = [prefs objectForKey:kBackgroundingMethod];
-    if ([value isKindOfClass:[NSNumber class]])
+    if ([value isKindOfClass:[NSNumber class]]) {
         backgroundingMethod_ = (BGBackgroundingMethod)[value integerValue];
+        if (isFirmware3x && backgroundingMethod_ == BGBackgroundingMethodAutoDetect)
+            backgroundingMethod_ = BGBackgroundingMethodBackgrounder;
+    }
 
     // Fallback to native
     value = [prefs objectForKey:kFallbackToNative];
@@ -282,6 +285,46 @@ typedef struct {
 
     // Load preferences to determine backgrounding method to use
     loadPreferences();
+
+    if (!isFirmware3x) {
+        if (backgroundingMethod_ == BGBackgroundingMethodAutoDetect) {
+            // Detect if native multitasking is supported
+            BOOL supportsMultitask = NO;
+
+            // Check if app was built with 4.x SDK
+            NSBundle *bundle = [NSBundle mainBundle];
+            id value = [bundle objectForInfoDictionaryKey:@"DTSDKName"]; 
+            if ([value isKindOfClass:[NSString class]]) {
+                if ([(NSString *)value hasPrefix:@"iphoneos4"]) {
+                    // Check if app is set to exit on suspend
+                    BOOL exitsOnSuspend = NO;
+                    value = [bundle objectForInfoDictionaryKey:@"UIApplicationExitsOnSuspend"]; 
+                    if ([value isKindOfClass:[NSNumber class]])
+                        exitsOnSuspend = [(NSNumber *)value boolValue];
+
+                    // App supports multitask if it does not exit on suspend
+                    supportsMultitask = !exitsOnSuspend;
+                }
+            }
+
+            // NOTE: App may have been built with 3.x SDK but still supports multitask;
+            //       check if app supports any of the allowed background modes.
+            //       (One known example is TomTom.)
+            if (!supportsMultitask) {
+                id value = [bundle objectForInfoDictionaryKey:@"UIBackgroundModes"];
+                if ([value isKindOfClass:[NSArray class]]) {
+                    NSArray *array = (NSArray *)value;
+                    supportsMultitask = [array containsObject:@"audio"]
+                        || [array containsObject:@"location"]
+                        || [array containsObject:@"voip"]
+                        || [array containsObject:@"continuous"];
+                }
+            }
+
+            // If multitasking is supported, use "Native" method; else use "Backgrounder"
+            backgroundingMethod_ = supportsMultitask ? BGBackgroundingMethodNative : BGBackgroundingMethodBackgrounder;
+        }
+    }
 
     // NOTE: Application class may be a subclass of UIApplication (and not UIApplication itself)
     Class $UIApplication = [self class];
