@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-18 01:50:06
+ * Last-modified: 2010-06-30 23:16:40
  */
 
 /**
@@ -126,7 +126,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    static int rows[] = {3, 2, 2, 2};
+    static int rows[] = {4, 2, 2, 2};
     return rows[section];
 }
 
@@ -135,17 +135,18 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
     static NSString *reuseIdToggle = @"ToggleCell";
     static NSString *reuseIdSimple = @"SimpleCell";
 
-    static NSString *cellTitles[][3] = {
-        {@"Off", @"Native", @"Backgrounder"},
-        {@"Enable at Launch", @"Stay Enabled", nil},
-        {@"Badge", @"Status Bar Icon", nil},
-        {@"Fall Back to Native", @"Minimize on Toggle", nil}
+    static NSString *cellTitles[][4] = {
+        {@"Off", @"Native", @"Backgrounder", @"Auto Detect"},
+        {@"Enable at Launch", @"Stay Enabled", nil, nil},
+        {@"Badge", @"Status Bar Icon", nil, nil},
+        {@"Fall Back to Native", @"Minimize on Toggle", nil, nil}
     };
-    static NSString *cellSubtitles[][3] = {
-        {@"App will quit when minimized", @"Use native method, if supported", @"Run as if in foreground"},
-        {@"No need to manually enable", @"Must be disabled manually", nil},
-        {@"Mark the app's icon", @"Mark the app's status bar", nil},
-        {@"If state disabled, use native method", @"Minimize app when toggling state", nil}
+    static NSString *cellSubtitles[][4] = {
+        {@"App will quit when minimized", @"Use native method, if supported",
+            @"Run as if in foreground", @"Native if supported, else Backgrounder"},
+        {@"No need to manually enable", @"Must be disabled manually", nil, nil},
+        {@"Mark the app's icon", @"Mark the app's status bar", nil, nil},
+        {@"If state disabled, use native method", @"Minimize app when toggling state", nil, nil}
     };
 
     // All cells access preferences
@@ -180,6 +181,9 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
                 break;
             case 2:
                 name = @"method_backgrounder.png";
+                break;
+            case 3:
+                name = @"method_autodetect.png";
                 break;
             default:
                 break;

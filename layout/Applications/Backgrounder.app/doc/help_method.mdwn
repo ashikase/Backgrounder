@@ -27,3 +27,9 @@
 >     Note that the app does not know that it is in the background, and so it cannot release unneeded resources. This can be quite expensive both CPU and memory-wise.
 >
 >     This method is not recommended for apps that have true backgrounding support built-in, such as Phone, Mail, iPod and Safari.
+>
+> * **Auto Detect (iOS 4.x only)**  
+>
+>     An attempt will be made to detect if the app supports iOS 4.0's native multitasking. If supported, the "Native" method will be used; if not, the "Backgrounder" method will be used.
+>
+>     Note that on firware versions prior to 4.x, this method will act the same as the "Backgrounder" method.

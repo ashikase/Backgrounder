@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-18 03:19:35
+ * Last-modified: 2010-06-30 22:21:54
  */
 
 /**
@@ -45,7 +45,8 @@
 typedef enum {
     BGBackgroundingMethodOff = 0,
     BGBackgroundingMethodNative,
-    BGBackgroundingMethodBackgrounder
+    BGBackgroundingMethodBackgrounder,
+    BGBackgroundingMethodAutoDetect
 } BGBackgroundingMethod;
 
 
