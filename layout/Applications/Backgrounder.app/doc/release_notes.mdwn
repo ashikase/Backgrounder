@@ -1,3 +1,17 @@
+> # Version svn.r513
+> - - -
+> * NEW: Added background method "Auto Detect" (iOS 4.0+ only).
+> * FIX: Status bar icons now work with iOS 4.0+.
+>    - Requires phoenix3200's libstatusbar extension.
+> * MOD: Removed use of preferences symbolic link, as it is not needed.
+>    - The symlink ~/.backgrounderrc is no longer used, and can be manually deleted, if desired.
+>    - Some apps still have issues due to Apple's sandbox; this will need to be fixed in a later release.
+> * MOD: Changed maximum supported firmware version to 4.0.1.
+>    - Note that Backgrounder purposely blocks untested firmware versions; this is to prevent the possibility of crashes with newer firmware.
+>    - Jailbreak users should *never* upgrade to new iOS firmware versions until they are certain that the firmware is jailbreakable and that the extensions they wish to use have been properly updated.
+
+- - -
+
 > # Version svn.r504
 > - - -
 > * FIX: The settings file was not being loaded correctly.
