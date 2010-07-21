@@ -1,3 +1,12 @@
+> # Version svn.r504
+> - - -
+> * FIX: The settings file was not being loaded correctly.
+>    - This is a long-standing bug that appears to affect all recent firmware (> 3.1.3?)
+>    - This bug caused App Store apps to always use the Backgrounder method to background, even if set to use Native.
+>    - Note that there may still be issues with some of Apple's default apps on 4.0.
+
+- - -
+
 > # Version svn.r502
 > - - -
 > * NEW: Initial iOS 4.0 support
