@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-07-21 12:45:18
+ * Last-modified: 2010-07-21 13:03:11
  */
 
 /**
@@ -387,9 +387,6 @@ static BOOL shouldSuspend_ = NO;
 
     // Create array to mark apps that are allowed to auto-relaunch
     appsPermittedToRelaunch_ = [[NSMutableArray alloc] init];
-
-    // Create the libactivator event listener
-    [BackgrounderActivator load];
 }
 
 - (void)dealloc
