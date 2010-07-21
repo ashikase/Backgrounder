@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-07-21 12:41:59
+ * Last-modified: 2010-07-21 12:45:18
  */
 
 /**
@@ -201,12 +201,6 @@ static BOOL boolForKey(NSString *key, NSString *displayId)
 static NSInteger integerForKey(NSString *key, NSString *displayId)
 {
     NSInteger ret = 0;
-
-    // FIXME: Temporary patch for SBSettings' "more" application, which does not
-    //        load Backgrounder.dylib and thus does not handle SIGUSER1.
-    if ([key isEqualToString:kBackgroundingMethod]
-            && [displayId isEqualToString:@"com.iptm.bigboss.sbsettings"])
-        return BGBackgroundingMethodNative;
 
     id value = objectForKey(key, displayId);
     if ([value isKindOfClass:[NSNumber class]])
