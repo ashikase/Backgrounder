@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-07-21 12:36:51
+ * Last-modified: 2010-07-21 12:41:59
  */
 
 /**
@@ -79,6 +79,11 @@
 
 @interface UIModalView : UIView
 @property(nonatomic,copy) NSString *title;
+@end
+
+@interface UIApplication (Private)
+- (void)addStatusBarImageNamed:(id)named;
+- (void)removeStatusBarImageNamed:(id)named;
 @end
 
 struct GSEvent;
@@ -294,23 +299,24 @@ static void setBadgeVisible(SBApplication *app, BOOL visible)
 static void setStatusBarIndicatorVisible(SBApplication *app, BOOL visible)
 {
     if (app == [SBWActiveDisplayStack topApplication]) {
-        if (isFirmware3x) {
-            // Remove any existing indicator
-            SBStatusBarController *sbCont = [objc_getClass("SBStatusBarController") sharedStatusBarController];
-            [sbCont removeStatusBarItem:@"Backgrounder"];
-            [sbCont removeStatusBarItem:@"Backgrounder_Native"];
+        // Remove any existing indicator
+        // NOTE: For iOS 4.0+, this code requires phoenix3200's libstatusbar
+        //       extension to be present; otherwise will fail with a warning
+        //       in syslog.
+        UIApplication *springBoard = [UIApplication sharedApplication];
+        [springBoard removeStatusBarImageNamed:@"Backgrounder"];
+        [springBoard removeStatusBarImageNamed:@"Backgrounder_Native"];
 
-            if (visible) {
-                NSString *identifier = [app displayIdentifier];
+        if (visible) {
+            NSString *identifier = [app displayIdentifier];
 #ifdef FALLBACK_INDICATORS
-                BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
-                    && [enabledApps_ containsObject:identifier];
+            BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
+                && [enabledApps_ containsObject:identifier];
 #else
-                BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder;
+            BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder;
 #endif
-                NSString *itemName = isBackgrounderMethod ? @"Backgrounder" : @"Backgrounder_Native";
-                [sbCont addStatusBarItem:itemName];
-            }
+            NSString *itemName = isBackgrounderMethod ? @"Backgrounder" : @"Backgrounder_Native";
+            [springBoard addStatusBarImageNamed:itemName];
         }
     }
 }
@@ -373,8 +379,8 @@ static BOOL shouldSuspend_ = NO;
     displayStacks = [[NSMutableArray alloc] initWithCapacity:4];
 
     if (!isFirmware3x)
-        // Create array to mark apps that support iOS4's native multitasking
-        appsSupportingMultitask_ = [[NSMutableArray alloc] init];
+    // Create array to mark apps that support iOS4's native multitasking
+    appsSupportingMultitask_ = [[NSMutableArray alloc] init];
 
     // Call original implementation
     %orig;
