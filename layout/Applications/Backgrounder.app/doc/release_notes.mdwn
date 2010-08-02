@@ -1,3 +1,14 @@
+> # Version svn.r521
+> - - -
+> * NEW: On iOS 4.x, the "Native" method will now enable fast-app switching even for apps that have not yet been updated for iOS 4.x.
+>    - This also works with the "Backgrounder" method when "Fall Back to Native" is ON.
+>    - Currently this is disabled for non-App Store apps.
+>    - Some developers purposely disable fast-app switching (by setting UIApplicationExitsOnSuspend flag in Info.plist); Backgrounder respects this setting.
+>    - Due to this change, the "Auto Detect" method may be removed in a future version (unless someone knows of a valid reason for keeping it).
+> * MOD: Prevent Backgrounder preferences app from being backgrounded, otherwise settings might not be applied.
+
+- - -
+
 > # Version svn.r513
 > - - -
 > * NEW: Added background method "Auto Detect" (iOS 4.0+ only).
