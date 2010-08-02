@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-07-21 13:03:11
+ * Last-modified: 2010-08-01 19:50:31
  */
 
 /**
@@ -206,10 +206,15 @@ static NSInteger integerForKey(NSString *key, NSString *displayId)
     if ([value isKindOfClass:[NSNumber class]])
         ret = [value integerValue];
 
-    if ([key isEqualToString:kBackgroundingMethod] && ret == BGBackgroundingMethodAutoDetect) {
-        // Use Native backgrounding method if supported, Backgrounder otherwise
-        ret = (isFirmware3x || ![appsSupportingMultitask_ containsObject:displayId]) ?
-            BGBackgroundingMethodBackgrounder : BGBackgroundingMethodNative;
+    if ([key isEqualToString:kBackgroundingMethod]) {
+        if ([displayId isEqualToString:@APP_ID]) {
+            // Do not allow Backgrounder preferences app to be backgrounded
+            ret = BGBackgroundingMethodOff;
+        } else if (ret == BGBackgroundingMethodAutoDetect) {
+            // Use Native backgrounding method if supported, Backgrounder otherwise
+            ret = (isFirmware3x || ![appsSupportingMultitask_ containsObject:displayId]) ?
+                BGBackgroundingMethodBackgrounder : BGBackgroundingMethodNative;
+        }
     }
 
     return ret;
