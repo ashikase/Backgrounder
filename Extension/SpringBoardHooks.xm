@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-08-01 19:50:31
+ * Last-modified: 2010-08-02 15:14:04
  */
 
 /**
@@ -95,6 +95,7 @@ extern "C" {
 }
 
 static BOOL isFirmware3x = NO;
+static NSMutableArray *appsExitingOnSuspend_ = nil;
 static NSMutableArray *appsSupportingMultitask_ = nil;
 
 //==============================================================================
@@ -207,8 +208,8 @@ static NSInteger integerForKey(NSString *key, NSString *displayId)
         ret = [value integerValue];
 
     if ([key isEqualToString:kBackgroundingMethod]) {
-        if ([displayId isEqualToString:@APP_ID]) {
-            // Do not allow Backgrounder preferences app to be backgrounded
+        if ([appsExitingOnSuspend_ containsObject:displayId]) {
+            // Do not allow the app to be backgrounded
             ret = BGBackgroundingMethodOff;
         } else if (ret == BGBackgroundingMethodAutoDetect) {
             // Use Native backgrounding method if supported, Backgrounder otherwise
@@ -377,9 +378,12 @@ static BOOL shouldSuspend_ = NO;
     // NOTE: SpringBoard creates four stacks at startup
     displayStacks = [[NSMutableArray alloc] initWithCapacity:4];
 
+    // Create array to mark apps that should *not* background
+    appsExitingOnSuspend_ = [[NSMutableArray alloc] init];
+
     if (!isFirmware3x)
-    // Create array to mark apps that support iOS4's native multitasking
-    appsSupportingMultitask_ = [[NSMutableArray alloc] init];
+        // Create array to mark apps that support iOS4's native multitasking
+        appsSupportingMultitask_ = [[NSMutableArray alloc] init];
 
     // Call original implementation
     %orig;
@@ -400,6 +404,7 @@ static BOOL shouldSuspend_ = NO;
     [appsPermittedToRelaunch_ release];
     [enabledApps_ release];
     [appsSupportingMultitask_ release];
+    [appsExitingOnSuspend_ release];
     [displayStacks release];
 
     %orig;
@@ -573,6 +578,57 @@ static BOOL shouldSuspend_ = NO;
 //==============================================================================
 
 %hook SBApplication
+
+// NOTE: Hooked to determine if app supports multitasking
+- (id)initWithBundleIdentifier:(id)bundleIdentifier roleIdentifier:(id)identifier path:(id)path bundle:(id)bundle
+    infoDictionary:(id)dictionary isSystemApplication:(BOOL)application signerIdentity:(id)identity
+    provisioningProfileValidated:(BOOL)validated
+{
+    id ret = %orig;
+
+    NSString *displayId = [self displayIdentifier];
+
+    // Check if app is set to exit on suspend
+    BOOL exitsOnSuspend = NO;
+    id value = [dictionary objectForKey:@"UIApplicationExitsOnSuspend"];
+    if ([value isKindOfClass:[NSNumber class]]) {
+        exitsOnSuspend = [(NSNumber *)value boolValue];
+        if (exitsOnSuspend && [self isSystemApplication])
+            [appsExitingOnSuspend_ addObject:displayId];
+    }
+
+    if (!isFirmware3x) {
+        // Check if app supports iOS multitasking
+        BOOL supportsMultitask = NO;
+
+        // Check if app was built with 4.x SDK
+        value = [dictionary objectForKey:@"DTSDKName"];
+        if ([value isKindOfClass:[NSString class]])
+            if ([(NSString *)value hasPrefix:@"iphoneos4"])
+                // App supports multitask if it does not exit on suspend
+                supportsMultitask = !exitsOnSuspend;
+
+        // NOTE: App may have been built with 3.x SDK but still supports multitask;
+        //       check if app supports any of the allowed background modes.
+        //       (One known example is TomTom.)
+        if (!supportsMultitask) {
+            id value = [dictionary objectForKey:@"UIBackgroundModes"];
+            if ([value isKindOfClass:[NSArray class]]) {
+                NSArray *array = (NSArray *)value;
+                supportsMultitask = [array containsObject:@"audio"]
+                    || [array containsObject:@"location"]
+                    || [array containsObject:@"voip"]
+                    || [array containsObject:@"continuous"];
+            }
+        }
+
+        if (supportsMultitask)
+            // App supports multitasking
+            [appsSupportingMultitask_ addObject:displayId];
+    }
+
+    return ret;
+}
 
 - (void)launchSucceeded:(BOOL)unknownFlag
 {
@@ -812,51 +868,6 @@ static BOOL shouldAutoLaunch(NSString *identifier, BOOL initialCheck, BOOL origV
     // NOTE: Meaning of passed parameter is a guess, based on disassembly.
     // FIXME: Confirm meaning.
     return shouldAutoLaunch([self displayIdentifier], initialCheck, %orig);
-}
-
-// NOTE: Hooked to determine if app supports native multitasking.
-- (id)initWithBundleIdentifier:(id)bundleIdentifier roleIdentifier:(id)identifier path:(id)path bundle:(id)bundle
-    infoDictionary:(id)dictionary isSystemApplication:(BOOL)application signerIdentity:(id)identity
-    provisioningProfileValidated:(BOOL)validated
-{
-    id ret = %orig;
-
-    BOOL supportsMultitask = NO;
-
-    // Check if app was built with 4.x SDK
-    id value = [dictionary objectForKey:@"DTSDKName"];
-    if ([value isKindOfClass:[NSString class]]) {
-        if ([(NSString *)value hasPrefix:@"iphoneos4"]) {
-            // Check if app is set to exit on suspend
-            BOOL exitsOnSuspend = NO;
-            value = [dictionary objectForKey:@"UIApplicationExitsOnSuspend"];
-            if ([value isKindOfClass:[NSNumber class]])
-                exitsOnSuspend = [(NSNumber *)value boolValue];
-
-            // App supports multitask if it does not exit on suspend
-            supportsMultitask = !exitsOnSuspend;
-        }
-    }
-
-    // NOTE: App may have been built with 3.x SDK but still supports multitask;
-    //       check if app supports any of the allowed background modes.
-    //       (One known example is TomTom.)
-    if (!supportsMultitask) {
-        id value = [dictionary objectForKey:@"UIBackgroundModes"];
-        if ([value isKindOfClass:[NSArray class]]) {
-            NSArray *array = (NSArray *)value;
-            supportsMultitask = [array containsObject:@"audio"]
-                || [array containsObject:@"location"]
-                || [array containsObject:@"voip"]
-                || [array containsObject:@"continuous"];
-        }
-    }
-
-    if (supportsMultitask)
-        // App supports multitasking
-        [appsSupportingMultitask_ addObject:[self displayIdentifier]];
-
-    return ret;
 }
 
 %end
