@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-07-21 23:38:06
+ * Last-modified: 2010-07-21 23:41:07
  */
 
 /**
@@ -204,7 +204,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
             nil;
 
         if (backgroundingMethod == BGBackgroundingMethodOff
-                || (indexPath.section == 3 && indexPath.row == 0 && backgroundingMethod == BGBackgroundingMethodNative)) {
+                || (indexPath.section == 3 && indexPath.row == 0 && backgroundingMethod != BGBackgroundingMethodBackgrounder)) {
             // Native backgrounding method cannot "fall back" to native.
             cell.textLabel.textColor = [UIColor grayColor];
             button.enabled = NO;
