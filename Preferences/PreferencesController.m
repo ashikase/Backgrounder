@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-30 23:16:40
+ * Last-modified: 2010-07-21 23:38:06
  */
 
 /**
@@ -148,6 +148,9 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
         {@"Mark the app's icon", @"Mark the app's status bar", nil, nil},
         {@"If state disabled, use native method", @"Minimize app when toggling state", nil, nil}
     };
+    static NSString *methodImages[] = {
+        @"method_off.png", @"method_native.png", @"method_backgrounder.png", @"method_autodetect.png"
+    };
 
     // All cells access preferences
     Preferences *prefs = [Preferences sharedInstance];
@@ -170,25 +173,8 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
         cell.accessoryType = (backgroundingMethod == indexPath.row) ? UITableViewCellAccessoryCheckmark : UITableViewCellAccessoryNone;
 
-            // Set image for cell
-        NSString *name = nil;
-        switch (indexPath.row) {
-            case 0:
-                name = @"method_off.png";
-                break;
-            case 1:
-                name = @"method_native.png";
-                break;
-            case 2:
-                name = @"method_backgrounder.png";
-                break;
-            case 3:
-                name = @"method_autodetect.png";
-                break;
-            default:
-                break;
-        }
-        cell.imageView.image = [UIImage imageNamed:name];
+        // Set image for cell
+        cell.imageView.image = [UIImage imageNamed:methodImages[indexPath.row]];
     } else {
         // Backgrounding indicators, Other
 
