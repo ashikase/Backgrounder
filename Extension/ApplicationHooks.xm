@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-j* Last-modified: 2010-07-18 22:55:01
+j* Last-modified: 2010-08-01 19:37:34
  */
 
 /**
@@ -144,7 +144,44 @@ typedef struct {
     unsigned isSuspendedUnderLock : 1;
     unsigned isRunningInTaskSwitcher : 1;
     unsigned shouldExitAfterSendSuspend : 1;
-    // ...
+    unsigned shouldExitAfterTaskCompletion : 1;
+    unsigned terminating : 1;
+    unsigned isHandlingShortCutURL : 1;
+    unsigned idleTimerDisabled : 1;
+    unsigned deviceOrientation : 3;
+    unsigned delegateShouldBeReleasedUponSet : 1;
+    unsigned delegateHandleOpenURL : 1;
+    unsigned delegateDidReceiveMemoryWarning : 1;
+    unsigned delegateWillTerminate : 1;
+    unsigned delegateSignificantTimeChange : 1;
+    unsigned delegateWillChangeInterfaceOrientation : 1;
+    unsigned delegateDidChangeInterfaceOrientation : 1;
+    unsigned delegateWillChangeStatusBarFrame : 1;
+    unsigned delegateDidChangeStatusBarFrame : 1;
+    unsigned delegateDeviceAccelerated : 1;
+    unsigned delegateDeviceChangedOrientation : 1;
+    unsigned delegateDidBecomeActive : 1;
+    unsigned delegateWillResignActive : 1;
+    unsigned delegateDidEnterBackground : 1;
+    unsigned delegateWillEnterForeground : 1;
+    unsigned delegateWillSuspend : 1;
+    unsigned delegateDidResume : 1;
+    unsigned idleTimerDisableActive : 1;
+    unsigned userDefaultsSyncDisabled : 1;
+    unsigned headsetButtonClickCount : 4;
+    unsigned isHeadsetButtonDown : 1;
+    unsigned isFastForwardActive : 1;
+    unsigned isRewindActive : 1;
+    unsigned disableViewGroupOpacity : 1;
+    unsigned disableViewEdgeAntialiasing : 1;
+    unsigned shakeToEdit : 1;
+    unsigned isClassic : 1;
+    unsigned zoomInClassicMode : 1;
+    unsigned ignoreHeadsetClicks : 1;
+    unsigned touchRotationDisabled : 1;
+    unsigned taskSuspendingUnsupported : 1;
+    unsigned isUnitTests : 1;
+    unsigned disableViewContentScaling : 1;
 } UIApplicationFlags4x;
 
 
@@ -286,32 +323,22 @@ typedef struct {
     // Load preferences to determine backgrounding method to use
     loadPreferences();
 
-    if (!isFirmware3x) {
+    if (!isFirmware3x && backgroundingMethod_ != BGBackgroundingMethodOff) {
+        // Get application flags
+        UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
+
         if (backgroundingMethod_ == BGBackgroundingMethodAutoDetect) {
-            // Detect if native multitasking is supported
-            BOOL supportsMultitask = NO;
-
-            // Check if app was built with 4.x SDK
-            NSBundle *bundle = [NSBundle mainBundle];
-            id value = [bundle objectForInfoDictionaryKey:@"DTSDKName"]; 
-            if ([value isKindOfClass:[NSString class]]) {
-                if ([(NSString *)value hasPrefix:@"iphoneos4"]) {
-                    // Check if app is set to exit on suspend
-                    BOOL exitsOnSuspend = NO;
-                    value = [bundle objectForInfoDictionaryKey:@"UIApplicationExitsOnSuspend"]; 
-                    if ([value isKindOfClass:[NSNumber class]])
-                        exitsOnSuspend = [(NSNumber *)value boolValue];
-
-                    // App supports multitask if it does not exit on suspend
-                    supportsMultitask = !exitsOnSuspend;
-                }
-            }
+            // Determine if native multitasking is supported
+            // NOTE: taskSuspendingUnsupported is set either if the app was
+            //       compiled with a pre-iOS4 version of UIKit, or if the info
+            //       plist file has the UIApplicationExitsOnSuspend flag set.
+            BOOL supportsMultitask = !_applicationFlags.taskSuspendingUnsupported;
 
             // NOTE: App may have been built with 3.x SDK but still supports multitask;
             //       check if app supports any of the allowed background modes.
             //       (One known example is TomTom.)
             if (!supportsMultitask) {
-                id value = [bundle objectForInfoDictionaryKey:@"UIBackgroundModes"];
+                id value = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"UIBackgroundModes"];
                 if ([value isKindOfClass:[NSArray class]]) {
                     NSArray *array = (NSArray *)value;
                     supportsMultitask = [array containsObject:@"audio"]
@@ -323,6 +350,21 @@ typedef struct {
 
             // If multitasking is supported, use "Native" method; else use "Backgrounder"
             backgroundingMethod_ = supportsMultitask ? BGBackgroundingMethodNative : BGBackgroundingMethodBackgrounder;
+        } else if (backgroundingMethod_ == BGBackgroundingMethodNative
+                || (backgroundingMethod_ == BGBackgroundingMethodBackgrounder && fallbackToNative_)) {
+            // Determine if native multitasking is purposely disabled
+            BOOL exitsOnSuspend = NO;
+            NSBundle *bundle = [NSBundle mainBundle];
+            id value = [bundle objectForInfoDictionaryKey:@"UIApplicationExitsOnSuspend"]; 
+            if ([value isKindOfClass:[NSNumber class]])
+                exitsOnSuspend = [(NSNumber *)value boolValue];
+
+            // NOTE: Respect UIApplicationExitsOnSuspend flag
+            // FIXME: For now, only enable for App Store apps, as certain
+            //        system (jailbreak) apps use app exit to respring/apply
+            //        settings.
+            if (!exitsOnSuspend && [[bundle executablePath] hasPrefix:@"/var/mobile/Applications"])
+                _applicationFlags.taskSuspendingUnsupported = 0;
         }
     }
 
