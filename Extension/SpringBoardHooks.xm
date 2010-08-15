@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-08-05 00:33:22
+ * Last-modified: 2010-08-12 00:59:16
  */
 
 /**
@@ -44,47 +44,9 @@
 
 #import <CoreFoundation/CoreFoundation.h>
 
-#import <SpringBoard/SBApplication.h>
-#import <SpringBoard/SBApplicationIcon.h>
-#import <SpringBoard/SBApplicationController.h>
-#import <SpringBoard/SBAlertItemsController.h>
-#import <SpringBoard/SBDisplayStack.h>
-#import <SpringBoard/SBIconModel.h>
-#import <SpringBoard/SBStatusBarController.h>
-#import <SpringBoard/SpringBoard.h>
-
 #import "BackgrounderActivator.h"
+#import "Headers.h"
 #import "SimplePopup.h"
-
-@interface SBIcon (Firmware32x)
-+ (CGSize)defaultIconImageSize;
-@end
-
-// Firmware >= 4.0
-@interface SBProcess : NSObject
-@property(readonly, assign) int pid;
-@end
-
-// Firmware >= 4.0
-@interface SBApplication (Firmware4x)
-@property(retain) SBProcess *process;
-- (void)setSuspendType:(int)type;
-- (int)_suspensionType;
-@end
-
-// Firmware >= 4.0
-@interface SBIconModel (Firmware4x)
-- (id)leafIconForIdentifier:(id)identifier; 
-@end
-
-@interface UIModalView : UIView
-@property(nonatomic,copy) NSString *title;
-@end
-
-@interface UIApplication (Private)
-- (void)addStatusBarImageNamed:(id)named;
-- (void)removeStatusBarImageNamed:(id)named;
-@end
 
 struct GSEvent;
 

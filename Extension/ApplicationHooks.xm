@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-j* Last-modified: 2010-08-12 00:53:00
+j* Last-modified: 2010-08-12 00:55:46
  */
 
 /**
@@ -44,6 +44,9 @@ j* Last-modified: 2010-08-12 00:53:00
 
 #import <substrate.h>
 
+#import "Headers.h"
+
+
 static BOOL isFirmware3x = NO;
 
 static BOOL backgroundingEnabled_ = NO;
@@ -55,12 +58,6 @@ static BOOL forceFastAppSwitching_ = NO;
 #define GSEventRef void *
 
 //==============================================================================
-
-@interface UIApplication (Private)
-- (NSString *)displayIdentifier;
-- (void)terminateWithSuccess;
-- (id)_backgroundModes;
-@end
 
 static void loadPreferences()
 {
@@ -108,95 +105,6 @@ static void toggleBackgrounding(int signal)
     if (backgroundingMethod_ != BGBackgroundingMethodOff)
         backgroundingEnabled_ = !backgroundingEnabled_;
 }
-
-//==============================================================================
-
-// NOTE: This struct comes from UIApplication; note that this declaration is incomplete.
-
-// // Firmware 3.0 - 3.2.
-typedef struct {
-    unsigned isActive : 1;
-    unsigned isSuspended : 1;
-    unsigned isSuspendedEventsOnly : 1;
-    unsigned isLaunchedSuspended : 1;
-    unsigned isHandlingURL : 1;
-    unsigned isHandlingRemoteNotification : 1;
-    unsigned statusBarMode : 8;
-    unsigned statusBarShowsProgress : 1;
-    unsigned blockInteractionEvents : 4;
-    unsigned forceExit : 1;
-    unsigned receivesMemoryWarnings : 1;
-    unsigned showingProgress : 1;
-    unsigned receivesPowerMessages : 1;
-    unsigned launchEventReceived : 1;
-    unsigned isAnimatingSuspensionOrResumption : 1;
-    unsigned isSuspendedUnderLock : 1;
-    unsigned shouldExitAfterSendSuspend : 1;
-    // ...
-} UIApplicationFlags3x;
-
-// Firmware 4.0
-typedef struct {
-    unsigned isActive : 1;
-    unsigned isSuspended : 1;
-    unsigned isSuspendedEventsOnly : 1;
-    unsigned isLaunchedSuspended : 1;
-    unsigned calledNonSuspendedLaunchDelegate : 1;
-    unsigned isHandlingURL : 1;
-    unsigned isHandlingRemoteNotification : 1;
-    unsigned isHandlingLocalNotification : 1;
-    unsigned statusBarShowsProgress : 1;
-    unsigned statusBarRequestedStyle : 4;
-    unsigned statusBarHidden : 1;
-    unsigned blockInteractionEvents : 4;
-    unsigned receivesMemoryWarnings : 1;
-    unsigned showingProgress : 1;
-    unsigned receivesPowerMessages : 1;
-    unsigned launchEventReceived : 1;
-    unsigned isAnimatingSuspensionOrResumption : 1;
-    unsigned isResuming : 1;
-    unsigned isSuspendedUnderLock : 1;
-    unsigned isRunningInTaskSwitcher : 1;
-    unsigned shouldExitAfterSendSuspend : 1;
-    unsigned shouldExitAfterTaskCompletion : 1;
-    unsigned terminating : 1;
-    unsigned isHandlingShortCutURL : 1;
-    unsigned idleTimerDisabled : 1;
-    unsigned deviceOrientation : 3;
-    unsigned delegateShouldBeReleasedUponSet : 1;
-    unsigned delegateHandleOpenURL : 1;
-    unsigned delegateDidReceiveMemoryWarning : 1;
-    unsigned delegateWillTerminate : 1;
-    unsigned delegateSignificantTimeChange : 1;
-    unsigned delegateWillChangeInterfaceOrientation : 1;
-    unsigned delegateDidChangeInterfaceOrientation : 1;
-    unsigned delegateWillChangeStatusBarFrame : 1;
-    unsigned delegateDidChangeStatusBarFrame : 1;
-    unsigned delegateDeviceAccelerated : 1;
-    unsigned delegateDeviceChangedOrientation : 1;
-    unsigned delegateDidBecomeActive : 1;
-    unsigned delegateWillResignActive : 1;
-    unsigned delegateDidEnterBackground : 1;
-    unsigned delegateWillEnterForeground : 1;
-    unsigned delegateWillSuspend : 1;
-    unsigned delegateDidResume : 1;
-    unsigned idleTimerDisableActive : 1;
-    unsigned userDefaultsSyncDisabled : 1;
-    unsigned headsetButtonClickCount : 4;
-    unsigned isHeadsetButtonDown : 1;
-    unsigned isFastForwardActive : 1;
-    unsigned isRewindActive : 1;
-    unsigned disableViewGroupOpacity : 1;
-    unsigned disableViewEdgeAntialiasing : 1;
-    unsigned shakeToEdit : 1;
-    unsigned isClassic : 1;
-    unsigned zoomInClassicMode : 1;
-    unsigned ignoreHeadsetClicks : 1;
-    unsigned touchRotationDisabled : 1;
-    unsigned taskSuspendingUnsupported : 1;
-    unsigned isUnitTests : 1;
-    unsigned disableViewContentScaling : 1;
-} UIApplicationFlags4x;
 
 //==============================================================================
 
