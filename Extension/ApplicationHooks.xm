@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-j* Last-modified: 2010-08-12 11:17:16
+j* Last-modified: 2010-08-13 00:21:04
  */
 
 /**
@@ -143,9 +143,10 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
     // If Backgrounder method and enabled, prevent the application from quitting on suspend
     if (!backgroundingEnabled_ || backgroundingMethod_ != BGBackgroundingMethodBackgrounder) {
         // Not Backgrounder method, or not enabled
-        if (!isFirmware3x_) {
+
+        if (!isFirmware3x_
+            && (backgroundingMethod_ == BGBackgroundingMethodNative || fallbackToNative_)) {
             // Check if fast app switching is disabled for this app
-            // FIXME: Does this require a Native/Fall Back check?
             if (!fastAppSwitchingEnabled_ && [[self _backgroundModes] count] == 0) {
                 // Fast app switching is disabled, and app does not support audio/gps/voip
                 NSArray **_backgroundTasks = NULL;
