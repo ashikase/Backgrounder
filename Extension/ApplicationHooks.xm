@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-j* Last-modified: 2010-08-12 01:07:42
+j* Last-modified: 2010-08-12 10:46:07
  */
 
 /**
@@ -86,7 +86,7 @@ static void loadPreferences()
     if ([value isKindOfClass:[NSNumber class]])
         fallbackToNative_ = [value boolValue];
 
-    // Fast app switcing
+    // Fast app switching
     value = [prefs objectForKey:kFastAppSwitchingEnabled];
     if ([value isKindOfClass:[NSNumber class]])
         fastAppSwitchingEnabled_ = [value boolValue];
@@ -97,16 +97,7 @@ static void loadPreferences()
         forceFastAppSwitching_ = [value boolValue];
 }
 
-//==============================================================================
-
-// Callback
-static void toggleBackgrounding(int signal)
-{
-    if (backgroundingMethod_ != BGBackgroundingMethodOff)
-        backgroundingEnabled_ = !backgroundingEnabled_;
-}
-
-//==============================================================================
+//------------------------------------------------------------------------------
 
 // NOTE: This function is based on work by Jay Freeman (a.k.a. saurik)
 template <typename Type_>
@@ -128,9 +119,11 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
 
 //==============================================================================
 
-%hook UIApplication
+// NOTE: Hooked for all backgrounding methods
 
 %group GMethodAll
+
+%hook UIApplication
 
 // NOTE: UIApplication's default implementation of applicationSuspend: simply
 //       sets _applicationFlags.shouldExitAfterSendSuspend to YES
@@ -138,24 +131,26 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
 //        get called. This is a side effect of a bug fix in SpringBoardHooks.xm.
 - (void)applicationSuspend:(GSEventRef)event
 {
-    if (!isFirmware3x_) {
-        // Check if fast app switching is disabled for this app
-        if (!fastAppSwitchingEnabled_ && [[self _backgroundModes] count] == 0) {
-            // Fast app switching is disabled, and app does not support audio/gps/voip
-            NSArray **_backgroundTasks = NULL;
-            lookupSymbol("/System/Library/Frameworks/UIKit.framework/UIKit", "__backgroundTasks", _backgroundTasks);
-
-            if (_backgroundTasks == NULL || [*_backgroundTasks count] == 0) {
-                // No outstanding background tasks; safe to terminate
-                UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
-                _applicationFlags.taskSuspendingUnsupported = 1;
-            }
-        }
-    }
-
     // If Backgrounder method and enabled, prevent the application from quitting on suspend
     if (!backgroundingEnabled_ || backgroundingMethod_ != BGBackgroundingMethodBackgrounder) {
         // Not Backgrounder method, or not enabled
+        if (!isFirmware3x_) {
+            // Check if fast app switching is disabled for this app
+            // FIXME: Does this require a Native/Fall Back check?
+            if (!fastAppSwitchingEnabled_ && [[self _backgroundModes] count] == 0) {
+                // Fast app switching is disabled, and app does not support audio/gps/voip
+                NSArray **_backgroundTasks = NULL;
+                lookupSymbol("/System/Library/Frameworks/UIKit.framework/UIKit", "__backgroundTasks", _backgroundTasks);
+
+                if (_backgroundTasks == NULL || [*_backgroundTasks count] == 0) {
+                    // No outstanding background tasks; safe to terminate
+                    UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
+                    _applicationFlags.taskSuspendingUnsupported = 1;
+                }
+            }
+        }
+
+        // Call original implementation
         %orig;
 
         if (!backgroundingEnabled_
@@ -176,7 +171,13 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
 
 %end
 
+%end // GMethodAll
+
+//------------------------------------------------------------------------------
+
 %group GMethodAll_SuspendSettings
+
+%hook UIApplication
 
 // Used by certain system applications, such as Mail and Phone, instead of applicationSuspend:
 - (BOOL)applicationSuspend:(GSEventRef)event settings:(id)settings
@@ -210,12 +211,31 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
 
 %end
 
-%end // UIApplication
+%end // GMethodAll_SuspendSettings
 
 //==============================================================================
 
-%group GMethodBackgrounder
+// NOTE: Only hooked for BGBackgroundingMethodOff on firmware 4.x+
+
+%group GMethodOff
+
+%hook UIDevice
+
+- (BOOL)isMultitaskingSupported
+{
+    // NOTE: This is for apps that properly check for multitasking support
+    return NO;
+}
+
+%end
+
+%end // GMethodOff
+
+//==============================================================================
+
 // NOTE: Only hooked for BGBackgroundingMethodBackgrounder
+
+%group GMethodBackgrounder
 
 %hook UIApplication
 
@@ -239,12 +259,11 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
 
 %end // GMethodBackgrounder
 
-//==============================================================================
-
-%hook AppDelegate
-// NOTE: Only hooked for BGBackgroundingMethodBackgrounder
+//------------------------------------------------------------------------------
 
 %group GMethodBackgrounder_Resign
+
+%hook AppDelegate
 
 // Delegate method
 - (void)applicationWillResignActive:(id)application
@@ -255,7 +274,13 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
 
 %end
 
+%end // GMethodBackgrounder_Resign
+
+//------------------------------------------------------------------------------
+
 %group GMethodBackgrounder_Become
+
+%hook AppDelegate
 
 // Delegate method
 - (void)applicationDidBecomeActive:(id)application
@@ -266,12 +291,13 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
 
 %end
 
-%end // AppDelegate
+%end // GMethodBackgrounder_Become
 
 //==============================================================================
 
-%group GFirmware4x_UIApplication
 // NOTE: Only hooked if fast app switching is disabled for the app
+
+%group GFastAppSwitchingOff
 
 %hook UIApplication
 
@@ -309,24 +335,7 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
 
 %end
 
-%end // GFirmware4x_UIApplication
-
-//==============================================================================
-
-%group GMethodOff
-// NOTE: Only hooked for BGBackgroundingMethodOff on firmware 4.x+
-
-%hook UIDevice
-
-- (BOOL)isMultitaskingSupported
-{
-    // NOTE: This is for apps that properly check for multitasking support
-    return NO;
-}
-
-%end
-
-%end // GMethodOff
+%end // GFastAppSwitchingOff
 
 //==============================================================================
 
@@ -387,7 +396,7 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
                     // App does not support audio/gps/voip; disable fast app switching
 
                     // Setup hooks to handle task-continuation
-                    %init(GFirmware4x_UIApplication);
+                    %init(GFastAppSwitchingOff);
                 }
             }
         }
@@ -421,9 +430,16 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
     }
 }
 
-%end // UIApplication
+%end
 
 //==============================================================================
+
+// Callback
+static void toggleBackgrounding(int signal)
+{
+    if (backgroundingMethod_ != BGBackgroundingMethodOff)
+        backgroundingEnabled_ = !backgroundingEnabled_;
+}
 
 void initApplicationHooks()
 {
