@@ -23,7 +23,7 @@
             <key>persistent</key>
             <true/>
             <key>statusBarIconEnabled</key>
-            <false/>
+            <true/>
         </dict>
         <key>overrides</key>
         <dict>
@@ -46,7 +46,7 @@
                 <key>persistent</key>
                 <true/>
                 <key>statusBarIconEnabled</key>
-                <false/>
+                <true/>
             </dict>
             <key>com.apple.mobilephone</key>
             <dict>
@@ -67,7 +67,7 @@
                 <key>persistent</key>
                 <true/>
                 <key>statusBarIconEnabled</key>
-                <false/>
+                <true/>
             </dict>
             <key>com.apple.mobilesafari</key>
             <dict>
@@ -88,7 +88,7 @@
                 <key>persistent</key>
                 <true/>
                 <key>statusBarIconEnabled</key>
-                <false/>
+                <true/>
             </dict>
             <key>com.apple.mobileipod-MediaPlayer</key>
             <dict>
@@ -109,7 +109,7 @@
                 <key>persistent</key>
                 <true/>
                 <key>statusBarIconEnabled</key>
-                <false/>
+                <true/>
             </dict>
             <key>com.apple.mobileipod-AudioPlayer</key>
             <dict>
@@ -130,7 +130,7 @@
                 <key>persistent</key>
                 <true/>
                 <key>statusBarIconEnabled</key>
-                <false/>
+                <true/>
             </dict>
             <key>com.apple.mobileipod-VideoPlayer</key>
             <dict>
@@ -151,7 +151,7 @@
                 <key>persistent</key>
                 <true/>
                 <key>statusBarIconEnabled</key>
-                <false/>
+                <true/>
             </dict>
         </dict>
     </dict>
