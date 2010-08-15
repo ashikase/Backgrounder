@@ -3,8 +3,6 @@
 > - - -
 > This option determines whether or not an app is allowed to background, as well as how it should background.
 >
-> This is especially useful when Backgrounder is used with a task switcher such as Kirikae or ProSwitcher.
->
 > * **Off**  
 >     The app will quit when minimized.
 > 
@@ -15,11 +13,7 @@
 > 
 >     Certain Apple apps, such as Phone, Mail, iPod and Safari, as well as some 3rd-party jailbreak apps, such as MobileTerminal, include support for true backgrounding. For such apps, it is recommended to use this "Native" method instead of the "Backgrounder" method, as the native method normally requires less resources.
 >
->     On firmware prior to iOS 4.0, for all other apps (including *all* App Store apps) the "Native" method is the same as the "Off" method.
-> 
->     As of iOS 4.0, apps are allowed to take advantage of various methods of pseudo-backgrounding (audio, gps, voip functionality). It is recommended to use the "Native" method for these apps as well.
->
->     For apps that do not use audio/gps/voip, iOS 4.0 also includes fast-app switching, a form of multitasking that keeps apps loaded in memory in a paused state. Normally developers must update their apps to support this; Backgrounder's "Native" method will enable fast-app switching for all App Store apps (except for those whose developers have purposely disabled multitasking).
+>     For all other apps (including *all* App Store apps) the "Native" method is the same as the "Off" method.
 >
 >     Note that selecting this method will automatically enable the "Enable at Launch" and "Stay Enabled" options. This is done in order to provide the same operational behavior as a device without Backgrounder installed.
 >
@@ -29,11 +23,3 @@
 >     Note that the app does not know that it is in the background, and so it cannot release unneeded resources. This can be quite expensive both CPU and memory-wise.
 >
 >     This method is not recommended for apps that have true backgrounding support built-in, such as Phone, Mail, iPod and Safari.
->
-> * **Auto Detect (iOS 4.x only)**  
->
->     An attempt will be made to detect if the app supports iOS 4.0's native multitasking. If supported, the "Native" method will be used; if not, the "Backgrounder" method will be used.
->
->     Note that on firware versions prior to 4.x, this method will act the same as the "Backgrounder" method.
->
->     **Also note that this method will likely be removed in a future version, as it is no longer useful or necessary.**

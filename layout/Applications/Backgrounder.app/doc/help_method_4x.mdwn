@@ -1,0 +1,26 @@
+> # Backgrounding Method
+> ## (Default: Backgrounder)
+> - - -
+> This option determines whether or not an app is allowed to background, as well as how it should background.
+>
+> Note that the "Native" method is recommended for apps that have built-in support for backgrounding (iOS 4 multitasking or otherwise), as it generally requires fewer resources than the "Backgrounder" method.
+
+> * **Off**  
+>     The app will quit when minimized.
+> 
+> * **Native**  
+>     If the app supports iOS 4 multitasking, the app will background using the supported iOS 4 method.
+> 
+>     In iOS 4, apps can be designed to use various methods of pseudo-backgrounding (for background audio/gps/voip, and for task-completion).
+>
+>     For apps that do not use any of these methods, iOS 4 also includes fast app switching, which keeps apps loaded in memory in a paused state.
+>
+>     Note that selecting this method will automatically enable the "Enable at Launch" and "Stay Enabled" options. This is done in order to provide the same operational behavior as a device without Backgrounder installed.
+>
+> * **Backgrounder**  
+>     The app will continue to run as if it were still in the foreground.
+> 
+>     Note that the app does not know that it is in the background, and so it cannot release unneeded resources. This can be quite expensive both CPU and memory-wise.
+>
+> * **Auto Detect**  
+>     An attempt will be made to detect if the app supports iOS 4's native multitasking. If supported, the "Native" method will be used; if not, the "Backgrounder" method will be used.

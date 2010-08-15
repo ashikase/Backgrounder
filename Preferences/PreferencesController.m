@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-08-12 22:23:40
+ * Last-modified: 2010-08-12 22:56:50
  */
 
 /**
@@ -477,13 +477,22 @@ static BOOL isFirmware3x_ = NO;
 - (void)helpButtonTapped:(UIButton *)sender
 {
     static NSString *helpFiles[] = {
-        @"help_method.mdwn", @"help_options_native.mdwn", @"help_options_backgrounder.mdwn",
+        nil, @"help_options_native.mdwn", @"help_options_backgrounder.mdwn",
         @"help_state.mdwn", @"help_indicators.mdwn", @"help_misc.mdwn"};
+
+    // Provide different documentation for "Backgrounding method", depending on firmware version.
+    // FIXME: Find a cleaner way to do this.
+    int index = sender.tag;
+    NSString *helpFile = nil;
+    if (index == 0)
+        helpFile = isFirmware3x_ ? @"help_method_3x.mdwn" : @"help_method_4x.mdwn";
+    else
+        helpFile = helpFiles[index];
 
     // Create and show help page
     // NOTE: Controller is released in delegate callback
     HtmlDocController *docCont = [[HtmlDocController alloc]
-        initWithContentsOfFile:helpFiles[sender.tag] templateFile:@"template.html" title:@"Help"];
+        initWithContentsOfFile:helpFile templateFile:@"template.html" title:@"Help"];
     docCont.delegate = self;
 }
 
