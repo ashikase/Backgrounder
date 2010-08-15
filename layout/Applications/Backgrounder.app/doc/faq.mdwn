@@ -14,7 +14,7 @@
 
 > # Why would I want to use Backgrounder on iOS 4.0?
 > - - -
-> While iOS 4.0 includes multitasking support, existing apps must be rebuilt to take advantage of it; otherwise the apps quit just as with older firmware.
+> While iOS 4.0 includes multitasking support, existing apps must be rebuilt to take advantage of it; otherwise the apps quit just as with older firmware. Backgrounder provides an option to allow *all* apps, even those that have not been rebuilt, to use iOS 4.0's "fast app switching" feature.
 >
 > Also, with iOS 4.0's multitasking enabled, all apps that support it will automatically use it; the user has no choice. With Backgrounder, the user can decide which apps are allowed to stay loaded.
 
