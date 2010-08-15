@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-08-02 15:14:04
+ * Last-modified: 2010-08-05 00:33:22
  */
 
 /**
@@ -296,27 +296,35 @@ static void setBadgeVisible(SBApplication *app, BOOL visible)
     }
 }
 
-static void setStatusBarIndicatorVisible(SBApplication *app, BOOL visible)
+static void updateStatusBarIndicatorForApplication(SBApplication *app)
 {
     if (app == [SBWActiveDisplayStack topApplication]) {
-        // Remove any existing indicator
         // NOTE: For iOS 4.0+, this code requires phoenix3200's libstatusbar
         //       extension to be present; otherwise will fail with a warning
         //       in syslog.
+
+        // Remove any existing indicator
         UIApplication *springBoard = [UIApplication sharedApplication];
         [springBoard removeStatusBarImageNamed:@"Backgrounder"];
         [springBoard removeStatusBarImageNamed:@"Backgrounder_Native"];
 
-        if (visible) {
-            NSString *identifier = [app displayIdentifier];
-#ifdef FALLBACK_INDICATORS
-            BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
-                && [enabledApps_ containsObject:identifier];
-#else
-            BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder;
-#endif
-            NSString *itemName = isBackgrounderMethod ? @"Backgrounder" : @"Backgrounder_Native";
-            [springBoard addStatusBarImageNamed:itemName];
+        // NOTE: nil represents SpringBoard
+        if (app != nil) {
+            NSString *displayId = [app displayIdentifier];
+            int bgMethod = integerForKey(kBackgroundingMethod, displayId);
+            if (bgMethod != BGBackgroundingMethodOff) {
+                if ([enabledApps_ containsObject:displayId]) {
+                    NSString *imageName = (bgMethod == BGBackgroundingMethodBackgrounder) ?
+                        @"Backgrounder" : @"Backgrounder_Native";
+                    [springBoard addStatusBarImageNamed:imageName];
+                } else {
+                    // On iOS 4.x, show native indicator if "Fall Back to Native" is ON
+                    if (!isFirmware3x
+                        && bgMethod == BGBackgroundingMethodBackgrounder
+                        && boolForKey(kFallbackToNative, displayId))
+                        [springBoard addStatusBarImageNamed:@"Backgrounder_Native"];
+                }
+            }
         }
     }
 }
@@ -339,23 +347,13 @@ static void setBackgroundingEnabled(SBApplication *app, BOOL enable)
     else
         [enabledApps_ removeObject:identifier];
 
-#ifdef FALLBACK_INDICATORS
-    // NOTE: Indicators will also be shown if fall back to native option is enabled
-    BOOL showIndicator = enable
-        || (integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
-                && boolForKey(kFallbackToNative, identifier)
-                && pid > 0);
-#else
-    BOOL showIndicator = enable;
-#endif
-
     // Update badge (if necessary)
     if (boolForKey(kBadgeEnabled, identifier))
-        setBadgeVisible(app, showIndicator);
+        setBadgeVisible(app, enable);
 
     // Update status bar indicator (if necessary)
     if (boolForKey(kStatusBarIconEnabled, identifier))
-        setStatusBarIndicatorVisible(app, showIndicator);
+        updateStatusBarIndicatorForApplication(app);
 }
 
 //==============================================================================
@@ -445,7 +443,8 @@ static BOOL shouldSuspend_ = NO;
 
     if ([SBWActiveDisplayStack topApplication] == nil)
         // SpringBoard is visible; remove any status bar indicator
-        setStatusBarIndicatorVisible(nil, NO);
+        // NOTE: Done again as indicator may not have been removed if app crashed, etc.
+        updateStatusBarIndicatorForApplication(nil);
 }
 
 %new(v@:)
@@ -577,6 +576,20 @@ static BOOL shouldSuspend_ = NO;
 
 //==============================================================================
 
+%hook SBUIController
+
+- (void)animateApplicationSuspend:(id)app
+{
+    // Active app is minimizing; remove any status bar indicator
+    updateStatusBarIndicatorForApplication(nil);
+
+    %orig;
+}
+
+%end
+
+//==============================================================================
+
 %hook SBApplication
 
 // NOTE: Hooked to determine if app supports multitasking
@@ -642,22 +655,15 @@ static BOOL shouldSuspend_ = NO;
             if (!boolForKey(kPersistent, identifier))
                 setBackgroundingEnabled(self, NO);
             else if (boolForKey(kStatusBarIconEnabled, identifier))
-#ifndef FALLBACK_INDICATORS
-                if ([enabledApps_ containsObject:identifier])
-#endif
                 // Must re-add the indicator on resume
-                setStatusBarIndicatorVisible(self, YES);
+                updateStatusBarIndicatorForApplication(self);
         } else {
             // Initial launch; check if this application is set to background at launch
             if (boolForKey(kEnableAtLaunch, identifier))
                 setBackgroundingEnabled(self, YES);
-#ifdef FALLBACK_INDICATORS
-            else if (boolForKey(kStatusBarIconEnabled, identifier)
-                    && backgroundingMethod == BGBackgroundingMethodBackgrounder
-                    && boolForKey(kFallbackToNative, identifier))
-                // Must add the initial indicator for "Native"
-                setStatusBarIndicatorVisible(self, YES);
-#endif
+            else if (boolForKey(kStatusBarIconEnabled, identifier))
+                // Must add the initial indicator for "Fall Back to Native"
+                updateStatusBarIndicatorForApplication(self);
         }
     }
 
