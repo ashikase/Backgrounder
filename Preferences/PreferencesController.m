@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-07-21 23:41:07
+ * Last-modified: 2010-08-07 19:36:38
  */
 
 /**
@@ -51,12 +51,19 @@
 
 extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *identifier);
 
+static BOOL isFirmware3x_ = NO;
 
 @interface PreferencesController (Private)
 - (UIView *)tableHeaderView;
 @end
 
 @implementation PreferencesController
+
++ (void)initialize
+{
+    // Determine firmware version
+    isFirmware3x_ = [[[UIDevice currentDevice] systemVersion] hasPrefix:@"3"];
+}
 
 - (id)initWithDisplayIdentifier:(NSString *)displayId
 {
@@ -121,12 +128,12 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return 4;
+	return isFirmware3x_ ? 4 : 5;
 }
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    static int rows[] = {4, 2, 2, 2};
+    static int rows[] = {4, 2, 2, 2, 2};
     return rows[section];
 }
 
@@ -139,14 +146,16 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
         {@"Off", @"Native", @"Backgrounder", @"Auto Detect"},
         {@"Enable at Launch", @"Stay Enabled", nil, nil},
         {@"Badge", @"Status Bar Icon", nil, nil},
-        {@"Fall Back to Native", @"Minimize on Toggle", nil, nil}
+        {@"Fall Back to Native", @"Minimize on Toggle", nil, nil},
+        {@"Fast App Switching", @"\u21b3 Even if Unsupported", nil, nil}
     };
     static NSString *cellSubtitles[][4] = {
         {@"App will quit when minimized", @"Use native method, if supported",
             @"Run as if in foreground", @"Native if supported, else Backgrounder"},
         {@"No need to manually enable", @"Must be disabled manually", nil, nil},
         {@"Mark the app's icon", @"Mark the app's status bar", nil, nil},
-        {@"If state disabled, use native method", @"Minimize app when toggling state", nil, nil}
+        {@"If state disabled, use native method", @"Minimize app when toggling state", nil, nil},
+        {@"Keep apps paused in memory", @"Include apps not updated for iOS4", nil, nil}
     };
     static NSString *methodImages[] = {
         @"method_off.png", @"method_native.png", @"method_backgrounder.png", @"method_autodetect.png"
@@ -193,7 +202,8 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
         static NSString *keys[][2] = {
             {kEnableAtLaunch, kPersistent},
             {kBadgeEnabled, kStatusBarIconEnabled},
-            {kFallbackToNative, kMinimizeOnToggle}};
+            {kFallbackToNative, kMinimizeOnToggle},
+            {kFastAppSwitchingEnabled, kForceFastAppSwitching}};
 
         UIButton *button = (UIButton *)cell.accessoryView;
         button.selected = [prefs boolForKey:keys[indexPath.section - 1][indexPath.row] forDisplayIdentifier:displayIdentifier];
@@ -234,7 +244,10 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section
 {
-    static NSString *titles[] = {@"Backgrounding method", @"Backgrounding state", @"Indicate status via...", @"Miscellaneous"};
+    static NSString *titles[] = {
+        @"Backgrounding method", @"Backgrounding state",
+        @"Indicate status via...", @"Miscellaneous", @"Options for \"Native\" method"
+    };
 
     // Determine size of application frame (iPad, iPhone differ)
     CGRect appFrame = [[UIScreen mainScreen] applicationFrame];
@@ -299,7 +312,8 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
     static NSString *keys[][2] = {
         {kEnableAtLaunch, kPersistent},
         {kBadgeEnabled, kStatusBarIconEnabled},
-        {kFallbackToNative, kMinimizeOnToggle}};
+        {kFallbackToNative, kMinimizeOnToggle},
+        {kFastAppSwitchingEnabled, kForceFastAppSwitching}};
 
     // Update selected state of button
     button.selected = !button.selected;
@@ -314,7 +328,9 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 
 - (void)helpButtonTapped:(UIButton *)sender
 {
-    static NSString *helpFiles[] = {@"help_method.mdwn", @"help_state.mdwn", @"help_indicators.mdwn", @"help_misc.mdwn"};
+    static NSString *helpFiles[] = {
+        @"help_method.mdwn", @"help_state.mdwn",
+        @"help_indicators.mdwn", @"help_misc.mdwn", @"help_ios4.mdwn"};
 
     // Create and show help page
     // NOTE: Controller is released in delegate callback
