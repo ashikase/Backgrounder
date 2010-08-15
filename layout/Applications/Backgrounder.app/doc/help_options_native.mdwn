@@ -1,0 +1,36 @@
+> Note that apps designed to **not** support multitasking will always quit when minimized, regardless of these settings.
+
+- - -
+
+> # Fast App Switching
+> ## (Default: On)
+> - - -
+> iOS 4.x includes several multitasking methods: voip, audio, gps, continuous, and task-completion. All of these allow an app to continue processing while in the background.
+>
+> For apps that do not support any of these methods, iOS 4.x also includes fast app switching, which keeps the app loaded in memory in a paused state so that it can be quickly resumed.
+>
+> * **Off:**  
+>   Apps that do not support one of the voip/audio/gps/continuous methods will quit when minimized.
+>
+>   Apps that use task-completion will quit once the tasks have completed.
+>
+> * **On:**  
+>   Apps will remain loaded in memory when minimized.
+
+- - -
+
+> # Even if Unsupported
+> ## (Default: Off)
+> ### Used with "Fast App Switching" option
+> - - -
+> Normally an app must be updated for iOS 4.x to support fast-app switching. This option allows fast-app switching to work with non-updated apps as well.
+>
+> **Warning:** Enabling this may cause issues for some non-updated apps, such as those that save settings on exit or use push notifications. For apps that experience issues, it is recommended to create an override.
+>
+> * **Off:**  
+>   Only apps that have been updated to iOS 4.x will stay loaded in memory when minimized.
+>
+> * **On:**  
+>   All apps will stay loaded in memory when minimized.
+>
+> **Note:** Currently, this option only affects App Store apps, not system apps.

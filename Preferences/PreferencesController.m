@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-08-07 19:36:38
+ * Last-modified: 2010-08-08 18:54:54
  */
 
 /**
@@ -330,7 +330,7 @@ static BOOL isFirmware3x_ = NO;
 {
     static NSString *helpFiles[] = {
         @"help_method.mdwn", @"help_state.mdwn",
-        @"help_indicators.mdwn", @"help_misc.mdwn", @"help_ios4.mdwn"};
+        @"help_indicators.mdwn", @"help_misc.mdwn", @"help_options_native.mdwn"};
 
     // Create and show help page
     // NOTE: Controller is released in delegate callback
