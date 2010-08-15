@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-j* Last-modified: 2010-08-01 19:37:34
+j* Last-modified: 2010-08-08 18:12:10
  */
 
 /**
@@ -42,12 +42,15 @@ j* Last-modified: 2010-08-01 19:37:34
 
 #import "PreferenceConstants.h"
 
+#import <substrate.h>
 
 static BOOL isFirmware3x = NO;
 
 static BOOL backgroundingEnabled_ = NO;
 static BGBackgroundingMethod backgroundingMethod_ = BGBackgroundingMethodBackgrounder;
 static BOOL fallbackToNative_ = YES;
+static BOOL fastAppSwitchingEnabled_ = YES;
+static BOOL forceFastAppSwitching_ = NO;
 
 #define GSEventRef void *
 
@@ -56,6 +59,7 @@ static BOOL fallbackToNative_ = YES;
 @interface UIApplication (Private)
 - (NSString *)displayIdentifier;
 - (void)terminateWithSuccess;
+- (id)_backgroundModes;
 @end
 
 static void loadPreferences()
@@ -84,6 +88,16 @@ static void loadPreferences()
     value = [prefs objectForKey:kFallbackToNative];
     if ([value isKindOfClass:[NSNumber class]])
         fallbackToNative_ = [value boolValue];
+
+    // Fast app switcing
+    value = [prefs objectForKey:kFastAppSwitchingEnabled];
+    if ([value isKindOfClass:[NSNumber class]])
+        fastAppSwitchingEnabled_ = [value boolValue];
+
+    // Enable fast app switching for apps not yet updated for iOS 4
+    value = [prefs objectForKey:kForceFastAppSwitching];
+    if ([value isKindOfClass:[NSNumber class]])
+        forceFastAppSwitching_ = [value boolValue];
 }
 
 //==============================================================================
@@ -184,17 +198,54 @@ typedef struct {
     unsigned disableViewContentScaling : 1;
 } UIApplicationFlags4x;
 
+//==============================================================================
+
+// NOTE: This function is based on work by Jay Freeman (a.k.a. saurik)
+template <typename Type_>
+static inline void lookupSymbol(const char *libraryFilePath, const char *symbolName, Type_ &symbol)
+{
+    // Lookup the symbol
+    struct nlist nl[2];
+    memset(nl, 0, sizeof(nl));
+    nl[0].n_un.n_name = (char *)symbolName;
+    nlist(libraryFilePath, nl);
+
+    // Check whether it is ARM or Thumb
+    uintptr_t value = nl[0].n_value;
+    if ((nl[0].n_desc & N_ARM_THUMB_DEF) != 0)
+        value |= 0x00000001;
+
+    symbol = reinterpret_cast<Type_>(value);
+}
+
+//==============================================================================
 
 %hook UIApplication
 
 %group GMethodAll
 
-// Overriding this method prevents the application from quitting on suspend
 // NOTE: UIApplication's default implementation of applicationSuspend: simply
 //       sets _applicationFlags.shouldExitAfterSendSuspend to YES
+// FIXME: Currently, if Backgrounder method is in use, applicationSuspend will not
+//        get called. This is a side effect of a bug fix in SpringBoardHooks.xm.
 - (void)applicationSuspend:(GSEventRef)event
 {
+    // Check if fast app switching is disabled for this app
+    if (!fastAppSwitchingEnabled_ && [[self _backgroundModes] count] == 0) {
+        // Fast app switching is disabled, and app does not support audio/gps/voip
+        NSArray **_backgroundTasks = NULL;
+        lookupSymbol("/System/Library/Frameworks/UIKit.framework/UIKit", "__backgroundTasks", _backgroundTasks);
+
+        if (_backgroundTasks == NULL || [*_backgroundTasks count] == 0) {
+            // No outstanding background tasks; safe to terminate
+            UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
+            _applicationFlags.taskSuspendingUnsupported = 1;
+        }
+    }
+
+    // If Backgrounder method and enabled, prevent the application from quitting on suspend
     if (!backgroundingEnabled_ || backgroundingMethod_ != BGBackgroundingMethodBackgrounder) {
+        // Not Backgrounder method, or not enabled
         %orig;
 
         if (!backgroundingEnabled_
@@ -217,7 +268,7 @@ typedef struct {
 
 %group GMethodAll_SuspendSettings
 
-// Used by certain applications, such as Mail and Phone, instead of applicationSuspend:
+// Used by certain system applications, such as Mail and Phone, instead of applicationSuspend:
 - (BOOL)applicationSuspend:(GSEventRef)event settings:(id)settings
 {
     // NOTE: The return value for this method appears to not be used;
@@ -309,6 +360,49 @@ typedef struct {
 
 //==============================================================================
 
+%group GFirmware4x_UIApplication
+// NOTE: Only hooked if fast app switching is disabled for the app
+
+%hook UIApplication
+
+// NOTE: UIApplication includes a flag, shouldExitAfterTaskCompletion, which is
+//       used to determine whether or not the app should stay loaded in memory
+//       after the last task completes. However, the app ends up suspending
+//       *before* this flag is ever checked. If the flag is set, once the app
+//       is brought to the foreground again, *then* it will terminate.
+// FIXME: Determine if there is a reason for this design, or if this is a miss
+//        on Apple's part.
+- (void)endBackgroundTask:(unsigned int)backgroundTaskId
+{
+    // If this is the last task, terminate the app instead of suspending
+    NSMutableArray **_backgroundTasks = NULL;
+    lookupSymbol("/System/Library/Frameworks/UIKit.framework/UIKit", "__backgroundTasks", _backgroundTasks);
+
+    if ([*_backgroundTasks count] == 1) {
+        // Only one task left; make sure the task ID matches
+        for (id task in *_backgroundTasks) {
+            unsigned int taskId = MSHookIvar<unsigned int>(task, "_taskId");
+            if (taskId == backgroundTaskId)
+                // The requested ID matches; terminate the app
+                // NOTE: Terminating the app here will result in a
+                //       "pid_suspend failed" message being printed to the syslog
+                //       by SpringBoard. An examination of SpringBoard appears to
+                //       show that this is harmless.
+                // FIXME: Confirm that this is, indeed, harmless.
+                [self terminateWithSuccess];
+        }
+    }
+
+    // Not the last task or matching task not found
+    %orig;
+}
+
+%end
+
+%end // GFirmware4x_UIApplication
+
+//==============================================================================
+
 %hook UIApplication
 
 - (void)_loadMainNibFile
@@ -352,19 +446,32 @@ typedef struct {
             backgroundingMethod_ = supportsMultitask ? BGBackgroundingMethodNative : BGBackgroundingMethodBackgrounder;
         } else if (backgroundingMethod_ == BGBackgroundingMethodNative
                 || (backgroundingMethod_ == BGBackgroundingMethodBackgrounder && fallbackToNative_)) {
-            // Determine if native multitasking is purposely disabled
-            BOOL exitsOnSuspend = NO;
-            NSBundle *bundle = [NSBundle mainBundle];
-            id value = [bundle objectForInfoDictionaryKey:@"UIApplicationExitsOnSuspend"]; 
-            if ([value isKindOfClass:[NSNumber class]])
-                exitsOnSuspend = [(NSNumber *)value boolValue];
+            if (fastAppSwitchingEnabled_) {
+                // NOTE: Only need to modify flag if "force" option is set;
+                //       apps updated for iOS4 will already have the flag set to zero.
+                if (forceFastAppSwitching_) {
+                    // Determine if native multitasking is purposely disabled
+                    BOOL exitsOnSuspend = NO;
+                    NSBundle *bundle = [NSBundle mainBundle];
+                    id value = [bundle objectForInfoDictionaryKey:@"UIApplicationExitsOnSuspend"]; 
+                    if ([value isKindOfClass:[NSNumber class]])
+                        exitsOnSuspend = [(NSNumber *)value boolValue];
 
-            // NOTE: Respect UIApplicationExitsOnSuspend flag
-            // FIXME: For now, only enable for App Store apps, as certain
-            //        system (jailbreak) apps use app exit to respring/apply
-            //        settings.
-            if (!exitsOnSuspend && [[bundle executablePath] hasPrefix:@"/var/mobile/Applications"])
-                _applicationFlags.taskSuspendingUnsupported = 0;
+                    // NOTE: Respect UIApplicationExitsOnSuspend flag
+                    // FIXME: For now, only enable for App Store apps, as certain
+                    //        system (jailbreak) apps use app exit to respring/apply
+                    //        settings.
+                    if (!exitsOnSuspend && [[bundle executablePath] hasPrefix:@"/var/mobile/Applications"])
+                        _applicationFlags.taskSuspendingUnsupported = 0;
+                }
+            } else {
+                if ([[self _backgroundModes] count] == 0) {
+                    // App does not support audio/gps/voip; disable fast app switching
+
+                    // Setup hooks to handle task-continuation
+                    %init(GFirmware4x_UIApplication);
+                }
+            }
         }
     }
 
@@ -387,7 +494,7 @@ typedef struct {
     }
 }
 
-%end
+%end // UIApplication
 
 //==============================================================================
 

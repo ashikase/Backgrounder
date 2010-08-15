@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-30 22:21:54
+ * Last-modified: 2010-08-06 00:58:31
  */
 
 /**
@@ -65,6 +65,8 @@ typedef enum {
 #define kEnableAtLaunch          @"enableAtLaunch"
 #define kMinimizeOnToggle        @"minimizeOnToggle"
 #define kFallbackToNative        @"fallbackToNative"
+#define kFastAppSwitchingEnabled @"fastAppSwitchingEnabled"
+#define kForceFastAppSwitching   @"forceFastAppSwitching"
 
 
 // Former preference settings keys
