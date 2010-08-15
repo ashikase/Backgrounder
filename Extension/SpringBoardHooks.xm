@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-08-14 19:53:06
+ * Last-modified: 2010-08-14 20:10:10
  */
 
 /**
@@ -282,18 +282,22 @@ static void updateStatusBarIndicatorForApplication(SBApplication *app)
                 if (showBackgrounder) {
                     imageName = @"Backgrounder";
                 } else {
-                    BOOL showNative = !showBackgrounder && (isEnabled || boolForKey(kFallbackToNative, displayId));
-
                     // FIXME: Find a better way to do this.
-                    BOOL allowFastApp = boolForKey(kFastAppSwitchingEnabled, displayId);
-                    BOOL willMultitask = ([appsSupportingMultitask_ containsObject:displayId]
-                            && (allowFastApp || ([app supportsAudioBackgroundMode]
-                                    || [app supportsLocationBackgroundMode]
-                                    || [app supportsVOIPBackgroundMode]
-                                    || [app supportsContinuousBackgroundMode])))
-                        || (allowFastApp && boolForKey(kForceFastAppSwitching, displayId));
+                    BOOL showNative = !showBackgrounder && (isEnabled
+                            || (!isFirmware3x && boolForKey(kFallbackToNative, displayId)));
 
-                    if (showNative && willMultitask)
+                    if (!isFirmware3x) {
+                        BOOL allowFastApp = boolForKey(kFastAppSwitchingEnabled, displayId);
+                        BOOL willMultitask = ([appsSupportingMultitask_ containsObject:displayId]
+                                && (allowFastApp || ([app supportsAudioBackgroundMode]
+                                        || [app supportsLocationBackgroundMode]
+                                        || [app supportsVOIPBackgroundMode]
+                                        || [app supportsContinuousBackgroundMode])))
+                            || (allowFastApp && boolForKey(kForceFastAppSwitching, displayId));
+                        showNative = showNative && willMultitask;
+                    }
+
+                    if (showNative)
                         imageName = @"Backgrounder_Native";
                 }
 
