@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-j* Last-modified: 2010-08-12 00:55:46
+j* Last-modified: 2010-08-12 01:07:42
  */
 
 /**
@@ -46,16 +46,16 @@ j* Last-modified: 2010-08-12 00:55:46
 
 #import "Headers.h"
 
+#define GSEventRef void *
 
-static BOOL isFirmware3x = NO;
+
+static BOOL isFirmware3x_ = NO;
 
 static BOOL backgroundingEnabled_ = NO;
 static BGBackgroundingMethod backgroundingMethod_ = BGBackgroundingMethodBackgrounder;
 static BOOL fallbackToNative_ = YES;
 static BOOL fastAppSwitchingEnabled_ = YES;
 static BOOL forceFastAppSwitching_ = NO;
-
-#define GSEventRef void *
 
 //==============================================================================
 
@@ -77,7 +77,7 @@ static void loadPreferences()
     id value = [prefs objectForKey:kBackgroundingMethod];
     if ([value isKindOfClass:[NSNumber class]]) {
         backgroundingMethod_ = (BGBackgroundingMethod)[value integerValue];
-        if (isFirmware3x && backgroundingMethod_ == BGBackgroundingMethodAutoDetect)
+        if (isFirmware3x_ && backgroundingMethod_ == BGBackgroundingMethodAutoDetect)
             backgroundingMethod_ = BGBackgroundingMethodBackgrounder;
     }
 
@@ -138,7 +138,7 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
 //        get called. This is a side effect of a bug fix in SpringBoardHooks.xm.
 - (void)applicationSuspend:(GSEventRef)event
 {
-    if (!isFirmware3x) {
+    if (!isFirmware3x_) {
         // Check if fast app switching is disabled for this app
         if (!fastAppSwitchingEnabled_ && [[self _backgroundModes] count] == 0) {
             // Fast app switching is disabled, and app does not support audio/gps/voip
@@ -163,7 +163,7 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
             // Application should terminate on suspend; make certain that it does
             // FIXME: Determine if there is any benefit of using shouldExitAfterSendSuspend
             //        over forceExit.
-            if (isFirmware3x) {
+            if (isFirmware3x_) {
                 UIApplicationFlags3x &_applicationFlags = MSHookIvar<UIApplicationFlags3x>(self, "_applicationFlags");
                 _applicationFlags.shouldExitAfterSendSuspend = YES;
             } else {
@@ -192,7 +192,7 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
         if (!backgroundingEnabled_
                 && (backgroundingMethod_ != BGBackgroundingMethodBackgrounder || !fallbackToNative_)) {
             // Application should terminate on suspend; make certain that it does
-            if (isFirmware3x) {
+            if (isFirmware3x_) {
                 // NOTE: The shouldExitAfterSendSuspend flag appears to be ignored when
                 //       this alternative method is called; resort to more "drastic"
                 //       measures.
@@ -344,7 +344,7 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
     // Load preferences to determine backgrounding method to use
     loadPreferences();
 
-    if (!isFirmware3x) {
+    if (!isFirmware3x_) {
         // Get application flags
         UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
 
@@ -428,7 +428,7 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
 void initApplicationHooks()
 {
     Class $UIApplication = objc_getClass("UIApplication");
-    isFirmware3x = (class_getInstanceMethod($UIApplication, @selector(applicationState)) == NULL);
+    isFirmware3x_ = (class_getInstanceMethod($UIApplication, @selector(applicationState)) == NULL);
 
     %init;
 
