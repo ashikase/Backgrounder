@@ -1,4 +1,4 @@
-> Note that apps designed to **not** support multitasking will always quit when minimized, regardless of these settings.
+> Note that apps purposely designed to **not** support multitasking will always quit when minimized, regardless of these settings.
 
 - - -
 
@@ -32,5 +32,3 @@
 >
 > * **On:**  
 >   All apps will stay loaded in memory when minimized.
->
-> **Note:** Currently, this option only affects App Store apps, not system apps.

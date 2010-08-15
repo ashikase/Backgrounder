@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-j* Last-modified: 2010-08-14 16:50:34
+j* Last-modified: 2010-08-14 16:56:02
  */
 
 /**
@@ -403,11 +403,7 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
                         exitsOnSuspend = [(NSNumber *)value boolValue];
 
                     // NOTE: Respect UIApplicationExitsOnSuspend flag
-                    // FIXME: For now, only enable for App Store apps, as certain
-                    //        system (jailbreak) apps use app exit to respring/apply
-                    //        settings.
-                    if (!exitsOnSuspend && [[bundle executablePath] hasPrefix:@"/var/mobile/Applications"])
-                        _applicationFlags.taskSuspendingUnsupported = 0;
+                    _applicationFlags.taskSuspendingUnsupported = exitsOnSuspend;
                 }
             } else {
                 if ([[self _backgroundModes] count] == 0) {
