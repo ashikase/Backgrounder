@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-j* Last-modified: 2010-08-13 00:21:04
+j* Last-modified: 2010-08-13 00:22:52
  */
 
 /**
@@ -318,22 +318,26 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
 //        on Apple's part.
 - (void)endBackgroundTask:(unsigned int)backgroundTaskId
 {
-    // If this is the last task, terminate the app instead of suspending
-    NSMutableArray **_backgroundTasks = NULL;
-    lookupSymbol("/System/Library/Frameworks/UIKit.framework/UIKit", "__backgroundTasks", _backgroundTasks);
+    // NOTE: Only terminate if app is suspended.
+    UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
+    if (_applicationFlags.isSuspended) {
+        // If this is the last task, terminate the app instead of suspending
+        NSMutableArray **_backgroundTasks = NULL;
+        lookupSymbol("/System/Library/Frameworks/UIKit.framework/UIKit", "__backgroundTasks", _backgroundTasks);
 
-    if ([*_backgroundTasks count] == 1) {
-        // Only one task left; make sure the task ID matches
-        for (id task in *_backgroundTasks) {
-            unsigned int taskId = MSHookIvar<unsigned int>(task, "_taskId");
-            if (taskId == backgroundTaskId)
-                // The requested ID matches; terminate the app
-                // NOTE: Terminating the app here will result in a
-                //       "pid_suspend failed" message being printed to the syslog
-                //       by SpringBoard. An examination of SpringBoard appears to
-                //       show that this is harmless.
-                // FIXME: Confirm that this is, indeed, harmless.
-                [self terminateWithSuccess];
+        if ([*_backgroundTasks count] == 1) {
+            // Only one task left; make sure the task ID matches
+            for (id task in *_backgroundTasks) {
+                unsigned int taskId = MSHookIvar<unsigned int>(task, "_taskId");
+                if (taskId == backgroundTaskId)
+                    // The requested ID matches; terminate the app
+                    // NOTE: Terminating the app here will result in a
+                    //       "pid_suspend failed" message being printed to the syslog
+                    //       by SpringBoard. An examination of SpringBoard appears to
+                    //       show that this is harmless.
+                    // FIXME: Confirm that this is, indeed, harmless.
+                    [self terminateWithSuccess];
+            }
         }
     }
 
