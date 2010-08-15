@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-08-09 02:30:50
+ * Last-modified: 2010-08-09 15:20:06
  */
 
 /**
@@ -128,12 +128,12 @@ static BOOL isFirmware3x_ = NO;
 
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return isFirmware3x_ ? 4 : 5;
+	return isFirmware3x_ ? 5 : 6;
 }
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
-    static int rows[] = {4, 2, 2, 2, 2};
+    static int rows[] = {4, 2, 1, 2, 2, 1};
     return rows[section];
 }
 
@@ -144,18 +144,20 @@ static BOOL isFirmware3x_ = NO;
 
     static NSString *cellTitles[][4] = {
         {@"Off", @"Native", @"Backgrounder", @"Auto Detect"},
+        {@"Fast App Switching", @"\u21b3 Even if Unsupported", nil, nil},
+        {@"Fall Back to Native", nil, nil, nil},
         {@"Enable at Launch", @"Stay Enabled", nil, nil},
         {@"Badge", @"Status Bar Icon", nil, nil},
-        {@"Fall Back to Native", @"Minimize on Toggle", nil, nil},
-        {@"Fast App Switching", @"\u21b3 Even if Unsupported", nil, nil}
+        {@"Minimize on Toggle", nil, nil, nil}
     };
     static NSString *cellSubtitles[][4] = {
         {@"App will quit when minimized", @"Use native method, if supported",
             @"Run as if in foreground", @"Native if supported, else Backgrounder"},
+        {@"Keep apps paused in memory", @"Include apps not updated for iOS4", nil, nil},
+        {@"If state disabled, use native method", nil, nil, nil},
         {@"No need to manually enable", @"Must be disabled manually", nil, nil},
         {@"Mark the app's icon", @"Mark the app's status bar", nil, nil},
-        {@"If state disabled, use native method", @"Minimize app when toggling state", nil, nil},
-        {@"Keep apps paused in memory", @"Include apps not updated for iOS4", nil, nil}
+        {@"Minimize app when toggling state", nil, nil, nil}
     };
     static NSString *methodImages[] = {
         @"method_off.png", @"method_native.png", @"method_backgrounder.png", @"method_autodetect.png"
@@ -200,21 +202,22 @@ static BOOL isFirmware3x_ = NO;
         }
 
         static NSString *keys[][2] = {
+            {kFastAppSwitchingEnabled, kForceFastAppSwitching},
+            {kFallbackToNative, nil},
             {kEnableAtLaunch, kPersistent},
             {kBadgeEnabled, kStatusBarIconEnabled},
-            {kFallbackToNative, kMinimizeOnToggle},
-            {kFastAppSwitchingEnabled, kForceFastAppSwitching}};
+            {kMinimizeOnToggle, nil}};
 
         UIButton *button = (UIButton *)cell.accessoryView;
         button.selected = [prefs boolForKey:keys[indexPath.section - 1][indexPath.row] forDisplayIdentifier:displayIdentifier];
 
         // Set image for cell
-        cell.imageView.image = (indexPath.section == 2) ?
+        cell.imageView.image = (indexPath.section == 4) ?
             [UIImage imageNamed:((indexPath.row == 0) ? @"badge.png" : @"status_bar_icon.png")] :
             nil;
 
         if (backgroundingMethod == BGBackgroundingMethodOff
-                || (indexPath.section == 3 && indexPath.row == 0 && backgroundingMethod != BGBackgroundingMethodBackgrounder)) {
+                || (indexPath.section == 2 && indexPath.row == 0 && backgroundingMethod != BGBackgroundingMethodBackgrounder)) {
             // Native backgrounding method cannot "fall back" to native.
             cell.textLabel.textColor = [UIColor grayColor];
             button.enabled = NO;
@@ -245,8 +248,9 @@ static BOOL isFirmware3x_ = NO;
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section
 {
     static NSString *titles[] = {
-        @"Backgrounding method", @"Backgrounding state",
-        @"Indicate state via...", @"Miscellaneous", @"Options for \"Native\" method"
+        @"Backgrounding method",
+        @"Options for \"Native\"", @"Options for \"Backgrounder\"",
+        @"Backgrounding state", @"Indicate state via...", @"Miscellaneous",
     };
 
     // Determine size of application frame (iPad, iPhone differ)
@@ -310,10 +314,11 @@ static BOOL isFirmware3x_ = NO;
 - (void)buttonToggled:(UIButton *)button
 {
     static NSString *keys[][2] = {
+        {kFastAppSwitchingEnabled, kForceFastAppSwitching},
+        {kFallbackToNative, nil},
         {kEnableAtLaunch, kPersistent},
         {kBadgeEnabled, kStatusBarIconEnabled},
-        {kFallbackToNative, kMinimizeOnToggle},
-        {kFastAppSwitchingEnabled, kForceFastAppSwitching}};
+        {kMinimizeOnToggle, nil}};
 
     // Update selected state of button
     button.selected = !button.selected;
@@ -329,8 +334,8 @@ static BOOL isFirmware3x_ = NO;
 - (void)helpButtonTapped:(UIButton *)sender
 {
     static NSString *helpFiles[] = {
-        @"help_method.mdwn", @"help_state.mdwn",
-        @"help_indicators.mdwn", @"help_misc.mdwn", @"help_options_native.mdwn"};
+        @"help_method.mdwn", @"help_options_native.mdwn", @"help_options_backgrounder.mdwn",
+        @"help_state.mdwn", @"help_indicators.mdwn", @"help_misc.mdwn"};
 
     // Create and show help page
     // NOTE: Controller is released in delegate callback
