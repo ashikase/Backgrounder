@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-j* Last-modified: 2010-08-08 18:12:10
+j* Last-modified: 2010-08-12 00:50:17
  */
 
 /**
@@ -230,16 +230,18 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
 //        get called. This is a side effect of a bug fix in SpringBoardHooks.xm.
 - (void)applicationSuspend:(GSEventRef)event
 {
-    // Check if fast app switching is disabled for this app
-    if (!fastAppSwitchingEnabled_ && [[self _backgroundModes] count] == 0) {
-        // Fast app switching is disabled, and app does not support audio/gps/voip
-        NSArray **_backgroundTasks = NULL;
-        lookupSymbol("/System/Library/Frameworks/UIKit.framework/UIKit", "__backgroundTasks", _backgroundTasks);
+    if (!isFirmware3x) {
+        // Check if fast app switching is disabled for this app
+        if (!fastAppSwitchingEnabled_ && [[self _backgroundModes] count] == 0) {
+            // Fast app switching is disabled, and app does not support audio/gps/voip
+            NSArray **_backgroundTasks = NULL;
+            lookupSymbol("/System/Library/Frameworks/UIKit.framework/UIKit", "__backgroundTasks", _backgroundTasks);
 
-        if (_backgroundTasks == NULL || [*_backgroundTasks count] == 0) {
-            // No outstanding background tasks; safe to terminate
-            UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
-            _applicationFlags.taskSuspendingUnsupported = 1;
+            if (_backgroundTasks == NULL || [*_backgroundTasks count] == 0) {
+                // No outstanding background tasks; safe to terminate
+                UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
+                _applicationFlags.taskSuspendingUnsupported = 1;
+            }
         }
     }
 
@@ -403,6 +405,23 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
 
 //==============================================================================
 
+%group GMethodOff
+// NOTE: Only hooked for BGBackgroundingMethodOff on firmware 4.x+
+
+%hook UIDevice
+
+- (BOOL)isMultitaskingSupported
+{
+    // NOTE: This is for apps that properly check for multitasking support
+    return NO;
+}
+
+%end
+
+%end // GMethodOff
+
+//==============================================================================
+
 %hook UIApplication
 
 - (void)_loadMainNibFile
@@ -417,7 +436,7 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
     // Load preferences to determine backgrounding method to use
     loadPreferences();
 
-    if (!isFirmware3x && backgroundingMethod_ != BGBackgroundingMethodOff) {
+    if (!isFirmware3x) {
         // Get application flags
         UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
 
@@ -472,6 +491,15 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
                     %init(GFirmware4x_UIApplication);
                 }
             }
+        }
+
+        if (backgroundingMethod_ == BGBackgroundingMethodOff
+                || (backgroundingMethod_ == BGBackgroundingMethodBackgrounder && !fallbackToNative_)) {
+            // Disable native backgrounding
+            // NOTE: Must hook for Backgrounder method as well to prevent task-continuation
+            _applicationFlags.taskSuspendingUnsupported = 1;
+
+            %init(GMethodOff);
         }
     }
 
