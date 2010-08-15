@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-j* Last-modified: 2010-08-13 00:22:52
+j* Last-modified: 2010-08-14 16:50:34
  */
 
 /**
@@ -136,16 +136,19 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
 
 // NOTE: UIApplication's default implementation of applicationSuspend: simply
 //       sets _applicationFlags.shouldExitAfterSendSuspend to YES
-// FIXME: Currently, if Backgrounder method is in use, applicationSuspend will not
-//        get called. This is a side effect of a bug fix in SpringBoardHooks.xm.
+// FIXME: Currently, if Backgrounder method is in use and backgrounding is
+//        enabled, applicationSuspend will not get called (it suspends "events only").
+//        This is a side effect of a bug fix in SpringBoardHooks.xm.
 - (void)applicationSuspend:(GSEventRef)event
 {
-    // If Backgrounder method and enabled, prevent the application from quitting on suspend
-    if (!backgroundingEnabled_ || backgroundingMethod_ != BGBackgroundingMethodBackgrounder) {
-        // Not Backgrounder method, or not enabled
+    if (!isFirmware3x_) {
+        // Firmware 4.x+
 
-        if (!isFirmware3x_
-            && (backgroundingMethod_ == BGBackgroundingMethodNative || fallbackToNative_)) {
+        if (backgroundingEnabled_ || fallbackToNative_) {
+            // Is Native method
+            // NOTE: backgroundingEnabled_ will always be NO here for
+            //       "Off" and "Backgrounder" methods.
+
             // Check if fast app switching is disabled for this app
             if (!fastAppSwitchingEnabled_ && [[self _backgroundModes] count] == 0) {
                 // Fast app switching is disabled, and app does not support audio/gps/voip
@@ -158,7 +161,16 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
                     _applicationFlags.taskSuspendingUnsupported = 1;
                 }
             }
+        } else {
+            // Application should terminate on suspend; make certain that it does
+            UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
+            _applicationFlags.taskSuspendingUnsupported = 1;
         }
+
+        // Call original implementation
+        %orig;
+    } else {
+        // Firmware 3.x
 
         // Call original implementation
         %orig;
@@ -167,13 +179,8 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
             // Application should terminate on suspend; make certain that it does
             // FIXME: Determine if there is any benefit of using shouldExitAfterSendSuspend
             //        over forceExit.
-            if (isFirmware3x_) {
-                UIApplicationFlags3x &_applicationFlags = MSHookIvar<UIApplicationFlags3x>(self, "_applicationFlags");
-                _applicationFlags.shouldExitAfterSendSuspend = YES;
-            } else {
-                UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
-                _applicationFlags.shouldExitAfterSendSuspend = YES;
-            }
+            UIApplicationFlags3x &_applicationFlags = MSHookIvar<UIApplicationFlags3x>(self, "_applicationFlags");
+            _applicationFlags.shouldExitAfterSendSuspend = YES;
         }
     }
 }
