@@ -1,22 +1,10 @@
-> # Fall Back to Native
-> ## (Default: On)
-> ### "Backgrounder" method only
-> - - -
-> When backgrounding state is disabled:
->
-> * **Off:**  
->   The app will quit when minimized.
->
-> * **On:**  
->   The app will use the native backgrounding method, if available, when minimized.
-
-- - -
-
 > # Minimize on Toggle
 > ## (Default: On)
 > - - -
+> When backgrounding state is toggled:
+>
 > * **Off:**  
->   The app will remain open upon enabling/disabling backgrounding.
+>   The app will remain open.
 >
 > * **On:**  
->   The app will minimize upon enabling/disabling backgrounding.
+>   The app will minimize.

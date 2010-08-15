@@ -1,0 +1,10 @@
+> # Fall Back to Native
+> ## (Default: On)
+> - - -
+> When backgrounding state is disabled:
+>
+> * **Off:**  
+>   The app will quit when minimized.
+>
+> * **On:**  
+>   The app will use the native backgrounding method, if available, when minimized.
