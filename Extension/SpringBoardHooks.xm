@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-08-14 20:10:10
+ * Last-modified: 2010-08-15 15:08:08
  */
 
 /**
@@ -278,13 +278,13 @@ static void updateStatusBarIndicatorForApplication(SBApplication *app)
                 NSString *imageName = nil;
 
                 BOOL isEnabled = [enabledApps_ containsObject:displayId];
-                BOOL showBackgrounder = isEnabled && (bgMethod == BGBackgroundingMethodBackgrounder);
-                if (showBackgrounder) {
+                BOOL isBackgrounderMethod = (bgMethod == BGBackgroundingMethodBackgrounder);
+                if (isEnabled && isBackgrounderMethod) {
                     imageName = @"Backgrounder";
                 } else {
                     // FIXME: Find a better way to do this.
-                    BOOL showNative = !showBackgrounder && (isEnabled
-                            || (!isFirmware3x && boolForKey(kFallbackToNative, displayId)));
+                    BOOL showNative = (isEnabled && !isBackgrounderMethod)
+                        || (!isFirmware3x && !isEnabled && isBackgrounderMethod && boolForKey(kFallbackToNative, displayId));
 
                     if (!isFirmware3x) {
                         BOOL allowFastApp = boolForKey(kFastAppSwitchingEnabled, displayId);
