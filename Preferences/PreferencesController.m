@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-08-12 23:31:00
+ * Last-modified: 2010-08-14 21:26:34
  */
 
 /**
@@ -373,8 +373,10 @@ static BOOL isFirmware3x_ = NO;
                         }
                     }
 
-                    // Show Native options
-                    [indexesToInsert addIndex:1];
+                    if (showNativeOptions)
+                        // Show Native options
+                        [indexesToInsert addIndex:1];
+
                     break;
                 case BGBackgroundingMethodBackgrounder:
                     if (showNativeOptions) {
@@ -439,40 +441,42 @@ static BOOL isFirmware3x_ = NO;
     NSString *key = keys[(indexPath.section - 1) + offset][indexPath.row];
     [[Preferences sharedInstance] setBool:button.selected forKey:key forDisplayIdentifier:displayIdentifier];
 
-    if ([key isEqualToString:kFastAppSwitchingEnabled]) {
-        // Visibility of "Even if Unsupported" is changing
+    if (!isFirmware3x_) {
+        if ([key isEqualToString:kFastAppSwitchingEnabled]) {
+            // Visibility of "Even if Unsupported" is changing
 
-        // Cache the updated value
-        showEvenIfUnsupported = button.selected;
+            // Cache the updated value
+            showEvenIfUnsupported = button.selected;
 
-        // Update the table
-        UITableView *tableView = self.tableView;
-        NSArray *indexPaths = [NSArray arrayWithObject:[NSIndexPath indexPathForRow:1 inSection:1]];
+            // Update the table
+            UITableView *tableView = self.tableView;
+            NSArray *indexPaths = [NSArray arrayWithObject:[NSIndexPath indexPathForRow:1 inSection:1]];
 
-        [tableView beginUpdates];
-        if (showEvenIfUnsupported)
-            // Show the "Even if Unsupported" option
-            [tableView insertRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationTop];
-        else
-            // Hide the "Even if Unsupported" option
-            [tableView deleteRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationTop];
-        [tableView endUpdates];
-    } else if ([key isEqualToString:kFallbackToNative]) {
-        // Visibility of Native options is changing; update visible sections
-        [self updateSectionVisibility];
+            [tableView beginUpdates];
+            if (showEvenIfUnsupported)
+                // Show the "Even if Unsupported" option
+                [tableView insertRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationTop];
+            else
+                // Hide the "Even if Unsupported" option
+                [tableView deleteRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationTop];
+            [tableView endUpdates];
+        } else if ([key isEqualToString:kFallbackToNative]) {
+            // Visibility of Native options is changing; update visible sections
+            [self updateSectionVisibility];
 
-        // Update the table
-        UITableView *tableView = self.tableView;
-        NSIndexSet *indexSet = [NSIndexSet indexSetWithIndex:1];
+            // Update the table
+            UITableView *tableView = self.tableView;
+            NSIndexSet *indexSet = [NSIndexSet indexSetWithIndex:1];
 
-        [tableView beginUpdates];
-        if (showNativeOptions)
-            // Show the Native options
-            [tableView insertSections:indexSet withRowAnimation:UITableViewRowAnimationFade];
-        else
-            // Hide the Native options
-            [tableView deleteSections:indexSet withRowAnimation:UITableViewRowAnimationFade];
-        [tableView endUpdates];
+            [tableView beginUpdates];
+            if (showNativeOptions)
+                // Show the Native options
+                [tableView insertSections:indexSet withRowAnimation:UITableViewRowAnimationFade];
+            else
+                // Hide the Native options
+                [tableView deleteSections:indexSet withRowAnimation:UITableViewRowAnimationFade];
+            [tableView endUpdates];
+        }
     }
 }
 
