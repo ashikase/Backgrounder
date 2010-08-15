@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-08-12 00:59:16
+ * Last-modified: 2010-08-14 19:53:06
  */
 
 /**
@@ -275,17 +275,30 @@ static void updateStatusBarIndicatorForApplication(SBApplication *app)
             NSString *displayId = [app displayIdentifier];
             int bgMethod = integerForKey(kBackgroundingMethod, displayId);
             if (bgMethod != BGBackgroundingMethodOff) {
-                if ([enabledApps_ containsObject:displayId]) {
-                    NSString *imageName = (bgMethod == BGBackgroundingMethodBackgrounder) ?
-                        @"Backgrounder" : @"Backgrounder_Native";
-                    [springBoard addStatusBarImageNamed:imageName];
+                NSString *imageName = nil;
+
+                BOOL isEnabled = [enabledApps_ containsObject:displayId];
+                BOOL showBackgrounder = isEnabled && (bgMethod == BGBackgroundingMethodBackgrounder);
+                if (showBackgrounder) {
+                    imageName = @"Backgrounder";
                 } else {
-                    // On iOS 4.x, show native indicator if "Fall Back to Native" is ON
-                    if (!isFirmware3x
-                        && bgMethod == BGBackgroundingMethodBackgrounder
-                        && boolForKey(kFallbackToNative, displayId))
-                        [springBoard addStatusBarImageNamed:@"Backgrounder_Native"];
+                    BOOL showNative = !showBackgrounder && (isEnabled || boolForKey(kFallbackToNative, displayId));
+
+                    // FIXME: Find a better way to do this.
+                    BOOL allowFastApp = boolForKey(kFastAppSwitchingEnabled, displayId);
+                    BOOL willMultitask = ([appsSupportingMultitask_ containsObject:displayId]
+                            && (allowFastApp || ([app supportsAudioBackgroundMode]
+                                    || [app supportsLocationBackgroundMode]
+                                    || [app supportsVOIPBackgroundMode]
+                                    || [app supportsContinuousBackgroundMode])))
+                        || (allowFastApp && boolForKey(kForceFastAppSwitching, displayId));
+
+                    if (showNative && willMultitask)
+                        imageName = @"Backgrounder_Native";
                 }
+
+                if (imageName != nil)
+                    [springBoard addStatusBarImageNamed:imageName];
             }
         }
     }
