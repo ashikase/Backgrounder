@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-11 15:05:01
+ * Last-modified: 2010-08-08 18:25:31
  */
 
 /**
@@ -171,14 +171,9 @@
     return cell;
 }
 
-- (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section
-{
-    return (section == 1) ? @"* The Activator event is only for use with the \"Backgrounder\" backgrounding method." : nil;
-}
-
 - (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section
 {
-    CGFloat heights[] = {0, 50.0f, 25.0f};
+    CGFloat heights[] = {0, 0, 25.0f};
     return heights[section];
 }
 
