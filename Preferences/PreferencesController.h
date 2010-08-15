@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 22:07:12
+ * Last-modified: 2010-08-11 18:29:54
  */
 
 /**
@@ -41,10 +41,24 @@
 
 
 #import "HtmlDocController.h"
+#import "PreferenceConstants.h"
 
 @interface PreferencesController : UITableViewController <HtmlDocControllerDelegate>
 {
     NSString *displayIdentifier;
+
+    // Cached copy of current backgrounding method
+    BGBackgroundingMethod backgroundingMethod;
+
+    // Whether to show sections for Native/Backgrounder method options
+    BOOL showNativeOptions;
+    BOOL showBackgrounderOptions;
+
+    // Whether to show "Even if Unsupported" option
+    BOOL showEvenIfUnsupported;
+
+    // Offset used when sections are hidden
+    int sectionOffset;
 }
 
 - (id)initWithDisplayIdentifier:(NSString *)displayId;

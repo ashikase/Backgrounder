@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-08-09 15:20:06
+ * Last-modified: 2010-08-11 18:29:48
  */
 
 /**
@@ -54,6 +54,7 @@ extern NSString * SBSCopyLocalizedApplicationNameForDisplayIdentifier(NSString *
 static BOOL isFirmware3x_ = NO;
 
 @interface PreferencesController (Private)
+- (void)updateSectionVisibility;
 - (UIView *)tableHeaderView;
 @end
 
@@ -78,6 +79,18 @@ static BOOL isFirmware3x_ = NO;
             style:UIBarButtonItemStyleBordered target:nil action:nil];
 
         self.tableView.tableHeaderView = [self tableHeaderView];
+
+        // Retrieve current value for backgrounding method
+        Preferences *prefs = [Preferences sharedInstance];
+        backgroundingMethod = (BGBackgroundingMethod)
+            [prefs integerForKey:kBackgroundingMethod forDisplayIdentifier:displayIdentifier];
+
+        // Retrieve current value of "Even if Unsupported" option
+        showEvenIfUnsupported = 
+            [prefs boolForKey:kFastAppSwitchingEnabled forDisplayIdentifier:displayIdentifier];
+
+        // Determine initial visibility flags and offset
+        [self updateSectionVisibility];
     }
     return self;
 }
@@ -86,6 +99,20 @@ static BOOL isFirmware3x_ = NO;
 {
     [displayIdentifier release];
     [super dealloc];
+}
+
+#pragma mark - Miscellaneous
+
+- (void)updateSectionVisibility
+{
+    // Update section visibility flags
+    showBackgrounderOptions = (backgroundingMethod == BGBackgroundingMethodBackgrounder);
+    showNativeOptions = (backgroundingMethod == BGBackgroundingMethodNative)
+        || (showBackgrounderOptions && [[Preferences sharedInstance]
+                boolForKey:kFallbackToNative forDisplayIdentifier:displayIdentifier]);
+
+    // Update the section offset
+    sectionOffset = !showNativeOptions + !showBackgrounderOptions;
 }
 
 - (UIView *)tableHeaderView
@@ -128,13 +155,25 @@ static BOOL isFirmware3x_ = NO;
 
 - (int)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return isFirmware3x_ ? 5 : 6;
+    return (backgroundingMethod == BGBackgroundingMethodOff) ? 1 : 6 - sectionOffset;
 }
 
 - (int)tableView:(UITableView *)tableView numberOfRowsInSection:(int)section
 {
     static int rows[] = {4, 2, 1, 2, 2, 1};
-    return rows[section];
+
+    // Adjust section based on visibility of Native/Backgrounder options
+    if (section > 1 || (section == 1 && !showNativeOptions))
+        section += sectionOffset;
+
+    // Get number of rows for requested section
+    int ret = rows[section];
+
+    // Adjust number of rows in Native options section
+    if (section == 1 && showNativeOptions)
+        ret -= !showEvenIfUnsupported;
+
+    return ret;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -163,12 +202,7 @@ static BOOL isFirmware3x_ = NO;
         @"method_off.png", @"method_native.png", @"method_backgrounder.png", @"method_autodetect.png"
     };
 
-    // All cells access preferences
-    Preferences *prefs = [Preferences sharedInstance];
-
-    // The availability of certain options depend on the backgrounding method in use
-    BGBackgroundingMethod backgroundingMethod =
-        (BGBackgroundingMethod)[prefs integerForKey:kBackgroundingMethod forDisplayIdentifier:displayIdentifier];
+    int offset = 0;
 
     UITableViewCell *cell = nil;
     if (indexPath.section == 0) {
@@ -188,6 +222,12 @@ static BOOL isFirmware3x_ = NO;
         cell.imageView.image = [UIImage imageNamed:methodImages[indexPath.row]];
     } else {
         // Backgrounding indicators, Other
+        static NSString *keys[][2] = {
+            {kFastAppSwitchingEnabled, kForceFastAppSwitching},
+            {kFallbackToNative, nil},
+            {kEnableAtLaunch, kPersistent},
+            {kBadgeEnabled, kStatusBarIconEnabled},
+            {kMinimizeOnToggle, nil}};
 
         // Try to retrieve from the table view a now-unused cell with the given identifier
         cell = [tableView dequeueReusableCellWithIdentifier:reuseIdToggle];
@@ -201,36 +241,21 @@ static BOOL isFirmware3x_ = NO;
             cell.accessoryView = button;
         }
 
-        static NSString *keys[][2] = {
-            {kFastAppSwitchingEnabled, kForceFastAppSwitching},
-            {kFallbackToNative, nil},
-            {kEnableAtLaunch, kPersistent},
-            {kBadgeEnabled, kStatusBarIconEnabled},
-            {kMinimizeOnToggle, nil}};
+        // Determine the section offset
+        offset = (indexPath.section == 1 && showNativeOptions) ? 0 : sectionOffset;
 
         UIButton *button = (UIButton *)cell.accessoryView;
-        button.selected = [prefs boolForKey:keys[indexPath.section - 1][indexPath.row] forDisplayIdentifier:displayIdentifier];
+        Preferences *prefs = [Preferences sharedInstance];
+        button.selected = [prefs boolForKey:keys[(indexPath.section - 1) + offset][indexPath.row] forDisplayIdentifier:displayIdentifier];
 
         // Set image for cell
         cell.imageView.image = (indexPath.section == 4) ?
             [UIImage imageNamed:((indexPath.row == 0) ? @"badge.png" : @"status_bar_icon.png")] :
             nil;
-
-        if (backgroundingMethod == BGBackgroundingMethodOff
-                || (indexPath.section == 2 && indexPath.row == 0 && backgroundingMethod != BGBackgroundingMethodBackgrounder)) {
-            // Native backgrounding method cannot "fall back" to native.
-            cell.textLabel.textColor = [UIColor grayColor];
-            button.enabled = NO;
-        } else {
-            // Cell may have been disabled; enable it
-            cell.textLabel.textColor = [UIColor blackColor];
-            button.enabled = YES;
-        }
-
     }
 
-    cell.textLabel.text = cellTitles[indexPath.section][indexPath.row];
-    cell.detailTextLabel.text = cellSubtitles[indexPath.section][indexPath.row];
+    cell.textLabel.text = cellTitles[indexPath.section + offset][indexPath.row];
+    cell.detailTextLabel.text = cellSubtitles[indexPath.section + offset][indexPath.row];
 
     return cell;
 }
@@ -252,6 +277,10 @@ static BOOL isFirmware3x_ = NO;
         @"Options for \"Native\"", @"Options for \"Backgrounder\"",
         @"Backgrounding state", @"Indicate state via...", @"Miscellaneous",
     };
+
+    // Adjust section based on visibility of Native/Backgrounder options
+    if (section > 1 || (section == 1 && !showNativeOptions))
+        section += sectionOffset;
 
     // Determine size of application frame (iPad, iPhone differ)
     CGRect appFrame = [[UIScreen mainScreen] applicationFrame];
@@ -290,13 +319,24 @@ static BOOL isFirmware3x_ = NO;
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    if (indexPath.section == 0) {
-        // Store the selected option
-        Preferences *prefs = [Preferences sharedInstance];
-        [prefs setInteger:indexPath.row forKey:kBackgroundingMethod
-            forDisplayIdentifier:displayIdentifier];
+    // NOTE: This method only gets called for section 0 (Backgrounding method)
+    if (indexPath.row  != (int)backgroundingMethod) {
+        // Method has changed; cache previous values
+        BGBackgroundingMethod prevMethod = backgroundingMethod;
+        BOOL nativeOptionsWasShown = showNativeOptions;
+        BOOL backgrounderOptionsWasShown = showBackgrounderOptions;
 
-        if (indexPath.row == 1) {
+        // Update cached backgrounding method value
+        backgroundingMethod = (BGBackgroundingMethod)indexPath.row;
+
+        // Update visibility flags and offset
+        [self updateSectionVisibility];
+
+        // Store the new method
+        Preferences *prefs = [Preferences sharedInstance];
+        [prefs setInteger:backgroundingMethod forKey:kBackgroundingMethod forDisplayIdentifier:displayIdentifier];
+
+        if (backgroundingMethod == BGBackgroundingMethodNative) {
             // "Native" backgrounding method selected; set certain other options
             // NOTE: This is done so that, by default, app will behave the same
             // as it would if Backgrounder were not installed.
@@ -304,9 +344,74 @@ static BOOL isFirmware3x_ = NO;
             [prefs setBool:YES forKey:kPersistent forDisplayIdentifier:displayIdentifier];
         }
 
+        // Determine which table sections to show/hide
+        NSMutableIndexSet *indexesToInsert = [NSMutableIndexSet indexSet];
+        NSMutableIndexSet *indexesToDelete = [NSMutableIndexSet indexSet];
+        if (prevMethod == BGBackgroundingMethodOff) {
+            // Backgrounding method was Off, readd sections
+            [indexesToInsert addIndexesInRange:NSMakeRange(1, showNativeOptions + showBackgrounderOptions + 3)];
+        } else {
+            // FIXME: Any way to clean up/simplify this code?
+            switch (backgroundingMethod) {
+                case BGBackgroundingMethodOff:
+                    // Backgrounding method is Off; remove all but first section
+                    [indexesToDelete addIndexesInRange:NSMakeRange(1, nativeOptionsWasShown + backgrounderOptionsWasShown + 3)];
+                    break;
+                case BGBackgroundingMethodNative:
+                    if (backgrounderOptionsWasShown) {
+                        if (nativeOptionsWasShown) {
+                            // NOTE: Native options already shown
+                            [indexesToDelete addIndex:2];
+                            break;
+                        } else {
+                            [indexesToDelete addIndex:1];
+                        }
+                    }
+
+                    // Show Native options
+                    [indexesToInsert addIndex:1];
+                    break;
+                case BGBackgroundingMethodBackgrounder:
+                    if (showNativeOptions) {
+                        // Show Backgrounder options
+                        [indexesToInsert addIndex:2];
+
+                        // Show Native options
+                        if (!nativeOptionsWasShown)
+                            [indexesToInsert addIndex:1];
+                    } else {
+                        // Show Backgrounder options
+                        [indexesToInsert addIndex:1];
+
+                        // Hide Native options
+                        if (nativeOptionsWasShown)
+                            [indexesToDelete addIndex:1];
+                    }
+                    break;
+                case BGBackgroundingMethodAutoDetect:
+                    // Hide Native/Backgrounder options
+                    [indexesToDelete addIndexesInRange:NSMakeRange(1, nativeOptionsWasShown + backgrounderOptionsWasShown)];
+                    break;
+                default:
+                    break;
+            }
+        }
+
         // Update the table
-        [tableView reloadData];
+        [tableView beginUpdates];
+        if ([indexesToDelete count] != 0)
+            [tableView deleteSections:indexesToDelete withRowAnimation:UITableViewRowAnimationFade];
+        if ([indexesToInsert count] != 0)
+            [tableView insertSections:indexesToInsert withRowAnimation:UITableViewRowAnimationFade];
+        [tableView endUpdates];
+
+        // Must reload first section to update selected method checkmark
+        NSIndexSet *indexesToReload = [NSIndexSet indexSetWithIndex:0];
+        [tableView reloadSections:indexesToReload withRowAnimation:UITableViewRowAnimationNone];
     }
+
+    // Deselect the selected row
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
 
 #pragma mark - UIButton delegate
@@ -325,8 +430,45 @@ static BOOL isFirmware3x_ = NO;
 
     // Update preference
     NSIndexPath *indexPath = [self.tableView indexPathForCell:(UITableViewCell *)[button superview]];
-    [[Preferences sharedInstance] setBool:button.selected forKey:keys[indexPath.section - 1][indexPath.row]
-            forDisplayIdentifier:displayIdentifier];
+    int offset = (indexPath.section == 1 && showNativeOptions) ? 0 : sectionOffset;
+    NSString *key = keys[(indexPath.section - 1) + offset][indexPath.row];
+    [[Preferences sharedInstance] setBool:button.selected forKey:key forDisplayIdentifier:displayIdentifier];
+
+    if ([key isEqualToString:kFastAppSwitchingEnabled]) {
+        // Visibility of "Even if Unsupported" is changing
+
+        // Cache the updated value
+        showEvenIfUnsupported = button.selected;
+
+        // Update the table
+        UITableView *tableView = self.tableView;
+        NSArray *indexPaths = [NSArray arrayWithObject:[NSIndexPath indexPathForRow:1 inSection:1]];
+
+        [tableView beginUpdates];
+        if (showEvenIfUnsupported)
+            // Show the "Even if Unsupported" option
+            [tableView insertRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationTop];
+        else
+            // Hide the "Even if Unsupported" option
+            [tableView deleteRowsAtIndexPaths:indexPaths withRowAnimation:UITableViewRowAnimationTop];
+        [tableView endUpdates];
+    } else if ([key isEqualToString:kFallbackToNative]) {
+        // Visibility of Native options is changing; update visible sections
+        [self updateSectionVisibility];
+
+        // Update the table
+        UITableView *tableView = self.tableView;
+        NSIndexSet *indexSet = [NSIndexSet indexSetWithIndex:1];
+
+        [tableView beginUpdates];
+        if (showNativeOptions)
+            // Show the Native options
+            [tableView insertSections:indexSet withRowAnimation:UITableViewRowAnimationFade];
+        else
+            // Hide the Native options
+            [tableView deleteSections:indexSet withRowAnimation:UITableViewRowAnimationFade];
+        [tableView endUpdates];
+    }
 }
 
 #pragma mark - Navigation bar delegates
