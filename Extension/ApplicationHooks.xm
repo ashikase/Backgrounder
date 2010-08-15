@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-j* Last-modified: 2010-08-12 00:50:17
+j* Last-modified: 2010-08-12 00:53:00
  */
 
 /**
@@ -450,16 +450,7 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
             // NOTE: App may have been built with 3.x SDK but still supports multitask;
             //       check if app supports any of the allowed background modes.
             //       (One known example is TomTom.)
-            if (!supportsMultitask) {
-                id value = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"UIBackgroundModes"];
-                if ([value isKindOfClass:[NSArray class]]) {
-                    NSArray *array = (NSArray *)value;
-                    supportsMultitask = [array containsObject:@"audio"]
-                        || [array containsObject:@"location"]
-                        || [array containsObject:@"voip"]
-                        || [array containsObject:@"continuous"];
-                }
-            }
+            supportsMultitask |= ([[self _backgroundModes] count] != 0);
 
             // If multitasking is supported, use "Native" method; else use "Backgrounder"
             backgroundingMethod_ = supportsMultitask ? BGBackgroundingMethodNative : BGBackgroundingMethodBackgrounder;
