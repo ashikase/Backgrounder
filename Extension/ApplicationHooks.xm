@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-j* Last-modified: 2010-08-12 10:46:07
+j* Last-modified: 2010-08-12 11:17:16
  */
 
 /**
@@ -81,20 +81,29 @@ static void loadPreferences()
             backgroundingMethod_ = BGBackgroundingMethodBackgrounder;
     }
 
-    // Fallback to native
-    value = [prefs objectForKey:kFallbackToNative];
-    if ([value isKindOfClass:[NSNumber class]])
-        fallbackToNative_ = [value boolValue];
+    // Fall Back to native
+    // NOTE: This option is only available with "Backgrounder" method
+    if (backgroundingMethod_ == BGBackgroundingMethodBackgrounder) {
+        value = [prefs objectForKey:kFallbackToNative];
+        if ([value isKindOfClass:[NSNumber class]])
+            fallbackToNative_ = [value boolValue];
+    } else {
+        // Not "Backgrounder" method (the default); disable fall back
+        fallbackToNative_ = NO;
+    }
 
-    // Fast app switching
-    value = [prefs objectForKey:kFastAppSwitchingEnabled];
-    if ([value isKindOfClass:[NSNumber class]])
-        fastAppSwitchingEnabled_ = [value boolValue];
+    // NOTE: These options are only available with "Native" method or "Fall Back"
+    if (backgroundingMethod_ == BGBackgroundingMethodNative || fallbackToNative_) {
+        // Fast app switching
+        value = [prefs objectForKey:kFastAppSwitchingEnabled];
+        if ([value isKindOfClass:[NSNumber class]])
+            fastAppSwitchingEnabled_ = [value boolValue];
 
-    // Enable fast app switching for apps not yet updated for iOS 4
-    value = [prefs objectForKey:kForceFastAppSwitching];
-    if ([value isKindOfClass:[NSNumber class]])
-        forceFastAppSwitching_ = [value boolValue];
+        // Enable fast app switching for apps not yet updated for iOS 4
+        value = [prefs objectForKey:kForceFastAppSwitching];
+        if ([value isKindOfClass:[NSNumber class]])
+            forceFastAppSwitching_ = [value boolValue];
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -153,8 +162,7 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
         // Call original implementation
         %orig;
 
-        if (!backgroundingEnabled_
-                && (backgroundingMethod_ != BGBackgroundingMethodBackgrounder || !fallbackToNative_)) {
+        if (!backgroundingEnabled_ && !fallbackToNative_) {
             // Application should terminate on suspend; make certain that it does
             // FIXME: Determine if there is any benefit of using shouldExitAfterSendSuspend
             //        over forceExit.
@@ -190,8 +198,7 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
     if (!backgroundingEnabled_ || backgroundingMethod_ != BGBackgroundingMethodBackgrounder) {
         ret = %orig;
 
-        if (!backgroundingEnabled_
-                && (backgroundingMethod_ != BGBackgroundingMethodBackgrounder || !fallbackToNative_)) {
+        if (!backgroundingEnabled_ && !fallbackToNative_) {
             // Application should terminate on suspend; make certain that it does
             if (isFirmware3x_) {
                 // NOTE: The shouldExitAfterSendSuspend flag appears to be ignored when
@@ -371,8 +378,7 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
 
             // If multitasking is supported, use "Native" method; else use "Backgrounder"
             backgroundingMethod_ = supportsMultitask ? BGBackgroundingMethodNative : BGBackgroundingMethodBackgrounder;
-        } else if (backgroundingMethod_ == BGBackgroundingMethodNative
-                || (backgroundingMethod_ == BGBackgroundingMethodBackgrounder && fallbackToNative_)) {
+        } else if (backgroundingMethod_ == BGBackgroundingMethodNative || fallbackToNative_) {
             if (fastAppSwitchingEnabled_) {
                 // NOTE: Only need to modify flag if "force" option is set;
                 //       apps updated for iOS4 will already have the flag set to zero.
