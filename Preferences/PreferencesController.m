@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-08-12 22:56:50
+ * Last-modified: 2010-08-12 23:31:00
  */
 
 /**
@@ -169,10 +169,14 @@ static BOOL isFirmware3x_ = NO;
 
     // Get number of rows for requested section
     int ret = rows[section];
-
-    // Adjust number of rows in Native options section
-    if (section == 1 && showNativeOptions)
+    if (section == 0) {
+        if (isFirmware3x_)
+            // Don't show Auto Detect method
+            ret--;
+    } else if (section == 1 && showNativeOptions) {
+        // Adjust number of rows in Native options section
         ret -= !showEvenIfUnsupported;
+    }
 
     return ret;
 }
