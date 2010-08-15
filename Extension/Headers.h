@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-08-12 01:03:22
+ * Last-modified: 2010-08-14 17:53:24
  */
 
 /**
@@ -138,6 +138,7 @@ typedef struct {
 @end
 @interface UIApplication (Firmware4x)
 - (id)_backgroundModes;
+- (void)endBackgroundTask:(unsigned)task;
 @end
 
 @interface UIModalView : UIView

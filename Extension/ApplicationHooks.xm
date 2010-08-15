@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-j* Last-modified: 2010-08-14 16:56:02
+j* Last-modified: 2010-08-14 17:44:42
  */
 
 /**
@@ -126,6 +126,16 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
     symbol = reinterpret_cast<Type_>(value);
 }
 
+//------------------------------------------------------------------------------
+
+static inline NSMutableArray *backgroundTasks()
+{
+    NSMutableArray **_backgroundTasks = NULL;
+    lookupSymbol("/System/Library/Frameworks/UIKit.framework/UIKit", "__backgroundTasks", _backgroundTasks);
+
+    return (_backgroundTasks != NULL) ? *_backgroundTasks : nil;
+}
+
 //==============================================================================
 
 // NOTE: Hooked for all backgrounding methods
@@ -152,17 +162,22 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
             // Check if fast app switching is disabled for this app
             if (!fastAppSwitchingEnabled_ && [[self _backgroundModes] count] == 0) {
                 // Fast app switching is disabled, and app does not support audio/gps/voip
-                NSArray **_backgroundTasks = NULL;
-                lookupSymbol("/System/Library/Frameworks/UIKit.framework/UIKit", "__backgroundTasks", _backgroundTasks);
-
-                if (_backgroundTasks == NULL || [*_backgroundTasks count] == 0) {
+                if ([backgroundTasks() count] == 0) {
                     // No outstanding background tasks; safe to terminate
                     UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
                     _applicationFlags.taskSuspendingUnsupported = 1;
                 }
             }
         } else {
+            // If there are any outstanding background tasks, terminate them
+            for (id task in backgroundTasks()) {
+                unsigned int taskId = MSHookIvar<unsigned int>(task, "_taskId");
+                [self endBackgroundTask:taskId];
+            }
+
             // Application should terminate on suspend; make certain that it does
+            // NOTE: If there were any remaining tasks, the app will terminate
+            //       before this code is reached.
             UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
             _applicationFlags.taskSuspendingUnsupported = 1;
         }
@@ -329,22 +344,19 @@ static inline void lookupSymbol(const char *libraryFilePath, const char *symbolN
     UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
     if (_applicationFlags.isSuspended) {
         // If this is the last task, terminate the app instead of suspending
-        NSMutableArray **_backgroundTasks = NULL;
-        lookupSymbol("/System/Library/Frameworks/UIKit.framework/UIKit", "__backgroundTasks", _backgroundTasks);
-
-        if ([*_backgroundTasks count] == 1) {
+        NSMutableArray *tasks = backgroundTasks();
+        if ([tasks count] == 1) {
             // Only one task left; make sure the task ID matches
-            for (id task in *_backgroundTasks) {
-                unsigned int taskId = MSHookIvar<unsigned int>(task, "_taskId");
-                if (taskId == backgroundTaskId)
-                    // The requested ID matches; terminate the app
-                    // NOTE: Terminating the app here will result in a
-                    //       "pid_suspend failed" message being printed to the syslog
-                    //       by SpringBoard. An examination of SpringBoard appears to
-                    //       show that this is harmless.
-                    // FIXME: Confirm that this is, indeed, harmless.
-                    [self terminateWithSuccess];
-            }
+            id task = [tasks lastObject];
+            unsigned int taskId = MSHookIvar<unsigned int>(task, "_taskId");
+            if (taskId == backgroundTaskId)
+                // The requested ID matches; terminate the app
+                // NOTE: Terminating the app here will result in a
+                //       "pid_suspend failed" message being printed to the syslog
+                //       by SpringBoard. An examination of SpringBoard appears to
+                //       show that this is harmless.
+                // FIXME: Confirm that this is, indeed, harmless.
+                [self terminateWithSuccess];
         }
     }
 
