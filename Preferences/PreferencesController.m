@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-08-08 18:54:54
+ * Last-modified: 2010-08-09 02:30:50
  */
 
 /**
@@ -246,7 +246,7 @@ static BOOL isFirmware3x_ = NO;
 {
     static NSString *titles[] = {
         @"Backgrounding method", @"Backgrounding state",
-        @"Indicate status via...", @"Miscellaneous", @"Options for \"Native\" method"
+        @"Indicate state via...", @"Miscellaneous", @"Options for \"Native\" method"
     };
 
     // Determine size of application frame (iPad, iPhone differ)
