@@ -1,3 +1,19 @@
+> # Version svn.r553
+> - - -
+>
+> * NEW: Option to toggle forcing of fast app switching (iOS 4.0+ only).
+>    - This option is now OFF by default, as forced fast app switching can cause issues for some apps.
+>      - Note that this functionality was ON by default in the previous Backgrounder release (r521).
+> * NEW: Option to enable/disable fast app switching altogether (iOS 4.0+ only).
+>    - If disabled, voip/audio/gps/task-continuation apps will still background, while apps that just take up memory will quit (and thus free up memory).
+>    - This option is especially useful for users of older devices, such as iPhone 3G.
+> * MOD: Cleaned up preferences dialog.
+> * MOD: The status bar icon is now shown for the "Fall Back to Native" case as well. (iOS 4.0+ only)
+> * MOD: Added support for iOS 4.0.2.
+> * FIX: When backgrounding was off or disabled, some apps failed to quit or would quit when reopened.
+
+- - -
+
 > # Version svn.r521
 > - - -
 > * NEW: On iOS 4.x, the "Native" method will now enable fast-app switching even for apps that have not yet been updated for iOS 4.x.
