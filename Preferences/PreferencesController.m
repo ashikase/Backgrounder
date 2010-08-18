@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-08-14 21:26:34
+ * Last-modified: 2010-08-17 20:37:34
  */
 
 /**
@@ -324,101 +324,102 @@ static BOOL isFirmware3x_ = NO;
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    // NOTE: This method only gets called for section 0 (Backgrounding method)
-    if (indexPath.row  != (int)backgroundingMethod) {
-        // Method has changed; cache previous values
-        BGBackgroundingMethod prevMethod = backgroundingMethod;
-        BOOL nativeOptionsWasShown = showNativeOptions;
-        BOOL backgrounderOptionsWasShown = showBackgrounderOptions;
+    if (indexPath.section == 0) {
+        if (indexPath.row  != (int)backgroundingMethod) {
+            // Method has changed; cache previous values
+            BGBackgroundingMethod prevMethod = backgroundingMethod;
+            BOOL nativeOptionsWasShown = showNativeOptions;
+            BOOL backgrounderOptionsWasShown = showBackgrounderOptions;
 
-        // Update cached backgrounding method value
-        backgroundingMethod = (BGBackgroundingMethod)indexPath.row;
+            // Update cached backgrounding method value
+            backgroundingMethod = (BGBackgroundingMethod)indexPath.row;
 
-        // Update visibility flags and offset
-        [self updateSectionVisibility];
+            // Update visibility flags and offset
+            [self updateSectionVisibility];
 
-        // Store the new method
-        Preferences *prefs = [Preferences sharedInstance];
-        [prefs setInteger:backgroundingMethod forKey:kBackgroundingMethod forDisplayIdentifier:displayIdentifier];
+            // Store the new method
+            Preferences *prefs = [Preferences sharedInstance];
+            [prefs setInteger:backgroundingMethod forKey:kBackgroundingMethod forDisplayIdentifier:displayIdentifier];
 
-        if (backgroundingMethod == BGBackgroundingMethodNative) {
-            // "Native" backgrounding method selected; set certain other options
-            // NOTE: This is done so that, by default, app will behave the same
-            // as it would if Backgrounder were not installed.
-            [prefs setBool:YES forKey:kEnableAtLaunch forDisplayIdentifier:displayIdentifier];
-            [prefs setBool:YES forKey:kPersistent forDisplayIdentifier:displayIdentifier];
-        }
-
-        // Determine which table sections to show/hide
-        NSMutableIndexSet *indexesToInsert = [NSMutableIndexSet indexSet];
-        NSMutableIndexSet *indexesToDelete = [NSMutableIndexSet indexSet];
-        if (prevMethod == BGBackgroundingMethodOff) {
-            // Backgrounding method was Off, readd sections
-            [indexesToInsert addIndexesInRange:NSMakeRange(1, showNativeOptions + showBackgrounderOptions + 3)];
-        } else {
-            // FIXME: Any way to clean up/simplify this code?
-            switch (backgroundingMethod) {
-                case BGBackgroundingMethodOff:
-                    // Backgrounding method is Off; remove all but first section
-                    [indexesToDelete addIndexesInRange:NSMakeRange(1, nativeOptionsWasShown + backgrounderOptionsWasShown + 3)];
-                    break;
-                case BGBackgroundingMethodNative:
-                    if (backgrounderOptionsWasShown) {
-                        if (nativeOptionsWasShown) {
-                            // NOTE: Native options already shown
-                            [indexesToDelete addIndex:2];
-                            break;
-                        } else {
-                            [indexesToDelete addIndex:1];
-                        }
-                    }
-
-                    if (showNativeOptions)
-                        // Show Native options
-                        [indexesToInsert addIndex:1];
-
-                    break;
-                case BGBackgroundingMethodBackgrounder:
-                    if (showNativeOptions) {
-                        // Show Backgrounder options
-                        [indexesToInsert addIndex:2];
-
-                        // Show Native options
-                        if (!nativeOptionsWasShown)
-                            [indexesToInsert addIndex:1];
-                    } else {
-                        // Show Backgrounder options
-                        [indexesToInsert addIndex:1];
-
-                        // Hide Native options
-                        if (nativeOptionsWasShown)
-                            [indexesToDelete addIndex:1];
-                    }
-                    break;
-                case BGBackgroundingMethodAutoDetect:
-                    // Hide Native/Backgrounder options
-                    [indexesToDelete addIndexesInRange:NSMakeRange(1, nativeOptionsWasShown + backgrounderOptionsWasShown)];
-                    break;
-                default:
-                    break;
+            if (backgroundingMethod == BGBackgroundingMethodNative) {
+                // "Native" backgrounding method selected; set certain other options
+                // NOTE: This is done so that, by default, app will behave the same
+                // as it would if Backgrounder were not installed.
+                [prefs setBool:YES forKey:kEnableAtLaunch forDisplayIdentifier:displayIdentifier];
+                [prefs setBool:YES forKey:kPersistent forDisplayIdentifier:displayIdentifier];
             }
+
+            // Determine which table sections to show/hide
+            NSMutableIndexSet *indexesToInsert = [NSMutableIndexSet indexSet];
+            NSMutableIndexSet *indexesToDelete = [NSMutableIndexSet indexSet];
+            if (prevMethod == BGBackgroundingMethodOff) {
+                // Backgrounding method was Off, readd sections
+                [indexesToInsert addIndexesInRange:NSMakeRange(1, showNativeOptions + showBackgrounderOptions + 3)];
+            } else {
+                // FIXME: Any way to clean up/simplify this code?
+                switch (backgroundingMethod) {
+                    case BGBackgroundingMethodOff:
+                        // Backgrounding method is Off; remove all but first section
+                        [indexesToDelete addIndexesInRange:NSMakeRange(1, nativeOptionsWasShown + backgrounderOptionsWasShown + 3)];
+                        break;
+                    case BGBackgroundingMethodNative:
+                        if (backgrounderOptionsWasShown) {
+                            if (nativeOptionsWasShown) {
+                                // NOTE: Native options already shown
+                                [indexesToDelete addIndex:2];
+                                break;
+                            } else {
+                                [indexesToDelete addIndex:1];
+                            }
+                        }
+
+                        if (showNativeOptions)
+                            // Show Native options
+                            [indexesToInsert addIndex:1];
+
+                        break;
+                    case BGBackgroundingMethodBackgrounder:
+                        if (showNativeOptions) {
+                            // Show Backgrounder options
+                            [indexesToInsert addIndex:2];
+
+                            // Show Native options
+                            if (!nativeOptionsWasShown)
+                                [indexesToInsert addIndex:1];
+                        } else {
+                            // Show Backgrounder options
+                            [indexesToInsert addIndex:1];
+
+                            // Hide Native options
+                            if (nativeOptionsWasShown)
+                                [indexesToDelete addIndex:1];
+                        }
+                        break;
+                    case BGBackgroundingMethodAutoDetect:
+                        // Hide Native/Backgrounder options
+                        [indexesToDelete addIndexesInRange:NSMakeRange(1, nativeOptionsWasShown + backgrounderOptionsWasShown)];
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            // Update the table
+            [tableView beginUpdates];
+            if ([indexesToDelete count] != 0)
+                [tableView deleteSections:indexesToDelete withRowAnimation:UITableViewRowAnimationFade];
+            if ([indexesToInsert count] != 0)
+                [tableView insertSections:indexesToInsert withRowAnimation:UITableViewRowAnimationFade];
+            [tableView endUpdates];
+
+            // Must reload first section to update selected method checkmark
+            NSIndexSet *indexesToReload = [NSIndexSet indexSetWithIndex:0];
+            [tableView reloadSections:indexesToReload withRowAnimation:UITableViewRowAnimationNone];
         }
 
-        // Update the table
-        [tableView beginUpdates];
-        if ([indexesToDelete count] != 0)
-            [tableView deleteSections:indexesToDelete withRowAnimation:UITableViewRowAnimationFade];
-        if ([indexesToInsert count] != 0)
-            [tableView insertSections:indexesToInsert withRowAnimation:UITableViewRowAnimationFade];
-        [tableView endUpdates];
-
-        // Must reload first section to update selected method checkmark
-        NSIndexSet *indexesToReload = [NSIndexSet indexSetWithIndex:0];
-        [tableView reloadSections:indexesToReload withRowAnimation:UITableViewRowAnimationNone];
+        // Deselect the selected row
+        [tableView deselectRowAtIndexPath:indexPath animated:YES];
     }
-
-    // Deselect the selected row
-    [tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
 
 #pragma mark - UIButton delegate
