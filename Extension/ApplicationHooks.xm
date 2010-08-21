@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-j* Last-modified: 2010-08-14 17:44:42
+j* Last-modified: 2010-08-19 01:02:11
  */
 
 /**
@@ -283,6 +283,26 @@ static inline NSMutableArray *backgroundTasks()
 {
     if (!backgroundingEnabled_)
         %orig;
+}
+
+%end
+
+extern "C" NSString *const UIApplicationDidBecomeActiveNotification;
+extern "C" NSString *const UIApplicationWillResignActiveNotification;
+
+%hook NSNotificationCenter
+
+- (void)postNotificationName:(NSString *)notificationName object:(id)notificationSender userInfo:(NSDictionary *)userInfo
+{
+    if (backgroundingEnabled_) {
+        // If backgrounding is enabled, must block these notifications.
+        // NOTE: Some apps use these notifications instead of the related delgate methods.
+        if ([notificationName isEqualToString:UIApplicationWillResignActiveNotification]
+                || [notificationName isEqualToString:UIApplicationDidBecomeActiveNotification])
+            return;
+    }
+
+    %orig;
 }
 
 %end
