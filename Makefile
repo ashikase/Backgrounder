@@ -1,6 +1,6 @@
 SUBPROJECTS = Extension Preferences Updater
 export ADDITIONAL_CFLAGS += -I../Common
-export CURRENT_VERSION = 556
+export CURRENT_VERSION = 558
 
 include framework/makefiles/common.mk
 include framework/makefiles/aggregate.mk

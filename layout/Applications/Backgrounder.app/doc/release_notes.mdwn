@@ -1,3 +1,10 @@
+> # Version svn.r558
+> - - -
+> * MOD: Allow installation on iOS 4.1.
+>    - Note that this is *untested* on 4.1. USE AT YOUR OWN RISK.
+
+- - -
+
 > # Version svn.r556
 > - - -
 >
