@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-06-21 15:29:53
+ * Last-modified: 2010-09-29 20:28:41
  */
 
 /**
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
     // Get current version number
     // NOTE: May be non-existant; wasn't added until release r4xx
     int currentVersion = 0;
-    id value = [prefs objectForKey:kBadgeEnabledForAll];
+    id value = [prefs objectForKey:kCurrentVersion];
     if (value != nil && [value isKindOfClass:[NSNumber class]])
         currentVersion = [value intValue];
 
