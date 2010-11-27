@@ -1,3 +1,11 @@
+> # Version svn.r556
+> - - -
+>
+> * FIX: Prevent Skype calls from being put on hold when backgrounded on iOS 3.x.
+> * FIX: In the preferences app, tapping the first cell of any section would set backgrounding method to Off.
+
+- - -
+
 > # Version svn.r553
 > - - -
 >
