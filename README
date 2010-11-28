@@ -15,9 +15,20 @@ NOTE: While I would prefer that you do not distribute your own package, and that
       you would instead submit any patches to me instead, if you do decide to
       distribute, *please* be certain to:
 
-1. Rename your package.
+1. Rename your package identifier (Package:) and name (Name:).
+   Do *not* use the original project name (i.e. "Backgrounder").
 2. Change the author/maintainer information.
-3. Make your package conflict with the original (my) package.
+3. Make your package conflicts with the original (my) package.
+4. Be sure to follow the rules of the license.
+   - The original author must be credited for the original work,
+     and *only* the original work - not any changes made by you.
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                                                                       !
+! WARNING: If people begin distributing custom builds without following !
+!          the above instructions, I *will* terminate this project.     !
+!                                                                       !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ---
 
