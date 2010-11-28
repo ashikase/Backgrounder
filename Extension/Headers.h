@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-08-14 18:48:36
+ * Last-modified: 2010-11-29 00:41:23
  */
 
 /**
@@ -39,6 +39,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+#define TP() NSLog(@"=== @%s:%u[%s]\n",  __FILE__, __LINE__, __FUNCTION__);
+
+typedef struct __GSEvent *GSEventRef;
+
+//==============================================================================
 
 // NOTE: This struct comes from UIApplication
 
@@ -149,25 +155,39 @@ typedef struct {
 
 //==============================================================================
 
-#import <SpringBoard/SBApplication.h>
-#import <SpringBoard/SBApplicationIcon.h>
-#import <SpringBoard/SBApplicationController.h>
-#import <SpringBoard/SBAlertItemsController.h>
-#import <SpringBoard/SBDisplayStack.h>
-#import <SpringBoard/SBIconModel.h>
-#import <SpringBoard/SBStatusBarController.h>
-#import <SpringBoard/SpringBoard.h>
-
-@interface SBIcon (Firmware32x)
-+ (CGSize)defaultIconImageSize;
+@protocol UIModalViewDelegate @end
+@interface SBAlertItem : NSObject <UIModalViewDelegate>
+- (id)alertSheet;
+- (void)dismiss;
 @end
 
-// Firmware >= 4.0
-@interface SBProcess : NSObject
-@property(readonly, assign) int pid;
+@interface SBAlertItemsController : NSObject
++ (id)sharedInstance;
+- (void)activateAlertItem:(id)item;
 @end
 
-// Firmware >= 4.0
+@interface SBApplicationController : NSObject
++ (id)sharedInstance;
+- (id)applicationWithDisplayIdentifier:(id)displayIdentifier;
+@end
+
+@class SBProcess;
+@interface SBDisplay : NSObject
+- (BOOL)activationSetting:(unsigned)setting;
+- (void)clearActivationSettings;
+- (BOOL)deactivationSetting:(unsigned)setting;
+- (BOOL)displaySetting:(unsigned)setting;
+- (void)setDeactivationSetting:(unsigned)setting flag:(BOOL)flag;
+@end
+@interface SBApplication : SBDisplay
+- (void)_cancelAutoRelaunch;
+- (id)contextHostView;
+- (id)displayIdentifier;
+- (BOOL)isSystemApplication;
+@end
+@interface SBApplication (Firmware3x)
+@property(assign) int pid;
+@end
 @interface SBApplication (Firmware4x)
 @property(retain) SBProcess *process;
 - (void)setSuspendType:(int)type;
@@ -178,9 +198,39 @@ typedef struct {
 - (int)_suspensionType;
 @end
 
-// Firmware >= 4.0
+@interface SBDisplayStack : NSObject
+- (BOOL)containsDisplay:(id)display;
+- (id)popDisplay:(id)display;
+- (void)pushDisplay:(id)display;
+- (id)topApplication;
+@end
+
+@interface SBIcon : UIView @end
+@interface SBIcon (Firmware32x)
++ (CGSize)defaultIconImageSize;
+@end
+@interface SBApplicationIcon : SBIcon @end
+
+@interface SBIconModel : NSObject
++ (id)sharedInstance;
+@end
+@interface SBIconModel (Firmware3x)
+- (id)iconForDisplayIdentifier:(id)displayIdentifier;
+@end
 @interface SBIconModel (Firmware4x)
 - (id)leafIconForIdentifier:(id)identifier; 
+@end
+
+@interface SBProcess : NSObject
+@property(readonly, assign) int pid;
+@end
+
+@protocol SBWiFiManagerDelegate @end
+@interface SpringBoard : UIApplication <UIApplicationDelegate, SBWiFiManagerDelegate>
+- (void)_setLockButtonTimer:(id)timer;
+@end
+@interface SpringBoard (Firmware3x)
+- (void)_unsetLockButtonBearTrap;
 @end
 
 /* vim: set filetype=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */

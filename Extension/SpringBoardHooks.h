@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 22:01:19
+ * Last-modified: 2010-11-29 00:58:33
  */
 
 /**
@@ -40,7 +40,7 @@
  */
 
 
-#import <SpringBoard/SpringBoard.h>
+#import "Headers.h"
 
 // NOTE: These methods can be used by third-party extensions/applications
 @interface SpringBoard (Backgrounder)

@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-08-15 15:08:08
+ * Last-modified: 2010-11-29 00:39:59
  */
 
 /**
@@ -471,7 +471,7 @@ static BOOL shouldSuspend_ = NO;
 {
     if (alert_ != nil) {
         // Backgrounder was invoked (feedback exists)
-        alert_.alertSheet.title = @"Cancelled!";
+        [alert_.alertSheet setTitle:@"Cancelled!"];
 
         // Undo change to backgrounding status of current application
         id app = [SBWActiveDisplayStack topApplication];
