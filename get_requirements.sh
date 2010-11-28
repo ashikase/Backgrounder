@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Description: Script to fetch requirements for building this project.
-# Last-modified: 2010-11-28 23:37:50
+# Last-modified: 2010-11-29 01:15:40
 #
 # Note that this script is not perfect and does not handle all errors.
 # Any improvements are welcome.
@@ -30,6 +30,25 @@ if [ ! -z "$GIT" ]; then
 else
     svn co http://svn.howett.net/svn/theos/trunk theos
 fi
+
+# Download MobileSubstrate header
+echo "Downloading MobileSubstrate header..."
+SUBSTRATE_REPO="http://apt.saurik.com"
+pkg=""
+if [ ! -z "$WGET" ]; then
+    wget -q "${SUBSTRATE_REPO}/dists/tangelo-3.7/main/binary-iphoneos-arm/Packages.bz2"
+    pkg_path=$(bzcat Packages.bz2 | grep "debs/mobilesubstrate" | awk '{print $2}')
+    pkg=$(basename $pkg_path)
+    wget -q "${SUBSTRATE_REPO}/${pkg_path}"
+else
+    curl -s -L "${SUBSTRATE_REPO}/dists/tangelo-3.7/main/binary-iphoneos-arm/Packages.bz2" > Packages.bz2
+    pkg_path=$(bzcat Packages.bz2 | grep "debs/mobilesubstrate" | awk '{print $2}')
+    pkg=$(basename $pkg_path)
+    curl -s -L "${SUBSTRATE_REPO}/${pkg_path}" > $pkg
+fi
+ar -p $pkg data.tar.gz | tar -zxf - ./Library/Frameworks/CydiaSubstrate.framework/Headers/CydiaSubstrate.h
+mv ./Library/Frameworks/CydiaSubstrate.framework/Headers/CydiaSubstrate.h theos/include/substrate.h
+rm -rf usr Packages.bz2 $pkg
 
 # Download Activator library
 echo "Downloading Activator header and library..."
