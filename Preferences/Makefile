@@ -18,5 +18,5 @@ Preferences_LDFLAGS = -lactivator
 Preferences_FRAMEWORKS = UIKit CoreGraphics
 Preferences_PRIVATE_FRAMEWORKS = GraphicsServices SpringBoardServices
 
-include ../framework/makefiles/common.mk
-include ../framework/makefiles/application.mk
+include ../theos/makefiles/common.mk
+include ../theos/makefiles/application.mk

@@ -15,5 +15,5 @@ Backgrounder_PRIVATE_FRAMEWORKS = GraphicsServices
 #       check to fail in ApplicationHooks' applicationSuspend: method.
 OPTFLAG = -O1
 
-include ../framework/makefiles/common.mk
-include ../framework/makefiles/tweak.mk
+include ../theos/makefiles/common.mk
+include ../theos/makefiles/tweak.mk

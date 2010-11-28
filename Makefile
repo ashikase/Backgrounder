@@ -2,8 +2,8 @@ SUBPROJECTS = Extension Preferences Updater
 export ADDITIONAL_CFLAGS += -I../Common
 export CURRENT_VERSION = 558
 
-include framework/makefiles/common.mk
-include framework/makefiles/aggregate.mk
+include theos/makefiles/common.mk
+include theos/makefiles/aggregate.mk
 
 after-stage::
 	# Convert Info.plist and Defaults.plist to binary
