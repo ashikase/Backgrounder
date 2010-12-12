@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-11-29 00:41:23
+ * Last-modified: 2010-12-12 14:44:42
  */
 
 /**
@@ -195,7 +195,12 @@ typedef struct {
 - (BOOL)supportsLocationBackgroundMode;
 - (BOOL)supportsVOIPBackgroundMode;
 - (BOOL)supportsContinuousBackgroundMode;
+@end
+@interface SBApplication (FirmwarePre42)
 - (int)_suspensionType;
+@end
+@interface SBApplication (Firmware42x)
+- (int)suspensionType;
 @end
 
 @interface SBDisplayStack : NSObject

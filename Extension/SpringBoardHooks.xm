@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-11-29 00:39:59
+ * Last-modified: 2010-12-12 14:43:58
  */
 
 /**
@@ -57,6 +57,8 @@ extern "C" {
 }
 
 static BOOL isFirmware3x = NO;
+static BOOL isFirmwarePre42 = NO;
+
 static NSMutableArray *appsExitingOnSuspend_ = nil;
 static NSMutableArray *appsSupportingMultitask_ = nil;
 
@@ -698,7 +700,7 @@ static BOOL shouldSuspend_ = NO;
     int suspendType = 0;
     if (shouldQuit) {
         // App should quit
-        suspendType = [self _suspensionType];
+        suspendType = isFirmwarePre42 ? [self _suspensionType] : [self suspensionType];
         [self setSuspendType:0];
     }
 
@@ -868,6 +870,7 @@ void initSpringBoardHooks()
     // Determine firmware version
     Class $SBApplication = objc_getClass("SBApplication");
     isFirmware3x = (class_getInstanceMethod($SBApplication, @selector(pid)) != NULL);
+    isFirmwarePre42 = (class_getInstanceMethod($SBApplication, @selector(suspensionType)) == NULL);
 
     // Load firmware-specific hooks
     if (isFirmware3x) {
