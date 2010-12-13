@@ -1,3 +1,11 @@
+> # Version 1.0.0
+> - - -
+> * MOD: Updated for iOS 4.2.1.
+> * MOD: Changed method used for preventing installation on unsupported iOS versions.
+> * MOD: Changed version numbering due to move from Google Code (svn) to GitHub (git).
+
+- - -
+
 > # Version svn.r558
 > - - -
 > * MOD: Allow installation on iOS 4.1.
