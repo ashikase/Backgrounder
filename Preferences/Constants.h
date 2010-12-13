@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-04-29 22:07:30
+ * Last-modified: 2010-12-12 15:11:33
  */
 
 /**
@@ -47,6 +47,6 @@
 // Documentation
 #define DOC_BUNDLE_PATH "doc"
 
-#define DEVSITE_URL "http://iphone-backgrounder.googlecode.com"
+#define DEVSITE_URL "http://github.com/ashikase/Backgrounder/"
 
 /* vim: set filetype=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
