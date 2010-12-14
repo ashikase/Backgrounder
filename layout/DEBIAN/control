@@ -1,6 +1,6 @@
 Package: backgrounder
 Name: Backgrounder
-Version: 1:1.0.0
+Version: 1:1.0.1
 Architecture: iphoneos-arm
 Description: Enable and manage backgrounding
 Homepage: http://iphone-backgrounder.googlecode.com/
