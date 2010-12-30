@@ -5,9 +5,3 @@
 > The iPhone OS is designed so that when resources become low, a notification is sent to inactive apps asking them to either free-up memory or to quit.
 >
 > The best practice is to not run too many (memory-intensive) apps at one time.
-
-- - -
-
-> # Known issues
-> - - -
-> See <a href=" http://code.google.com/p/iphone-backgrounder/issues/list">issue reports</a> on the project homepage for latest information.
