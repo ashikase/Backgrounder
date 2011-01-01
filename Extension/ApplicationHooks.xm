@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
-j* Last-modified: 2010-08-19 01:02:11
+j* Last-modified: 2010-12-30 20:13:26
  */
 
 /**
@@ -390,6 +390,15 @@ extern "C" NSString *const UIApplicationWillResignActiveNotification;
 
 //==============================================================================
 
+// Callback
+static void toggleBackgrounding(int signal)
+{
+    if (backgroundingMethod_ != BGBackgroundingMethodOff)
+        backgroundingEnabled_ = !backgroundingEnabled_;
+}
+
+//------------------------------------------------------------------------------
+
 %hook UIApplication
 
 - (void)_loadMainNibFile
@@ -474,25 +483,7 @@ extern "C" NSString *const UIApplicationWillResignActiveNotification;
         if ([delegate respondsToSelector:@selector(applicationDidBecomeActive:)])
             %init(GMethodBackgrounder_Become, AppDelegate = $AppDelegate);
     }
-}
 
-%end
-
-//==============================================================================
-
-// Callback
-static void toggleBackgrounding(int signal)
-{
-    if (backgroundingMethod_ != BGBackgroundingMethodOff)
-        backgroundingEnabled_ = !backgroundingEnabled_;
-}
-
-void initApplicationHooks()
-{
-    Class $UIApplication = objc_getClass("UIApplication");
-    isFirmware3x_ = (class_getInstanceMethod($UIApplication, @selector(applicationState)) == NULL);
-
-    %init;
 
     // Setup action to take upon receiving toggle signal from SpringBoard
     // NOTE: Done this way as the application hooks *must* be installed in
@@ -507,6 +498,18 @@ void initApplicationHooks()
     action.sa_mask = block_mask;
     action.sa_flags = 0;
     sigaction(SIGUSR1, &action, NULL);
+}
+
+%end
+
+//==============================================================================
+
+void initApplicationHooks()
+{
+    Class $UIApplication = objc_getClass("UIApplication");
+    isFirmware3x_ = (class_getInstanceMethod($UIApplication, @selector(applicationState)) == NULL);
+
+    %init;
 }
 
 /* vim: set filetype=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
