@@ -1,6 +1,6 @@
 SUBPROJECTS = Extension Preferences Updater
 export ADDITIONAL_CFLAGS += -I../Common
-export CURRENT_VERSION = 1101
+export CURRENT_VERSION = 1103
 
 include theos/makefiles/common.mk
 include theos/makefiles/aggregate.mk

@@ -1,3 +1,23 @@
+> # Version 1.0.3
+> - - -
+> * MOD: Updated for iOS 4.2.6 (Verizon).
+
+- - -
+
+> # Version 1.0.2
+>
+> * NEW: Retina images for badge and statusbar icons.
+>    - These images were created and donated by Adam Bird (@Archez39).
+> * FIX: On iOS 4.2.1, Mail app would always quit, regardless of backgrounding state.
+
+- - -
+
+> # Version 1.0.1
+> - - -
+> FIX: Was incorrectly registering with Activator, which caused an error message to be displayed with newer Activator versions.
+
+- - -
+
 > # Version 1.0.0
 > - - -
 > * MOD: Updated for iOS 4.2.1.
