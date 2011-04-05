@@ -8,7 +8,7 @@ Depiction: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=background
 Maintainer: BigBoss <bigboss@thebigboss.org>
 Author: Lance Fetters (ashikase) <gaizin@gmail.com>
 Section: System
-Depends: mobilesubstrate, libactivator (>= 1.3.1), firmware (>= 3.0), firmware (<= 4.2.6), firmware (<< 4.0) | libstatusbar
+Depends: mobilesubstrate, libactivator (>= 1.3.1), firmware (>= 3.0), firmware (<< 4.0) | libstatusbar
 Conflicts: sbsettings (<< 3.0.2-14), us.hannahpappah.incarcerapp (<= svn.r436-75)
 dev: ashikase
 Sponsor: thebigboss.org <http://thebigboss.org>
