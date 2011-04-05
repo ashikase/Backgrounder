@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-08-08 18:25:31
+ * Last-modified: 2011-04-05 22:44:00
  */
 
 /**
@@ -94,14 +94,17 @@
     UIView *view = [[UIView alloc] initWithFrame:
         CGRectMake(0, 0, appFrame.size.width, appFrame.size.height - 44.0f - height)];
 
+    UIImage *image = nil;
+#if 0
     // Donation button
     UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
     [button addTarget:self action:@selector(openDonationLink) forControlEvents:UIControlEventTouchUpInside];
-    UIImage *image = [UIImage imageNamed:@"donate.png"];
+    image = [UIImage imageNamed:@"donate.png"];
     [button setImage:image forState:UIControlStateNormal];
     button.frame = CGRectMake((appFrame.size.width - image.size.width) / 2.0f, view.bounds.size.height - image.size.height - 10.0f,
             image.size.width, image.size.height);
     [view addSubview:button];
+#endif
 
     // Note height of donation button
     float donationHeight = image.size.height;
