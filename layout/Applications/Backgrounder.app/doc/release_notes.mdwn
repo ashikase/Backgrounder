@@ -1,3 +1,11 @@
+> # Version 1.0.4
+> - - -
+> * MOD: Removed maximum firmware restriction, allowing for installation on newer firmware.
+>    - WARNING: Installing Backgrounder on untested firmware may cause your device to crash, lockup, explode, etc.
+> * MOD: Disabled donation button.
+
+- - -
+
 > # Version 1.0.3
 > - - -
 > * MOD: Updated for iOS 4.2.6 (Verizon).
