@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-12-12 14:43:58
+ * Last-modified: 2011-11-05 00:25:40
  */
 
 /**
@@ -58,6 +58,7 @@ extern "C" {
 
 static BOOL isFirmware3x = NO;
 static BOOL isFirmwarePre42 = NO;
+static BOOL isFirmware5x = NO;
 
 static NSMutableArray *appsExitingOnSuspend_ = nil;
 static NSMutableArray *appsSupportingMultitask_ = nil;
@@ -227,8 +228,11 @@ static void setBadgeVisible(SBApplication *app, BOOL visible)
 
     // Update the app's SpringBoard icon to indicate if backgrounding is enabled
     SBIconModel *iconModel = [objc_getClass("SBIconModel") sharedInstance];
-    SBApplicationIcon *icon = isFirmware3x ?
+    id icon = isFirmware3x ?
         [iconModel iconForDisplayIdentifier:identifier] : [iconModel leafIconForIdentifier:identifier];
+    if (isFirmware5x) {
+        icon = [[objc_getClass("SBIconViewMap") homescreenMap] mappedIconViewForIcon:icon];
+    }
 
     // Remove any existing badge
     // NOTE: Icon may already have a badge due to fall back to native option
@@ -238,10 +242,10 @@ static void setBadgeVisible(SBApplication *app, BOOL visible)
         // Determine origin for badge based on icon image size
         // NOTE: Default icon image sizes: iPhone/iPod: 59x62, iPad: 74x76 
         CGPoint point;
-        Class $SBIcon = objc_getClass("SBIcon");
-        if ([$SBIcon respondsToSelector:@selector(defaultIconImageSize)]) {
+        Class $Icon = isFirmware5x ? objc_getClass("SBIconView") : objc_getClass("SBIcon");
+        if ([$Icon respondsToSelector:@selector(defaultIconImageSize)]) {
             // Determine position for badge (relative to lower left corner of icon)
-            CGSize size = [$SBIcon defaultIconImageSize];
+            CGSize size = [$Icon defaultIconImageSize];
             point = CGPointMake(-12.0f, size.height - 23.0f);
         } else {
             // Fall back to hard-coded values (for firmware < 3.2, iPhone/iPod only)
@@ -299,8 +303,9 @@ static void updateStatusBarIndicatorForApplication(SBApplication *app)
                         showNative = showNative && willMultitask;
                     }
 
-                    if (showNative)
+                    if (showNative) {
                         imageName = @"Backgrounder_Native";
+                    }
                 }
 
                 if (imageName != nil)
@@ -573,13 +578,8 @@ static BOOL shouldSuspend_ = NO;
 
 %hook SBApplication
 
-// NOTE: Hooked to determine if app supports multitasking
-- (id)initWithBundleIdentifier:(id)bundleIdentifier roleIdentifier:(id)identifier path:(id)path bundle:(id)bundle
-    infoDictionary:(id)dictionary isSystemApplication:(BOOL)application signerIdentity:(id)identity
-    provisioningProfileValidated:(BOOL)validated
+static inline void determineMultitaskingSupport(SBApplication *self, NSDictionary *dictionary)
 {
-    id ret = %orig;
-
     NSString *displayId = [self displayIdentifier];
 
     // Check if app is set to exit on suspend
@@ -595,12 +595,14 @@ static BOOL shouldSuspend_ = NO;
         // Check if app supports iOS multitasking
         BOOL supportsMultitask = NO;
 
-        // Check if app was built with 4.x SDK
+        // Check if app was built with 4.x/5.x SDK
         value = [dictionary objectForKey:@"DTSDKName"];
-        if ([value isKindOfClass:[NSString class]])
-            if ([(NSString *)value hasPrefix:@"iphoneos4"])
+        if ([value isKindOfClass:[NSString class]]) {
+            if ([(NSString *)value hasPrefix:@"iphoneos4"] || [(NSString *)value hasPrefix:@"iphoneos5"]) {
                 // App supports multitask if it does not exit on suspend
                 supportsMultitask = !exitsOnSuspend;
+            }
+        }
 
         // NOTE: App may have been built with 3.x SDK but still supports multitask;
         //       check if app supports any of the allowed background modes.
@@ -620,9 +622,34 @@ static BOOL shouldSuspend_ = NO;
             // App supports multitasking
             [appsSupportingMultitask_ addObject:displayId];
     }
+}
 
+%group GFirmwarePre5x
+
+// NOTE: Hooked to determine if app supports multitasking
+- (id)initWithBundleIdentifier:(id)bundleIdentifier roleIdentifier:(id)identifier path:(id)path bundle:(id)bundle
+    infoDictionary:(id)dictionary isSystemApplication:(BOOL)application signerIdentity:(id)identity
+    provisioningProfileValidated:(BOOL)validated
+{
+    id ret = %orig;
+    determineMultitaskingSupport(self, dictionary);
     return ret;
 }
+
+%end
+
+%group GFirmware5x
+
+- (id)initWithBundleIdentifier:(id)bundleIdentifier webClip:(id)clip path:(id)path bundle:(id)bundle
+    infoDictionary:(id)dictionary isSystemApplication:(BOOL)application signerIdentity:(id)identity
+    provisioningProfileValidated:(BOOL)validated
+{
+    id ret = %orig;
+    determineMultitaskingSupport(self, dictionary);
+    return ret;
+}
+
+%end
 
 - (void)launchSucceeded:(BOOL)unknownFlag
 {
@@ -631,7 +658,8 @@ static BOOL shouldSuspend_ = NO;
     NSInteger backgroundingMethod = integerForKey(kBackgroundingMethod, identifier);
     if (backgroundingMethod != BGBackgroundingMethodOff) {
         // NOTE: Display setting 0x2 is resume
-        if ([self displaySetting:0x2]) {
+        BOOL resume = isFirmware5x ? [self displayFlag:0x2] : [self displaySetting:0x2];
+        if (resume) {
             // Was restored from backgrounded state
             if (!boolForKey(kPersistent, identifier))
                 setBackgroundingEnabled(self, NO);
@@ -691,7 +719,7 @@ static BOOL shouldSuspend_ = NO;
         // NOTE: Credit for this goes to phoenix3200 (author of Music Controls, http://phoenix-dev.com/)
         // NOTE: This prevents applicationSuspend: from being called.
         // FIXME: Run a trace on deactivate to determine why this works.
-        flag = [self deactivationSetting:0x1];
+        flag = isFirmware5x ? [self deactivationFlag:0x1] : [self deactivationSetting:0x1];
         [self setDeactivationSetting:0x1 flag:YES];
     }
 
@@ -732,12 +760,14 @@ static BOOL shouldSuspend_ = NO;
 {
     %orig;
 
-    if ([enabledApps_ containsObject:[self displayIdentifier]])
+    if ([enabledApps_ containsObject:[self displayIdentifier]]) {
         // If a notification is received while the device is locked, the app's
         // GUI will get "stuck" and will no longer respond to the home button.
         // Prevent this by hiding the app's context view upon deactivation.
         // NOTE: Credit for this one also goes to phoenix3200
-        [[self contextHostView] setHidden:YES];
+        id contextHostView = isFirmware5x ? [self contextHostViewForRequester:@"default"] : [self contextHostView];
+        [contextHostView setHidden:YES];
+    }
 }
 
 // NOTE: Observed types:
@@ -767,7 +797,7 @@ static BOOL shouldSuspend_ = NO;
 {
     // NOTE: Activation setting 0x10000 is firstLaunchAfterBoot
     if (self == SBWActiveDisplayStack
-        && [display activationSetting:0x10000]
+        && (isFirmware5x ? [display activationFlag:0x10000] : [display activationSetting:0x10000])
         && integerForKey(kBackgroundingMethod, [display displayIdentifier]) != BGBackgroundingMethodNative) {
         // Backgrounding method is set to off or manual; prevent auto-launch at boot
         // NOTE: Activation settings will remain if not manually cleared
@@ -871,6 +901,7 @@ void initSpringBoardHooks()
     Class $SBApplication = objc_getClass("SBApplication");
     isFirmware3x = (class_getInstanceMethod($SBApplication, @selector(pid)) != NULL);
     isFirmwarePre42 = (class_getInstanceMethod($SBApplication, @selector(suspensionType)) == NULL);
+    isFirmware5x = (objc_getClass("SBIconView") != nil);
 
     // Load firmware-specific hooks
     if (isFirmware3x) {
@@ -883,6 +914,14 @@ void initSpringBoardHooks()
     } else {
         // Firmware >= 4.0
         %init(GFirmware4x);
+    }
+
+    if (isFirmware5x) {
+        // Firmware >= 5.0
+        %init(GFirmware5x);
+    } else {
+        // Firmware < 5.0
+        %init(GFirmwarePre5x);
     }
 
     // Initialize simple notification popup

@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-12-12 14:44:42
+ * Last-modified: 2011-11-05 01:33:49
  */
 
 /**
@@ -134,6 +134,76 @@ typedef struct {
     unsigned disableViewContentScaling : 1;
 } UIApplicationFlags4x;
 
+// Firmware 5.0
+typedef struct {
+    unsigned deactivatingReasonFlags : 8;
+    unsigned isSuspended : 1;
+    unsigned isSuspendedEventsOnly : 1;
+    unsigned isLaunchedSuspended : 1;
+    unsigned calledNonSuspendedLaunchDelegate : 1;
+    unsigned isHandlingURL : 1;
+    unsigned isHandlingRemoteNotification : 1;
+    unsigned isHandlingLocalNotification : 1;
+    unsigned statusBarShowsProgress : 1;
+    unsigned statusBarRequestedStyle : 4;
+    unsigned statusBarHidden : 1;
+    unsigned blockInteractionEvents : 4;
+    unsigned receivesMemoryWarnings : 1;
+    unsigned showingProgress : 1;
+    unsigned receivesPowerMessages : 1;
+    unsigned launchEventReceived : 1;
+    unsigned systemIsAnimatingApplicationLifecycleEvent : 1;
+    unsigned isResuming : 1;
+    unsigned isSuspendedUnderLock : 1;
+    unsigned shouldExitAfterSendSuspend : 1;
+    unsigned shouldExitAfterTaskCompletion : 1;
+    unsigned terminating : 1;
+    unsigned isHandlingShortCutURL : 1;
+    unsigned idleTimerDisabled : 1;
+    unsigned deviceOrientation : 3;
+    unsigned delegateShouldBeReleasedUponSet : 1;
+    unsigned delegateHandleOpenURL : 1;
+    unsigned delegateOpenURL : 1;
+    unsigned delegateDidReceiveMemoryWarning : 1;
+    unsigned delegateWillTerminate : 1;
+    unsigned delegateSignificantTimeChange : 1;
+    unsigned delegateWillChangeInterfaceOrientation : 1;
+    unsigned delegateDidChangeInterfaceOrientation : 1;
+    unsigned delegateWillChangeStatusBarFrame : 1;
+    unsigned delegateDidChangeStatusBarFrame : 1;
+    unsigned delegateDeviceAccelerated : 1;
+    unsigned delegateDeviceChangedOrientation : 1;
+    unsigned delegateDidBecomeActive : 1;
+    unsigned delegateWillResignActive : 1;
+    unsigned delegateDidEnterBackground : 1;
+    unsigned delegateDidEnterBackgroundWasSent : 1;
+    unsigned delegateWillEnterForeground : 1;
+    unsigned delegateWillSuspend : 1;
+    unsigned delegateDidResume : 1;
+    unsigned userDefaultsSyncDisabled : 1;
+    unsigned headsetButtonClickCount : 4;
+    unsigned isHeadsetButtonDown : 1;
+    unsigned isFastForwardActive : 1;
+    unsigned isRewindActive : 1;
+    unsigned disableViewGroupOpacity : 1;
+    unsigned disableViewEdgeAntialiasing : 1;
+    unsigned shakeToEdit : 1;
+    unsigned isClassic : 1;
+    unsigned zoomInClassicMode : 1;
+    unsigned ignoreHeadsetClicks : 1;
+    unsigned touchRotationDisabled : 1;
+    unsigned taskSuspendingUnsupported : 1;
+    unsigned taskSuspendingOnLockUnsupported : 1;
+    unsigned isUnitTests : 1;
+    unsigned requiresHighResolution : 1;
+    unsigned disableViewContentScaling : 1;
+    unsigned singleUseLaunchOrientation : 3;
+    unsigned defaultInterfaceOrientation : 3;
+    unsigned delegateWantsNextResponder : 1;
+    unsigned isRunningInApplicationSwitcher : 1;
+    unsigned isSendingEventForProgrammaticTouchCancellation : 1;
+} UIApplicationFlags5x;
+
 //==============================================================================
 
 @interface UIApplication (Private)
@@ -173,15 +243,21 @@ typedef struct {
 
 @class SBProcess;
 @interface SBDisplay : NSObject
-- (BOOL)activationSetting:(unsigned)setting;
 - (void)clearActivationSettings;
+- (void)setDeactivationSetting:(unsigned)setting flag:(BOOL)flag;
+@end
+@interface SBDisplay (FirmwarePre5x)
+- (BOOL)activationSetting:(unsigned)setting;
 - (BOOL)deactivationSetting:(unsigned)setting;
 - (BOOL)displaySetting:(unsigned)setting;
-- (void)setDeactivationSetting:(unsigned)setting flag:(BOOL)flag;
+@end
+@interface SBDisplay (Firmware5x)
+- (BOOL)activationFlag:(unsigned)flag;
+- (BOOL)deactivationFlag:(unsigned)flag;
+- (BOOL)displayFlag:(unsigned)flag;
 @end
 @interface SBApplication : SBDisplay
 - (void)_cancelAutoRelaunch;
-- (id)contextHostView;
 - (id)displayIdentifier;
 - (BOOL)isSystemApplication;
 @end
@@ -201,6 +277,12 @@ typedef struct {
 @end
 @interface SBApplication (Firmware42x)
 - (int)suspensionType;
+@end
+@interface SBApplication (FirmwarePre5x)
+- (id)contextHostView;
+@end
+@interface SBApplication (Firmware5x)
+- (id)contextHostViewForRequester:(id)requester;
 @end
 
 @interface SBDisplayStack : NSObject
@@ -224,6 +306,12 @@ typedef struct {
 @end
 @interface SBIconModel (Firmware4x)
 - (id)leafIconForIdentifier:(id)identifier; 
+@end
+
+// 5.x
+@interface SBIconViewMap : NSObject
++ (id)homescreenMap;
+- (id)mappedIconViewForIcon:(id)icon;
 @end
 
 @interface SBProcess : NSObject
