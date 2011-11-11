@@ -39,6 +39,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#import <UIKit/UIKit.h>
+
 
 #define TP() NSLog(@"=== @%s:%u[%s]\n",  __FILE__, __LINE__, __FUNCTION__);
 
@@ -134,6 +136,76 @@ typedef struct {
     unsigned disableViewContentScaling : 1;
 } UIApplicationFlags4x;
 
+// Firmware 5.0
+typedef struct {
+    unsigned int deactivatingReasonFlags:8;
+    unsigned int isSuspended:1;
+    unsigned int isSuspendedEventsOnly:1;
+    unsigned int isLaunchedSuspended:1;
+    unsigned int calledNonSuspendedLaunchDelegate:1;
+    unsigned int isHandlingURL:1;
+    unsigned int isHandlingRemoteNotification:1;
+    unsigned int isHandlingLocalNotification:1;
+    unsigned int statusBarShowsProgress:1;
+    unsigned int statusBarRequestedStyle:4;
+    unsigned int statusBarHidden:1;
+    unsigned int blockInteractionEvents:4;
+    unsigned int receivesMemoryWarnings:1;
+    unsigned int showingProgress:1;
+    unsigned int receivesPowerMessages:1;
+    unsigned int launchEventReceived:1;
+    unsigned int systemIsAnimatingApplicationLifecycleEvent:1;
+    unsigned int isResuming:1;
+    unsigned int isSuspendedUnderLock:1;
+    unsigned int shouldExitAfterSendSuspend:1;
+    unsigned int shouldExitAfterTaskCompletion:1;
+    unsigned int terminating:1;
+    unsigned int isHandlingShortCutURL:1;
+    unsigned int idleTimerDisabled:1;
+    unsigned int deviceOrientation:3;
+    unsigned int delegateShouldBeReleasedUponSet:1;
+    unsigned int delegateHandleOpenURL:1;
+    unsigned int delegateOpenURL:1;
+    unsigned int delegateDidReceiveMemoryWarning:1;
+    unsigned int delegateWillTerminate:1;
+    unsigned int delegateSignificantTimeChange:1;
+    unsigned int delegateWillChangeInterfaceOrientation:1;
+    unsigned int delegateDidChangeInterfaceOrientation:1;
+    unsigned int delegateWillChangeStatusBarFrame:1;
+    unsigned int delegateDidChangeStatusBarFrame:1;
+    unsigned int delegateDeviceAccelerated:1;
+    unsigned int delegateDeviceChangedOrientation:1;
+    unsigned int delegateDidBecomeActive:1;
+    unsigned int delegateWillResignActive:1;
+    unsigned int delegateDidEnterBackground:1;
+    unsigned int delegateDidEnterBackgroundWasSent:1;
+    unsigned int delegateWillEnterForeground:1;
+    unsigned int delegateWillSuspend:1;
+    unsigned int delegateDidResume:1;
+    unsigned int userDefaultsSyncDisabled:1;
+    unsigned int headsetButtonClickCount:4;
+    unsigned int isHeadsetButtonDown:1;
+    unsigned int isFastForwardActive:1;
+    unsigned int isRewindActive:1;
+    unsigned int disableViewGroupOpacity:1;
+    unsigned int disableViewEdgeAntialiasing:1;
+    unsigned int shakeToEdit:1;
+    unsigned int isClassic:1;
+    unsigned int zoomInClassicMode:1;
+    unsigned int ignoreHeadsetClicks:1;
+    unsigned int touchRotationDisabled:1;
+    unsigned int taskSuspendingUnsupported:1;
+    unsigned int taskSuspendingOnLockUnsupported:1;
+    unsigned int isUnitTests:1;
+    unsigned int requiresHighResolution:1;
+    unsigned int disableViewContentScaling:1;
+    unsigned int singleUseLaunchOrientation:3;
+    unsigned int defaultInterfaceOrientation:3;
+    unsigned int delegateWantsNextResponder:1;
+    unsigned int isRunningInApplicationSwitcher:1;
+    unsigned int isSendingEventForProgrammaticTouchCancellation:1;
+} UIApplicationFlags5x;
+
 //==============================================================================
 
 @interface UIApplication (Private)
@@ -175,15 +247,24 @@ typedef struct {
 @interface SBDisplay : NSObject
 - (BOOL)activationSetting:(unsigned)setting;
 - (void)clearActivationSettings;
-- (BOOL)deactivationSetting:(unsigned)setting;
-- (BOOL)displaySetting:(unsigned)setting;
+- (BOOL)deactivationSetting:(unsigned)setting;                               // ~Firmware 4
+- (BOOL)deactivationFlag:(unsigned int)setting;                              // Firmware 5~
+- (BOOL)displaySetting:(unsigned)setting;                                    // ~Firmware 4
+- (BOOL)displayFlag:(unsigned int)setting;                                   // Firmware 5~
 - (void)setDeactivationSetting:(unsigned)setting flag:(BOOL)flag;
+- (void)setDeactivationSetting:(unsigned int)setting value:(id)value;        // Firmware 4~
+- (void)kill;
 @end
 @interface SBApplication : SBDisplay
 - (void)_cancelAutoRelaunch;
-- (id)contextHostView;
+- (id)contextHostView;                                                       // ~Firmware 4
+- (id)contextHostManager;                                                    // Firmware 5~
 - (id)displayIdentifier;
 - (BOOL)isSystemApplication;
+@end
+@interface SBAppContextHostManager : NSObject {
+    //SBAppContextHostView *_contextHostView;
+}
 @end
 @interface SBApplication (Firmware3x)
 @property(assign) int pid;
@@ -202,6 +283,9 @@ typedef struct {
 @interface SBApplication (Firmware42x)
 - (int)suspensionType;
 @end
+@interface SBApplication (Firmware5x)
+- (id)contextHostViewForRequester:(id)fp8;
+@end
 
 @interface SBDisplayStack : NSObject
 - (BOOL)containsDisplay:(id)display;
@@ -214,7 +298,9 @@ typedef struct {
 @interface SBIcon (Firmware32x)
 + (CGSize)defaultIconImageSize;
 @end
-@interface SBApplicationIcon : SBIcon @end
+@interface SBApplicationIcon : SBIcon
+- (SBApplication *)application;
+@end
 
 @interface SBIconModel : NSObject
 + (id)sharedInstance;
@@ -225,9 +311,20 @@ typedef struct {
 @interface SBIconModel (Firmware4x)
 - (id)leafIconForIdentifier:(id)identifier; 
 @end
+@interface SBIconViewMap : NSObject
++ (id)homescreenMap;
+- (id)iconViewForIcon:(id)fp8;
+@end
+@interface SBIconView : UIView
++ (CGSize)defaultIconImageSize;
+- (int)location;
+- (id)icon;
+- (id)iconImageView;
+@end
 
 @interface SBProcess : NSObject
 @property(readonly, assign) int pid;
+- (BOOL)isRunning;                                            // Firmware 4
 @end
 
 @protocol SBWiFiManagerDelegate @end
