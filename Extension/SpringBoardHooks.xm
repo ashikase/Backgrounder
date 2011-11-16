@@ -745,9 +745,9 @@ static inline void determineMultitaskingSupport(SBApplication *self, NSDictionar
     if (shouldQuit) {
         // App should quit
         if ([self respondsToSelector:@selector(_suspensionType)])
-            [self _suspensionType];
+            suspendType = [self _suspensionType];
         else
-            [self suspensionType];
+            suspendType = [self suspensionType];
         [self setSuspendType:0];
     }
 
