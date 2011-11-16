@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-12-30 20:13:26
+j* Last-modified: 2011-11-11 22:54:18
  */
 
 /**
@@ -50,6 +50,7 @@
 
 
 static BOOL isFirmware3x_ = NO;
+static BOOL isFirmware4x_ = NO;
 static BOOL isFirmware5x_ = NO;
 
 static BOOL backgroundingEnabled_ = NO;
@@ -164,13 +165,15 @@ static inline NSMutableArray *backgroundTasks()
             if (!fastAppSwitchingEnabled_ && [[self _backgroundModes] count] == 0) {
                 // Fast app switching is disabled, and app does not support audio/gps/voip
                 if ([backgroundTasks() count] == 0) {
-                    // No outstanding background tasks; safe to terminate
-                    UIApplicationFlags4x &_applicationFlags4x = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
-                    UIApplicationFlags5x &_applicationFlags5x = MSHookIvar<UIApplicationFlags5x>(self, "_applicationFlags");
-                    if (isFirmware5x_)
-                        _applicationFlags5x.taskSuspendingUnsupported = 1;
-                    else
-                        _applicationFlags4x.taskSuspendingUnsupported = 1;
+                    if (isFirmware4x_) {
+                        // No outstanding background tasks; safe to terminate
+                        UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
+                        _applicationFlags.taskSuspendingUnsupported = 1;
+                    } else {
+                        // No outstanding background tasks; safe to terminate
+                        UIApplicationFlags5x &_applicationFlags = MSHookIvar<UIApplicationFlags5x>(self, "_applicationFlags");
+                        _applicationFlags.taskSuspendingUnsupported = 1;
+                    }
                 }
             }
         } else {
@@ -183,12 +186,13 @@ static inline NSMutableArray *backgroundTasks()
             // Application should terminate on suspend; make certain that it does
             // NOTE: If there were any remaining tasks, the app will terminate
             //       before this code is reached.
-            UIApplicationFlags4x &_applicationFlags4x = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
-            UIApplicationFlags5x &_applicationFlags5x = MSHookIvar<UIApplicationFlags5x>(self, "_applicationFlags");
-            if (isFirmware5x_)
-                _applicationFlags5x.taskSuspendingUnsupported = 1;
-            else
-                _applicationFlags4x.taskSuspendingUnsupported = 1;
+            if (isFirmware4x_) {
+                UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
+                _applicationFlags.taskSuspendingUnsupported = 1;
+            } else {
+                UIApplicationFlags5x &_applicationFlags = MSHookIvar<UIApplicationFlags5x>(self, "_applicationFlags");
+                _applicationFlags.taskSuspendingUnsupported = 1;
+            }
         }
 
         // Call original implementation
@@ -219,7 +223,6 @@ static inline NSMutableArray *backgroundTasks()
 
 %hook UIApplication
 
-// not iOS 5
 // Used by certain system applications, such as Mail and Phone, instead of applicationSuspend:
 - (BOOL)applicationSuspend:(GSEventRef)event settings:(id)settings
 {
@@ -241,8 +244,7 @@ static inline NSMutableArray *backgroundTasks()
                 _applicationFlags.forceExit = YES;
             } else {
                 // FIXME: Not certain if this is the best method for forcing termination.
-                // commented by deVbug
-                //[self terminateWithSuccess];
+                [self terminateWithSuccess];
             }
         }
     }
@@ -372,11 +374,14 @@ extern "C" NSString *const UIApplicationWillResignActiveNotification;
 - (void)endBackgroundTask:(unsigned int)backgroundTaskId
 {
     // NOTE: Only terminate if app is suspended.
-    UIApplicationFlags4x &_applicationFlags4x = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
-    UIApplicationFlags5x &_applicationFlags5x = MSHookIvar<UIApplicationFlags5x>(self, "_applicationFlags");
-    
-    BOOL isSuspended = isFirmware5x_ ? _applicationFlags5x.isSuspended : _applicationFlags4x.isSuspended;
-    
+    BOOL isSuspended;
+    if (isFirmware4x_) {
+        UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
+        isSuspended = _applicationFlags.isSuspended;
+    } else {
+        UIApplicationFlags5x &_applicationFlags = MSHookIvar<UIApplicationFlags5x>(self, "_applicationFlags");
+        isSuspended = _applicationFlags.isSuspended;
+    }
     if (isSuspended) {
         // If this is the last task, terminate the app instead of suspending
         NSMutableArray *tasks = backgroundTasks();
@@ -414,37 +419,33 @@ static void toggleBackgrounding(int signal)
 
 //------------------------------------------------------------------------------
 
-@interface UIApplication (Backgrounder)
-- (void)initBackgrounder;
-@end
-
-
 %hook UIApplication
 
-
-%new(v:)
-- (void)initBackgrounder
+static void setup(UIApplication *self)
 {
     // Load preferences to determine backgrounding method to use
     loadPreferences();
-    
+
     if (!isFirmware3x_) {
-        // Get application flags
-        UIApplicationFlags4x &_applicationFlags4x = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
-        UIApplicationFlags5x &_applicationFlags5x = MSHookIvar<UIApplicationFlags5x>(self, "_applicationFlags");
-        
         if (backgroundingMethod_ == BGBackgroundingMethodAutoDetect) {
             // Determine if native multitasking is supported
             // NOTE: taskSuspendingUnsupported is set either if the app was
             //       compiled with a pre-iOS4 version of UIKit, or if the info
             //       plist file has the UIApplicationExitsOnSuspend flag set.
-            BOOL supportsMultitask = isFirmware5x_ ? !_applicationFlags5x.taskSuspendingUnsupported : !_applicationFlags4x.taskSuspendingUnsupported;
-            
+            BOOL supportsMultitask;
+            if (isFirmware4x_) {
+                UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
+                supportsMultitask = !_applicationFlags.taskSuspendingUnsupported;
+            } else  {
+                UIApplicationFlags5x &_applicationFlags = MSHookIvar<UIApplicationFlags5x>(self, "_applicationFlags");
+                supportsMultitask = !_applicationFlags.taskSuspendingUnsupported;
+            }
+
             // NOTE: App may have been built with 3.x SDK but still supports multitask;
             //       check if app supports any of the allowed background modes.
             //       (One known example is TomTom.)
             supportsMultitask |= ([[self _backgroundModes] count] != 0);
-            
+
             // If multitasking is supported, use "Native" method; else use "Backgrounder"
             backgroundingMethod_ = supportsMultitask ? BGBackgroundingMethodNative : BGBackgroundingMethodBackgrounder;
         } else if (backgroundingMethod_ == BGBackgroundingMethodNative || fallbackToNative_) {
@@ -458,47 +459,51 @@ static void toggleBackgrounding(int signal)
                     id value = [bundle objectForInfoDictionaryKey:@"UIApplicationExitsOnSuspend"]; 
                     if ([value isKindOfClass:[NSNumber class]])
                         exitsOnSuspend = [(NSNumber *)value boolValue];
-                        
+
                     // NOTE: Respect UIApplicationExitsOnSuspend flag
-                    if (isFirmware5x_)
-                        _applicationFlags5x.taskSuspendingUnsupported = NO;
-                    else
-                        _applicationFlags4x.taskSuspendingUnsupported = NO;
+                    if (isFirmware4x_) {
+                        UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
+                        _applicationFlags.taskSuspendingUnsupported = exitsOnSuspend;
+                    } else {
+                        UIApplicationFlags5x &_applicationFlags = MSHookIvar<UIApplicationFlags5x>(self, "_applicationFlags");
+                        _applicationFlags.taskSuspendingUnsupported = exitsOnSuspend;
+                    }
                 }
             } else {
                 if ([[self _backgroundModes] count] == 0) {
                     // App does not support audio/gps/voip; disable fast app switching
-                    
+
                     // Setup hooks to handle task-continuation
                     %init(GFastAppSwitchingOff);
                 }
             }
         }
-        
+
         if (backgroundingMethod_ == BGBackgroundingMethodOff
-            || (backgroundingMethod_ == BGBackgroundingMethodBackgrounder && !fallbackToNative_)) {
+                || (backgroundingMethod_ == BGBackgroundingMethodBackgrounder && !fallbackToNative_)) {
             // Disable native backgrounding
             // NOTE: Must hook for Backgrounder method as well to prevent task-continuation
-            if (isFirmware5x_)
-                _applicationFlags5x.taskSuspendingUnsupported = 1;
-            else
-                _applicationFlags4x.taskSuspendingUnsupported = 1;
-            
+            if (isFirmware4x_) {
+                UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
+                _applicationFlags.taskSuspendingUnsupported = 1;
+            } else {
+                UIApplicationFlags5x &_applicationFlags = MSHookIvar<UIApplicationFlags5x>(self, "_applicationFlags");
+                _applicationFlags.taskSuspendingUnsupported = 1;
+            }
+
             %init(GMethodOff);
         }
     }
-    
+
     // NOTE: Application class may be a subclass of UIApplication (and not UIApplication itself)
     Class $UIApplication = [self class];
-    if (!isFirmware5x_) {
-        %init(GMethodAll, UIApplication = $UIApplication);
-        if ([self respondsToSelector:@selector(applicationSuspend:settings:)])
-            %init(GMethodAll_SuspendSettings, UIApplication = $UIApplication);
-    }
-        
+    %init(GMethodAll, UIApplication = $UIApplication);
+    if ([self respondsToSelector:@selector(applicationSuspend:settings:)])
+        %init(GMethodAll_SuspendSettings, UIApplication = $UIApplication);
+
     if (backgroundingMethod_ == BGBackgroundingMethodBackgrounder) {
         %init(GMethodBackgrounder, UIApplication = $UIApplication);
-        
+
         // NOTE: Not every app implements the following two methods
         id delegate = [self delegate];
         Class $AppDelegate = delegate ? [delegate class] : [self class];
@@ -507,8 +512,8 @@ static void toggleBackgrounding(int signal)
         if ([delegate respondsToSelector:@selector(applicationDidBecomeActive:)])
             %init(GMethodBackgrounder_Become, AppDelegate = $AppDelegate);
     }
-    
-    
+
+
     // Setup action to take upon receiving toggle signal from SpringBoard
     // NOTE: Done this way as the application hooks *must* be installed in
     //       the UIApplication process, not the SpringBoard process
@@ -524,8 +529,7 @@ static void toggleBackgrounding(int signal)
     sigaction(SIGUSR1, &action, NULL);
 }
 
-
-%group UnderiOS4
+%group GFirmwarePre5x
 
 - (void)_loadMainNibFile
 {
@@ -536,19 +540,23 @@ static void toggleBackgrounding(int signal)
     //       this extension's hooks will not be installed.
     %orig;
 
-    [self initBackgrounder];
+    setup(self);
 }
 
 %end
 
+%group GFirmware5x
 
-%group iOS5
-
-- (void)_loadMainInterfaceFile
+- (int)_loadMainInterfaceFile
 {
-    %orig;
-    
-    [self initBackgrounder];
+    // NOTE: This method always gets called, even if no NIB files are used.
+    //       This method was chosen as it is called after the application
+    //       delegate has been set.
+    // NOTE: If an application overrides this method (unlikely, but possible),
+    //       this extension's hooks will not be installed.
+    int result = %orig;
+    setup(self);
+    return result;
 }
 
 %end
@@ -561,14 +569,17 @@ void initApplicationHooks()
 {
     Class $UIApplication = objc_getClass("UIApplication");
     isFirmware3x_ = (class_getInstanceMethod($UIApplication, @selector(applicationState)) == NULL);
-    isFirmware5x_ = (class_getInstanceMethod($UIApplication, @selector(_loadMainNibFile)) == NULL);
-    
+    isFirmware5x_ = (class_getInstanceMethod($UIApplication, @selector(_loadMainInterfaceFile)) != NULL);
+    isFirmware4x_ = !isFirmware3x_ && !isFirmware5x_;
+
     %init;
 
-    if (isFirmware5x_)
-        %init(iOS5);
-    else
-        %init(UnderiOS4);
+    if (isFirmware5x_) {
+        %init(GFirmware5x);
+    } else {
+        %init(GFirmwarePre5x);
+    }
+
 }
 
 /* vim: set filetype=objcpp sw=4 ts=4 sts=4 expandtab textwidth=80 ff=unix: */
