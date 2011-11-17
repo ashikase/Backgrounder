@@ -156,10 +156,11 @@ static inline NSMutableArray *backgroundTasks()
     if (!isFirmware3x_) {
         // Firmware 4.x+
 
-        if (backgroundingEnabled_ || fallbackToNative_) {
+        if (backgroundingEnabled_ || fallbackToNative_ || backgroundingMethod_ == BGBackgroundingMethodNative) {
             // Is Native method
             // NOTE: backgroundingEnabled_ will always be NO here for
             //       "Off" and "Backgrounder" methods.
+            // NOTE: no, in case of iFile for "Native" method, backgroundingEnabled_ is NO
 
             // Check if fast app switching is disabled for this app
             if (!fastAppSwitchingEnabled_ && [[self _backgroundModes] count] == 0) {

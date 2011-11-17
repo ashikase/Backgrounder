@@ -283,7 +283,7 @@ static void setBadgeVisible5(SBIconView *iconView, BOOL visible)
         
         // Create and add badge
         BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
-        && [enabledApps_ containsObject:identifier];
+                                                  && [enabledApps_ containsObject:identifier];
         NSString *fileName = isBackgrounderMethod ? @"Backgrounder_Badge.png" : @"Backgrounder_NativeBadge.png";
         UIImageView *badgeView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:fileName]];
         badgeView.tag = 1000;
@@ -777,7 +777,7 @@ static inline void determineMultitaskingSupport(SBApplication *self, NSDictionar
     // NOTE: for fix what has sended kill signal to exited native multitasking app by Backgrounder
     if (!isEnabled && ![appsExitingOnSuspend_ containsObject:identifier] &&
         (isBackgrounderMethod && !(boolForKey(kFallbackToNative, identifier)) || 
-         (integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodNative)))
+        (integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodNative)))
         [self kill];
 }
 
