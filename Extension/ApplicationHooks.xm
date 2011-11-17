@@ -456,19 +456,19 @@ static void setup(UIApplication *self)
                 //       apps updated for iOS4 will already have the flag set to zero.
                 if (forceFastAppSwitching_) {
                     // Determine if native multitasking is purposely disabled
-                    /*BOOL exitsOnSuspend = NO;
+                    BOOL exitsOnSuspend = NO;
                     NSBundle *bundle = [NSBundle mainBundle];
                     id value = [bundle objectForInfoDictionaryKey:@"UIApplicationExitsOnSuspend"]; 
                     if ([value isKindOfClass:[NSNumber class]])
-                        exitsOnSuspend = [(NSNumber *)value boolValue];*/
+                        exitsOnSuspend = [(NSNumber *)value boolValue];
 
                     // NOTE: Respect UIApplicationExitsOnSuspend flag
                     if (isFirmware4x_) {
                         UIApplicationFlags4x &_applicationFlags = MSHookIvar<UIApplicationFlags4x>(self, "_applicationFlags");
-                        _applicationFlags.taskSuspendingUnsupported = NO;
+                        _applicationFlags.taskSuspendingUnsupported = exitsOnSuspend;
                     } else {
                         UIApplicationFlags5x &_applicationFlags = MSHookIvar<UIApplicationFlags5x>(self, "_applicationFlags");
-                        _applicationFlags.taskSuspendingUnsupported = NO;
+                        _applicationFlags.taskSuspendingUnsupported = exitsOnSuspend;
                     }
                 }
             } else {
