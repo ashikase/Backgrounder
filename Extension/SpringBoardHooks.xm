@@ -770,7 +770,7 @@ static inline void determineMultitaskingSupport(SBApplication *self, NSDictionar
     //       displayed until the backgrounding state of the app has been toggled
     //       on and off. This workaround ensures that a native badge is added.
     // FIXME: Find a better way to do this.
-    if (!isEnabled && shouldFallback)
+    if (!isEnabled && shouldFallback && boolForKey(kBadgeEnabled, identifier))
         setBadgeVisible(self, YES);
 #endif
     
