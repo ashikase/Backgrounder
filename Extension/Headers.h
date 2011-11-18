@@ -245,6 +245,7 @@ typedef struct {
 @interface SBDisplay : NSObject
 - (void)clearActivationSettings;
 - (void)setDeactivationSetting:(unsigned)setting flag:(BOOL)flag;
+- (void)kill;
 @end
 @interface SBDisplay (FirmwarePre5x)
 - (BOOL)activationSetting:(unsigned)setting;
@@ -296,7 +297,9 @@ typedef struct {
 @interface SBIcon (Firmware32x)
 + (CGSize)defaultIconImageSize;
 @end
-@interface SBApplicationIcon : SBIcon @end
+@interface SBApplicationIcon : SBIcon
+- (SBApplication *)application;
+@end
 
 @interface SBIconModel : NSObject
 + (id)sharedInstance;
@@ -313,9 +316,15 @@ typedef struct {
 + (id)homescreenMap;
 - (id)mappedIconViewForIcon:(id)icon;
 @end
+@interface SBIconView : UIView
++ (CGSize)defaultIconImageSize;
+- (int)location;
+- (id)icon;
+@end
 
 @interface SBProcess : NSObject
 @property(readonly, assign) int pid;
+- (BOOL)isRunning;
 @end
 
 @protocol SBWiFiManagerDelegate @end

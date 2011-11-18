@@ -48,6 +48,8 @@
 #import "Headers.h"
 #import "SimplePopup.h"
 
+#define FALLBACK_INDICATORS
+
 struct GSEvent;
 
 // GraphicsServices
@@ -57,7 +59,6 @@ extern "C" {
 }
 
 static BOOL isFirmware3x = NO;
-static BOOL isFirmwarePre42 = NO;
 static BOOL isFirmware5x = NO;
 
 static NSMutableArray *appsExitingOnSuspend_ = nil;
@@ -260,6 +261,34 @@ static void setBadgeVisible(SBApplication *app, BOOL visible)
         badgeView.tag = 1000;
         badgeView.origin = point;
         [icon addSubview:badgeView];
+        [badgeView release];
+    }
+}
+
+static void setBadgeVisible5(SBIconView *iconView, BOOL visible)
+{
+    SBApplication *app = [(SBApplicationIcon *)[iconView icon] application];
+    NSString *identifier = [app displayIdentifier];
+    
+    [[iconView viewWithTag:1000] removeFromSuperview];
+    
+    if (visible && boolForKey(kBadgeEnabled, identifier)) {
+        // Determine origin for badge based on icon image size
+        // NOTE: Default icon image sizes: iPhone/iPod: 59x62, iPad: 74x76 
+        CGPoint point;
+        
+        // Determine position for badge (relative to lower left corner of icon)
+        CGSize size = [objc_getClass("SBIconView") defaultIconImageSize];
+        point = CGPointMake(-12.0f, size.height - 23.0f);
+        
+        // Create and add badge
+        BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
+            && [enabledApps_ containsObject:identifier];
+        NSString *fileName = isBackgrounderMethod ? @"Backgrounder_Badge.png" : @"Backgrounder_NativeBadge.png";
+        UIImageView *badgeView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:fileName]];
+        badgeView.tag = 1000;
+        badgeView.origin = point;
+        [iconView addSubview:badgeView];
         [badgeView release];
     }
 }
@@ -638,19 +667,6 @@ static inline void determineMultitaskingSupport(SBApplication *self, NSDictionar
 
 %end
 
-%group GFirmware5x
-
-- (id)initWithBundleIdentifier:(id)bundleIdentifier webClip:(id)clip path:(id)path bundle:(id)bundle
-    infoDictionary:(id)dictionary isSystemApplication:(BOOL)application signerIdentity:(id)identity
-    provisioningProfileValidated:(BOOL)validated
-{
-    id ret = %orig;
-    determineMultitaskingSupport(self, dictionary);
-    return ret;
-}
-
-%end
-
 - (void)launchSucceeded:(BOOL)unknownFlag
 {
     NSString *identifier = [self displayIdentifier];
@@ -728,7 +744,10 @@ static inline void determineMultitaskingSupport(SBApplication *self, NSDictionar
     int suspendType = 0;
     if (shouldQuit) {
         // App should quit
-        suspendType = isFirmwarePre42 ? [self _suspensionType] : [self suspensionType];
+        if ([self respondsToSelector:@selector(_suspensionType)])
+            suspendType = [self _suspensionType];
+        else
+            suspendType = [self suspensionType];
         [self setSuspendType:0];
     }
 
@@ -751,9 +770,16 @@ static inline void determineMultitaskingSupport(SBApplication *self, NSDictionar
     //       displayed until the backgrounding state of the app has been toggled
     //       on and off. This workaround ensures that a native badge is added.
     // FIXME: Find a better way to do this.
-    if (!isEnabled && shouldFallback)
+    if (!isEnabled && shouldFallback && boolForKey(kBadgeEnabled, identifier))
         setBadgeVisible(self, YES);
 #endif
+    
+    // NOTE: for fix what has sended kill signal to exited native multitasking app by Backgrounder
+    // FIXME: this code causes abnormal exit
+    if (!isEnabled && ![appsExitingOnSuspend_ containsObject:identifier] &&
+        (isBackgrounderMethod && !(boolForKey(kFallbackToNative, identifier)) || 
+        (integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodNative)))
+        [self kill];
 }
 
 - (void)deactivated
@@ -765,7 +791,7 @@ static inline void determineMultitaskingSupport(SBApplication *self, NSDictionar
         // GUI will get "stuck" and will no longer respond to the home button.
         // Prevent this by hiding the app's context view upon deactivation.
         // NOTE: Credit for this one also goes to phoenix3200
-        id contextHostView = isFirmware5x ? [self contextHostViewForRequester:@"default"] : [self contextHostView];
+        id contextHostView = isFirmware5x ? [self contextHostViewForRequester:@"LaunchSuspend"] : [self contextHostView];
         [contextHostView setHidden:YES];
     }
 }
@@ -891,21 +917,59 @@ static BOOL shouldAutoLaunch(NSString *identifier, BOOL initialCheck, BOOL origV
 
 %end // GFirmware4x
 
+// NOTE: Only hooked for firmware >= 5.0
+%group GFirmware5x
+
+%hook SBApplication
+
+- (id)initWithBundleIdentifier:(id)bundleIdentifier webClip:(id)clip path:(id)path bundle:(id)bundle
+    infoDictionary:(id)dictionary isSystemApplication:(BOOL)application signerIdentity:(id)identity
+    provisioningProfileValidated:(BOOL)validated
+{
+    id ret = %orig;
+    determineMultitaskingSupport(self, dictionary);
+    return ret;
+}
+
+%end
+
+%hook SBIconView
+
+- (id)iconImageView {
+    [[self viewWithTag:1000] removeFromSuperview];
+    
+    if ([[self icon] isKindOfClass:[objc_getClass("SBApplicationIcon") class]]) {
+        SBApplication *application = [((SBApplicationIcon *)[self icon]) application];
+        BOOL isRunning = [[application process] isRunning];
+        
+        // location 
+        // 0 : homescreen
+        // 1 : dock
+        // 2 : appswitcher
+        if (([self location] == 0 || [self location] == 1) && boolForKey(kBadgeEnabled, [application displayIdentifier]))
+            setBadgeVisible5(self, isRunning);
+    }
+    
+    return %orig;
+}
+
+%end
+
+%end // GFirmware5x
+
 //==============================================================================
 
 void initSpringBoardHooks()
 {
-    %init;
-
     // Determine firmware version
-    Class $SBApplication = objc_getClass("SBApplication");
-    isFirmware3x = (class_getInstanceMethod($SBApplication, @selector(pid)) != NULL);
-    isFirmwarePre42 = (class_getInstanceMethod($SBApplication, @selector(suspensionType)) == NULL);
-    isFirmware5x = (objc_getClass("SBIconView") != nil);
+    isFirmware3x = (kCFCoreFoundationVersionNumber <= 478.61);
+    isFirmware5x = (kCFCoreFoundationVersionNumber >= 675.00);
+    
+    %init;
 
     // Load firmware-specific hooks
     if (isFirmware3x) {
-        if (class_getInstanceMethod($SBApplication, @selector(_shouldAutoLaunchOnBoot:)) == NULL)
+        if (478.47 <= kCFCoreFoundationVersionNumber && kCFCoreFoundationVersionNumber < 478.52)
             // Firmware < 3.1
             %init(GFirmware30x);
         else
