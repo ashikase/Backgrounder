@@ -156,11 +156,10 @@ static inline NSMutableArray *backgroundTasks()
     if (!isFirmware3x_) {
         // Firmware 4.x+
 
-        if (backgroundingEnabled_ || fallbackToNative_ || backgroundingMethod_ == BGBackgroundingMethodNative) {
+        if (backgroundingEnabled_ || fallbackToNative_) {
             // Is Native method
             // NOTE: backgroundingEnabled_ will always be NO here for
             //       "Off" and "Backgrounder" methods.
-            // NOTE: no, in case of iFile for "Native" method, backgroundingEnabled_ is NO
 
             // Check if fast app switching is disabled for this app
             if (!fastAppSwitchingEnabled_ && [[self _backgroundModes] count] == 0) {
@@ -245,8 +244,7 @@ static inline NSMutableArray *backgroundTasks()
                 _applicationFlags.forceExit = YES;
             } else {
                 // FIXME: Not certain if this is the best method for forcing termination.
-                // NOTE for fix what has sended kill signal to exited native multitasking app by Backgrounder
-                //[self terminateWithSuccess];
+                [self terminateWithSuccess];
             }
         }
     }

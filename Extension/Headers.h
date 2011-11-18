@@ -40,8 +40,6 @@
  */
 
 
-#import <UIKit/UIKit.h>
-
 #define TP() NSLog(@"=== @%s:%u[%s]\n",  __FILE__, __LINE__, __FUNCTION__);
 
 typedef struct __GSEvent *GSEventRef;
