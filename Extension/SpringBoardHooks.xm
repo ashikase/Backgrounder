@@ -57,7 +57,6 @@ extern "C" {
 }
 
 static BOOL isFirmware3x = NO;
-static BOOL isFirmwarePre42 = NO;
 static BOOL isFirmware5x = NO;
 
 static NSMutableArray *appsExitingOnSuspend_ = nil;
@@ -728,7 +727,10 @@ static inline void determineMultitaskingSupport(SBApplication *self, NSDictionar
     int suspendType = 0;
     if (shouldQuit) {
         // App should quit
-        suspendType = isFirmwarePre42 ? [self _suspensionType] : [self suspensionType];
+        if ([self respondsToSelector:@selector(_suspensionType)])
+            suspendType = [self _suspensionType];
+        else
+            suspendType = [self suspensionType];
         [self setSuspendType:0];
     }
 
@@ -895,17 +897,16 @@ static BOOL shouldAutoLaunch(NSString *identifier, BOOL initialCheck, BOOL origV
 
 void initSpringBoardHooks()
 {
-    %init;
-
     // Determine firmware version
-    Class $SBApplication = objc_getClass("SBApplication");
-    isFirmware3x = (class_getInstanceMethod($SBApplication, @selector(pid)) != NULL);
-    isFirmwarePre42 = (class_getInstanceMethod($SBApplication, @selector(suspensionType)) == NULL);
-    isFirmware5x = (objc_getClass("SBIconView") != nil);
-
+    isFirmware3x = (kCFCoreFoundationVersionNumber <= kCFCoreFoundationVersionNumber_iPhoneOS_3_2);
+    isFirmware5x = (kCFCoreFoundationVersionNumber >= 675.00);
+    
+    %init;
+    
     // Load firmware-specific hooks
     if (isFirmware3x) {
-        if (class_getInstanceMethod($SBApplication, @selector(_shouldAutoLaunchOnBoot:)) == NULL)
+        if (kCFCoreFoundationVersionNumber_iPhoneOS_3_0 <= kCFCoreFoundationVersionNumber && 
+            kCFCoreFoundationVersionNumber < kCFCoreFoundationVersionNumber_iPhoneOS_3_1)
             // Firmware < 3.1
             %init(GFirmware30x);
         else
