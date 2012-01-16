@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2011-11-05 01:33:49
+ * Last-modified: 2012-01-16 15:20:07
  */
 
 /**
@@ -43,6 +43,16 @@
 #define TP() NSLog(@"=== @%s:%u[%s]\n",  __FILE__, __LINE__, __FUNCTION__);
 
 typedef struct __GSEvent *GSEventRef;
+
+//==============================================================================
+
+#ifndef kCFCoreFoundationVersionNumber_iPhoneOS_3_1
+#define kCFCoreFoundationVersionNumber_iPhoneOS_3_1 478.52
+#endif
+
+#ifndef kCFCoreFoundationVersionNumber_iPhoneOS_3_2
+#define kCFCoreFoundationVersionNumber_iPhoneOS_3_2 478.61
+#endif
 
 //==============================================================================
 
