@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2011-11-05 00:25:40
+ * Last-modified: 2012-01-16 15:04:59
  */
 
 /**
@@ -900,13 +900,12 @@ void initSpringBoardHooks()
     // Determine firmware version
     isFirmware3x = (kCFCoreFoundationVersionNumber <= kCFCoreFoundationVersionNumber_iPhoneOS_3_2);
     isFirmware5x = (kCFCoreFoundationVersionNumber >= 675.00);
-    
+
     %init;
-    
+
     // Load firmware-specific hooks
     if (isFirmware3x) {
-        if (kCFCoreFoundationVersionNumber_iPhoneOS_3_0 <= kCFCoreFoundationVersionNumber && 
-            kCFCoreFoundationVersionNumber < kCFCoreFoundationVersionNumber_iPhoneOS_3_1)
+        if (kCFCoreFoundationVersionNumber < kCFCoreFoundationVersionNumber_iPhoneOS_3_1)
             // Firmware < 3.1
             %init(GFirmware30x);
         else
