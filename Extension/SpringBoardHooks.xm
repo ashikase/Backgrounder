@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2012-01-16 15:04:59
+ * Last-modified: 2012-01-16 20:50:32
  */
 
 /**
@@ -221,6 +221,32 @@ static NSMutableArray *appsPermittedToRelaunch_ = nil;
 @property(assign) CGPoint origin;
 @end
 
+static void enableBadgeForIconWithIdentifier(id icon, NSString *identifier)
+{
+    // Determine origin for badge based on icon image size
+    // NOTE: Default icon image sizes: iPhone/iPod: 59x62, iPad: 74x76 
+    CGPoint point;
+    Class $Icon = isFirmware5x ? objc_getClass("SBIconView") : objc_getClass("SBIcon");
+    if ([$Icon respondsToSelector:@selector(defaultIconImageSize)]) {
+        // Determine position for badge (relative to lower left corner of icon)
+        CGSize size = [$Icon defaultIconImageSize];
+        point = CGPointMake(-12.0f, size.height - 23.0f);
+    } else {
+        // Fall back to hard-coded values (for firmware < 3.2, iPhone/iPod only)
+        point = CGPointMake(-12.0f, 39.0f);
+    }
+
+    // Create and add badge
+    BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
+        && [enabledApps_ containsObject:identifier];
+    NSString *fileName = isBackgrounderMethod ? @"Backgrounder_Badge.png" : @"Backgrounder_NativeBadge.png";
+    UIImageView *badgeView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:fileName]];
+    badgeView.tag = 1000;
+    badgeView.origin = point;
+    [icon addSubview:badgeView];
+    [badgeView release];
+}
+
 static void setBadgeVisible(SBApplication *app, BOOL visible)
 {
     NSString *identifier = [app displayIdentifier];
@@ -238,28 +264,7 @@ static void setBadgeVisible(SBApplication *app, BOOL visible)
     [[icon viewWithTag:1000] removeFromSuperview];
 
     if (visible) {
-        // Determine origin for badge based on icon image size
-        // NOTE: Default icon image sizes: iPhone/iPod: 59x62, iPad: 74x76 
-        CGPoint point;
-        Class $Icon = isFirmware5x ? objc_getClass("SBIconView") : objc_getClass("SBIcon");
-        if ([$Icon respondsToSelector:@selector(defaultIconImageSize)]) {
-            // Determine position for badge (relative to lower left corner of icon)
-            CGSize size = [$Icon defaultIconImageSize];
-            point = CGPointMake(-12.0f, size.height - 23.0f);
-        } else {
-            // Fall back to hard-coded values (for firmware < 3.2, iPhone/iPod only)
-            point = CGPointMake(-12.0f, 39.0f);
-        }
-
-        // Create and add badge
-        BOOL isBackgrounderMethod = integerForKey(kBackgroundingMethod, identifier) == BGBackgroundingMethodBackgrounder
-            && [enabledApps_ containsObject:identifier];
-        NSString *fileName = isBackgrounderMethod ? @"Backgrounder_Badge.png" : @"Backgrounder_NativeBadge.png";
-        UIImageView *badgeView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:fileName]];
-        badgeView.tag = 1000;
-        badgeView.origin = point;
-        [icon addSubview:badgeView];
-        [badgeView release];
+        enableBadgeForIconWithIdentifier(icon, identifier);
     }
 }
 
@@ -892,6 +897,36 @@ static BOOL shouldAutoLaunch(NSString *identifier, BOOL initialCheck, BOOL origV
 %end
 
 %end // GFirmware4x
+
+//==============================================================================
+
+%group GFirmware5x
+
+%hook SBIconViewMap
+
+- (id)_iconViewForIcon:(id)icon
+{
+    id result = %orig;
+    if ([icon isApplicationIcon]) {
+        NSString *identifier = [icon leafIdentifier];
+        if ([enabledApps_ containsObject:identifier] &&
+                boolForKey(kBadgeEnabled, identifier)) {
+            enableBadgeForIconWithIdentifier(result, identifier);
+        }
+    }
+    return result;
+}
+
+- (void)_recycleIconView:(id)view
+{
+    // Remove any badges
+    [[view viewWithTag:1000] removeFromSuperview];
+    %orig;
+}
+
+%end
+
+%end
 
 //==============================================================================
 

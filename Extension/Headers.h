@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2012-01-16 15:20:07
+ * Last-modified: 2012-01-16 20:53:18
  */
 
 /**
@@ -305,6 +305,10 @@ typedef struct {
 @interface SBIcon : UIView @end
 @interface SBIcon (Firmware32x)
 + (CGSize)defaultIconImageSize;
+@end
+@interface SBIcon (Firmware4x)
+- (BOOL)isApplicationIcon;
+- (id)leafIdentifier;
 @end
 @interface SBApplicationIcon : SBIcon @end
 
