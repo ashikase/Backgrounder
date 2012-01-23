@@ -3,7 +3,7 @@
  * Type: iPhone OS SpringBoard extension (MobileSubstrate-based)
  * Description: allow applications to run in the background
  * Author: Lance Fetters (aka. ashikase)
- * Last-modified: 2010-08-17 20:37:34
+ * Last-modified: 2012-01-16 18:20:20
  */
 
 /**
@@ -187,7 +187,7 @@ static BOOL isFirmware3x_ = NO;
     static NSString *reuseIdSimple = @"SimpleCell";
 
     static NSString *cellTitles[][4] = {
-        {@"Off", @"Native", @"Backgrounder", @"Auto Detect"},
+        {@"Off", @"Native", @"Forced", @"Auto Detect"},
         {@"Fast App Switching", @"\u21b3 Even if Unsupported", nil, nil},
         {@"Fall Back to Native", nil, nil, nil},
         {@"Enable at Launch", @"Stay Enabled", nil, nil},
@@ -195,8 +195,8 @@ static BOOL isFirmware3x_ = NO;
         {@"Minimize on Toggle", nil, nil, nil}
     };
     static NSString *cellSubtitles[][4] = {
-        {@"App will quit when minimized", @"Use native method, if supported",
-            @"Run as if in foreground", @"Native if supported, else Backgrounder"},
+        {@"App will quit when minimized", @"Use iOS multitasking, if supported",
+            @"Uses more CPU and RAM", @"Native if supported, else Forced"},
         {@"Keep apps paused in memory", @"Include apps not updated for iOS4", nil, nil},
         {@"If state disabled, use native method", nil, nil, nil},
         {@"No need to manually enable", @"Must be disabled manually", nil, nil},
@@ -279,7 +279,7 @@ static BOOL isFirmware3x_ = NO;
 {
     static NSString *titles[] = {
         @"Backgrounding method",
-        @"Options for \"Native\"", @"Options for \"Backgrounder\"",
+        @"Options for \"Native\"", @"Options for \"Forced\"",
         @"Backgrounding state", @"Indicate state via...", @"Miscellaneous",
     };
 
