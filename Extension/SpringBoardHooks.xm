@@ -557,6 +557,11 @@ static BOOL shouldSuspend_ = NO;
     }
 }
 
+%new
+-(NSArray*)backgroundedApplicationIdentifiers{
+    return [enabledApps_ copy];
+}
+
 %end
 
 //==============================================================================
