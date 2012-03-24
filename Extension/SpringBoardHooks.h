@@ -45,6 +45,7 @@
 // NOTE: These methods can be used by third-party extensions/applications
 @interface SpringBoard (Backgrounder)
 - (void)setBackgroundingEnabled:(BOOL)enable forDisplayIdentifier:(NSString *)identifier;
+- (NSArray*)backgroundedApplicationIdentifiers;
 @end
 
 // NOTE: These methods should *not* be used by third-party extensions/applications
