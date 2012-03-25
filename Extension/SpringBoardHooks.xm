@@ -559,7 +559,7 @@ static BOOL shouldSuspend_ = NO;
 
 %new
 -(NSArray*)backgroundedApplicationIdentifiers{
-    return [enabledApps_ copy];
+    return [[enabledApps_ copy] autorelease];
 }
 
 %end
